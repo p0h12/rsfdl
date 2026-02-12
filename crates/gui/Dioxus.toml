@@ -1,0 +1,8 @@
+[application]
+name = "rsfdl"
+default_platform = "desktop"
+
+[bundle]
+identifier = "p0h12.rsfdl"
+publisher = "p0h12"
+icon = ["assets/icon.icns", "assets/icon.ico", "assets/icon.png"]
