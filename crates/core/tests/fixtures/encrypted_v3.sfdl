@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>10</ContainerVersion>
+  <Description>eJjeUNiPvUqK3c1ypgc77PPHIFO10bLczGmz8CpirZ8GYz6jUvEhY2mp8/FTJkxD</Description>
+  <Uploader>TKAwmafNOUXgJggB/1lyoxJYxesM7Ka3aJVaUbJom50=</Uploader>
+  <Encrypted>true</Encrypted>
+  <MaxDownloadThreads>3</MaxDownloadThreads>
+  <Connection>
+    <Host>ZnCq0KENCowhCZiPQJl1tGvgoDaItbq+9itwFRIZF0I=</Host>
+    <Port>21</Port>
+    <Username>4a2taBpnEfFU51iBNAx8MyMDlVC5v5ngN+KFelZert8=</Username>
+    <Password>lA71qOLCxjHixDTlCfvYxX9QKUtzhv9eoVYW2jjTE/k=</Password>
+    <AuthRequired>true</AuthRequired>
+    <DataConnectionType>Passive</DataConnectionType>
+    <DataType>Binary</DataType>
+    <CharacterEncoding>UTF8</CharacterEncoding>
+    <SSLProtocol>None</SSLProtocol>
+    <ConnectTimeout>10</ConnectTimeout>
+    <CommandTimeout>10</CommandTimeout>
+  </Connection>
+  <Packages>
+    <Package>
+      <Name>dB7P8Ntbi1a/zlUARBOA136dAal4n6gNxXsrFv4yFRA=</Name>
+      <BulkFolderMode>false</BulkFolderMode>
+      <FileList>
+        <FileItem>
+          <FileName>wZ/uW65rcXckoPWvHvB9vmTxt6Td2oRHMXJl1Fom3j8=</FileName>
+          <DirectoryRoot>E+E41U64gY2inDmS7e8HCqJPghFrsFVrgsIPpW6YF1w=</DirectoryRoot>
+          <DirectoryPath>vYxiqdwW7u04fjCtBk/B3O7Nom6iNNhgwhx2Ltq1SCU=</DirectoryPath>
+          <FullPath>XpF1poy475OnTeyJgFctH9yTIJjmBVtYbPuM5gBIUdddAYwEDtoQXBgg+sbWSn0x</FullPath>
+          <FileSize>104857600</FileSize>
+          <HashType>MD5</HashType>
+          <FileHash>d41d8cd98f00b204e9800998ecf8427e</FileHash>
+          <PackageName>dB7P8Ntbi1a/zlUARBOA136dAal4n6gNxXsrFv4yFRA=</PackageName>
+        </FileItem>
+        <FileItem>
+          <FileName>yEVnoYwVJMef8J9HzQtEXF6H1+UA6Xg2ZHChiOL2kpw=</FileName>
+          <DirectoryRoot>E+E41U64gY2inDmS7e8HCqJPghFrsFVrgsIPpW6YF1w=</DirectoryRoot>
+          <DirectoryPath>vYxiqdwW7u04fjCtBk/B3O7Nom6iNNhgwhx2Ltq1SCU=</DirectoryPath>
+          <FullPath>w1VqPP2jATZWC6fiBiGrxog417phlJcEZ/NU1//Zx/099CqEbAdmcvRow5RLmqEE</FullPath>
+          <FileSize>52428800</FileSize>
+          <HashType>None</HashType>
+          <FileHash></FileHash>
+          <PackageName>dB7P8Ntbi1a/zlUARBOA136dAal4n6gNxXsrFv4yFRA=</PackageName>
+        </FileItem>
+      </FileList>
+      <BulkFolderList />
+    </Package>
+  </Packages>
+</Container>
