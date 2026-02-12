@@ -124,7 +124,7 @@ jobs:
 
       # Upload artifacts
       - name: Upload CLI artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.cli_artifact }}
           path: |
@@ -134,7 +134,7 @@ jobs:
 
       - name: Upload GUI artifact (macOS)
         if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.gui_artifact }}
           path: target/dx/rsfdl/bundle/macos/**/*.dmg
@@ -142,7 +142,7 @@ jobs:
 
       - name: Upload GUI artifact (Linux)
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.gui_artifact }}
           path: |
@@ -152,7 +152,7 @@ jobs:
 
       - name: Upload GUI artifact (Windows)
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v6
         with:
           name: ${{ matrix.gui_artifact }}
           path: |
