@@ -1,0 +1,11 @@
+[application]
+name = "rsfdl"
+default_platform = "desktop"
+#asset_dir = "../../assets"
+
+[desktop]
+entry = "src/main.rs"
+
+[bundle]
+identifier = "p0h12.rsfdl"
+icon = ["../../assets/icon.icns", "../../assets/icon.png"]

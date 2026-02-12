@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>10</ContainerVersion>
+  <Description>Test.Release.2026.1080p</Description>
+  <Uploader>testuser</Uploader>
+  <Encrypted>false</Encrypted>
+  <MaxDownloadThreads>3</MaxDownloadThreads>
+  <Connection>
+    <Host>ftp.example.com</Host>
+    <Port>21</Port>
+    <Username>ftpuser</Username>
+    <Password>ftppass</Password>
+    <AuthRequired>true</AuthRequired>
+    <DataConnectionType>Passive</DataConnectionType>
+    <DataType>Binary</DataType>
+    <CharacterEncoding>UTF8</CharacterEncoding>
+    <SSLProtocol>None</SSLProtocol>
+    <ConnectTimeout>10</ConnectTimeout>
+    <CommandTimeout>10</CommandTimeout>
+  </Connection>
+  <Packages>
+    <Package>
+      <Name>Package1</Name>
+      <BulkFolderMode>false</BulkFolderMode>
+      <FileList>
+        <FileItem>
+          <FileName>movie.part1.rar</FileName>
+          <DirectoryRoot>/</DirectoryRoot>
+          <DirectoryPath>releases/test</DirectoryPath>
+          <FullPath>/releases/test/movie.part1.rar</FullPath>
+          <FileSize>104857600</FileSize>
+          <HashType>MD5</HashType>
+          <FileHash>d41d8cd98f00b204e9800998ecf8427e</FileHash>
+          <PackageName>Package1</PackageName>
+        </FileItem>
+        <FileItem>
+          <FileName>movie.part2.rar</FileName>
+          <DirectoryRoot>/</DirectoryRoot>
+          <DirectoryPath>releases/test</DirectoryPath>
+          <FullPath>/releases/test/movie.part2.rar</FullPath>
+          <FileSize>52428800</FileSize>
+          <HashType>None</HashType>
+          <FileHash></FileHash>
+          <PackageName>Package1</PackageName>
+        </FileItem>
+      </FileList>
+      <BulkFolderList />
+    </Package>
+  </Packages>
+</Container>
