@@ -1,0 +1,11 @@
+.*
+!.gitignore
+!.github
+
+/target
+/book
+node_modules/
+
+package.json
+bun.lock
+tailwind.css

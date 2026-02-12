@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<SFDLFile xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+    <Description>Test.Release.v2</Description>
+    <Uploader>testuser</Uploader>
+    <SFDLFileVersion>6</SFDLFileVersion>
+    <Encrypted>false</Encrypted>
+    <ConnectionInfo>
+        <Host>ftp.example.com</Host>
+        <Port>21</Port>
+        <Username>ftpuser</Username>
+        <Password>ftppass</Password>
+    </ConnectionInfo>
+    <Packages>
+        <SFDLPackage>
+            <BulkFolderList>
+                <BulkFolder>
+                    <BulkFolderPath>/releases/test/</BulkFolderPath>
+                </BulkFolder>
+            </BulkFolderList>
+        </SFDLPackage>
+    </Packages>
+</SFDLFile>
