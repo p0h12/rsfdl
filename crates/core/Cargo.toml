@@ -1,0 +1,47 @@
+[package]
+name = "rsfdl-core"
+version.workspace = true
+edition.workspace = true
+
+[dependencies]
+# XML parsing
+quick-xml = { version = "0.37", features = ["serialize"] }
+serde = { workspace = true }
+
+# Encryption
+aes = "0.8"
+cbc = { version = "0.1", features = ["alloc"] }
+md-5 = "0.10"
+base64 = "0.22"
+
+# FTP
+suppaftp = { version = "6", features = ["async-native-tls", "async"] }
+
+# Async
+tokio = { workspace = true }
+tokio-util = "0.7"
+futures-lite = "2"
+
+# Serialization
+serde_json = "1"
+
+# Archive extraction
+unrar = "0.5"
+zip = "2"
+regex = "1"
+
+# Utilities
+uuid = { version = "1", features = ["v4"] }
+dirs = "6"
+thiserror = { workspace = true }
+tracing = { workspace = true }
+
+[dev-dependencies]
+tempfile = "3"
+libunftp = "0.20"
+unftp-sbe-fs = "0.2"
+portpicker = "0.1"
+
+[features]
+default = []
+ftp-tests = []

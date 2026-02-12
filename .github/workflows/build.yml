@@ -1,0 +1,178 @@
+name: Build
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - '**'
+    tags-ignore:
+      - 'v*'
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install system dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev libssl-dev pkg-config
+
+      - name: Install Rust (Stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy
+        run: cargo clippy --workspace --all-targets -- -D warnings
+
+      - name: Run tests
+        run: cargo test --workspace
+
+  build:
+    needs: check
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            cli_artifact: rsfdl-cli-macos-arm64
+            gui_artifact: rsfdl-gui-macos-arm64
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            cli_artifact: rsfdl-cli-macos-x64
+            gui_artifact: rsfdl-gui-macos-x64
+          - platform: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            cli_artifact: rsfdl-cli-linux-x64
+            gui_artifact: rsfdl-gui-linux-x64
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            cli_artifact: rsfdl-cli-windows-x64
+            gui_artifact: rsfdl-gui-windows-x64
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install system dependencies (Ubuntu)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev libssl-dev pkg-config
+
+      - name: Install Rust (Stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Build CLI
+        run: cargo build --release -p rsfdl-cli --target ${{ matrix.target }}
+
+      - name: Install Dioxus CLI
+        run: cargo install dioxus-cli@0.7.3 --locked
+
+      - name: Build GUI bundle
+        run: dx bundle --release --platform desktop
+
+      # Package CLI artifacts
+      - name: Package CLI (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p staging
+          cp target/${{ matrix.target }}/release/rsfdl-cli staging/rsfdl-cli
+          cd staging && tar czf ../${{ matrix.cli_artifact }}.tar.gz rsfdl-cli
+
+      - name: Package CLI (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path staging
+          Copy-Item "target/${{ matrix.target }}/release/rsfdl-cli.exe" "staging/rsfdl-cli.exe"
+          Compress-Archive -Path "staging/rsfdl-cli.exe" -DestinationPath "${{ matrix.cli_artifact }}.zip"
+
+      # Upload artifacts
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.cli_artifact }}
+          path: |
+            ${{ matrix.cli_artifact }}.tar.gz
+            ${{ matrix.cli_artifact }}.zip
+          if-no-files-found: ignore
+
+      - name: Upload GUI artifact (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.gui_artifact }}
+          path: target/dx/rsfdl/bundle/macos/**/*.dmg
+          if-no-files-found: warn
+
+      - name: Upload GUI artifact (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.gui_artifact }}
+          path: |
+            target/dx/rsfdl/bundle/linux/**/*.deb
+            target/dx/rsfdl/bundle/linux/**/*.AppImage
+          if-no-files-found: warn
+
+      - name: Upload GUI artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.gui_artifact }}
+          path: |
+            target/dx/rsfdl/bundle/windows/**/*.msi
+            target/dx/rsfdl/bundle/windows/**/*.exe
+          if-no-files-found: warn
+
+  snapshot:
+    if: github.ref == 'refs/heads/main'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      - name: Create snapshot draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: snapshot-${{ github.sha }}
+          name: 'Snapshot Build ${{ github.sha }}'
+          body: 'Automated snapshot build from the main branch.'
+          draft: true
+          prerelease: false
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+            artifacts/**/*.dmg
+            artifacts/**/*.deb
+            artifacts/**/*.AppImage
+            artifacts/**/*.msi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

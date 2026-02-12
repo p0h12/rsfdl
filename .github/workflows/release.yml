@@ -1,0 +1,178 @@
+name: Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  release:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: macos-latest
+            target: aarch64-apple-darwin
+            cli_artifact: rsfdl-cli-macos-arm64
+            gui_artifact: rsfdl-gui-macos-arm64
+          - platform: macos-13
+            target: x86_64-apple-darwin
+            cli_artifact: rsfdl-cli-macos-x64
+            gui_artifact: rsfdl-gui-macos-x64
+          - platform: ubuntu-24.04
+            target: x86_64-unknown-linux-gnu
+            cli_artifact: rsfdl-cli-linux-x64
+            gui_artifact: rsfdl-gui-linux-x64
+          - platform: windows-latest
+            target: x86_64-pc-windows-msvc
+            cli_artifact: rsfdl-cli-windows-x64
+            gui_artifact: rsfdl-gui-windows-x64
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Sync version from git tag
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: bash
+        run: |
+          VERSION="${GITHUB_REF_NAME#v}"
+          echo "Syncing version to $VERSION"
+          sed -i.bak "s/^version = \".*\"/version = \"$VERSION\"/" Cargo.toml
+          rm -f Cargo.toml.bak
+          cargo update --workspace
+
+      - name: Install system dependencies (Ubuntu)
+        if: matrix.platform == 'ubuntu-24.04'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev libgtk-3-dev \
+            libayatana-appindicator3-dev libssl-dev pkg-config
+
+      - name: Install Rust (Stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          targets: ${{ matrix.target }}
+
+      - name: Rust cache
+        uses: swatinem/rust-cache@v2
+
+      - name: Run tests
+        run: cargo test --workspace
+
+      - name: Build CLI
+        run: cargo build --release -p rsfdl-cli --target ${{ matrix.target }}
+
+      - name: Install Dioxus CLI
+        run: cargo install dioxus-cli@0.7.3 --locked
+
+      - name: Build GUI bundle
+        run: dx bundle --release --platform desktop
+
+      # Package CLI artifacts
+      - name: Package CLI (Unix)
+        if: runner.os != 'Windows'
+        run: |
+          mkdir -p staging
+          cp target/${{ matrix.target }}/release/rsfdl-cli staging/rsfdl-cli
+          cd staging && tar czf ../${{ matrix.cli_artifact }}.tar.gz rsfdl-cli
+
+      - name: Package CLI (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force -Path staging
+          Copy-Item "target/${{ matrix.target }}/release/rsfdl-cli.exe" "staging/rsfdl-cli.exe"
+          Compress-Archive -Path "staging/rsfdl-cli.exe" -DestinationPath "${{ matrix.cli_artifact }}.zip"
+
+      # Upload artifacts
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.cli_artifact }}
+          path: |
+            ${{ matrix.cli_artifact }}.tar.gz
+            ${{ matrix.cli_artifact }}.zip
+          if-no-files-found: ignore
+
+      - name: Upload GUI artifact (macOS)
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.gui_artifact }}
+          path: target/dx/rsfdl/bundle/macos/**/*.dmg
+          if-no-files-found: warn
+
+      - name: Upload GUI artifact (Linux)
+        if: runner.os == 'Linux'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.gui_artifact }}
+          path: |
+            target/dx/rsfdl/bundle/linux/**/*.deb
+            target/dx/rsfdl/bundle/linux/**/*.AppImage
+          if-no-files-found: warn
+
+      - name: Upload GUI artifact (Windows)
+        if: runner.os == 'Windows'
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.gui_artifact }}
+          path: |
+            target/dx/rsfdl/bundle/windows/**/*.msi
+            target/dx/rsfdl/bundle/windows/**/*.exe
+          if-no-files-found: warn
+
+  publish:
+    needs: release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: artifacts
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: 'rsfdl ${{ github.ref_name }}'
+          body: |
+            ## rsfdl ${{ github.ref_name }}
+
+            ### Downloads
+
+            **CLI** (headless downloader):
+            | Platform | Download |
+            |----------|----------|
+            | macOS ARM (M1+) | `rsfdl-cli-macos-arm64.tar.gz` |
+            | macOS Intel | `rsfdl-cli-macos-x64.tar.gz` |
+            | Linux x64 | `rsfdl-cli-linux-x64.tar.gz` |
+            | Windows x64 | `rsfdl-cli-windows-x64.zip` |
+
+            **GUI** (desktop app):
+            | Platform | Download |
+            |----------|----------|
+            | macOS ARM | `.dmg` |
+            | macOS Intel | `.dmg` |
+            | Linux x64 | `.deb` / `.AppImage` |
+            | Windows x64 | `.msi` |
+          draft: false
+          prerelease: false
+          files: |
+            artifacts/**/*.tar.gz
+            artifacts/**/*.zip
+            artifacts/**/*.dmg
+            artifacts/**/*.deb
+            artifacts/**/*.AppImage
+            artifacts/**/*.msi
+            artifacts/**/*.exe
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
