@@ -5,7 +5,7 @@ edition.workspace = true
 
 [dependencies]
 # XML parsing
-quick-xml = { version = "0.37", features = ["serialize"] }
+quick-xml = { version = "0.38", features = ["serialize"] }
 serde = { workspace = true }
 
 # Encryption
@@ -27,7 +27,7 @@ serde_json = "1"
 
 # Archive extraction
 unrar = "0.5"
-zip = "2"
+zip = "7"
 regex = "1"
 
 # Utilities
@@ -38,8 +38,8 @@ tracing = { workspace = true }
 
 [dev-dependencies]
 tempfile = "3"
-libunftp = "0.20"
-unftp-sbe-fs = "0.2"
+libunftp = "0.22"
+unftp-sbe-fs = "0.3"
 portpicker = "0.1"
 
 [features]
