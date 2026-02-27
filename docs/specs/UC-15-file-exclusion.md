@@ -29,6 +29,7 @@
 
 **Trigger:** `file_exclusion_patterns` ist leer
 **Flow:**
+
 1. Keine Dateien werden ausgeschlossen
 2. Alle Dateien sind standardmässig ausgewählt (wie bisher)
 
@@ -36,6 +37,7 @@
 
 **Trigger:** Alle Dateien im Container entsprechen einem Ausschluss-Muster
 **Flow:**
+
 1. System zeigt Warnung: "Alle Dateien sind ausgeschlossen"
 2. Kein Download wird gestartet
 3. Benutzer kann Muster anpassen oder einzelne Dateien manuell auswählen
@@ -44,6 +46,7 @@
 
 **Trigger:** Benutzer gibt `--exclude <pattern>` an
 **Flow:**
+
 1. CLI-Muster werden zusätzlich zu gespeicherten Mustern angewandt
 2. Ausgeschlossene Dateien werden als "skipped" im Output markiert
 3. Nur nicht-ausgeschlossene Dateien werden heruntergeladen
@@ -52,6 +55,7 @@
 
 **Trigger:** Ein Muster in der Liste ist kein gültiger Glob-Ausdruck
 **Flow:**
+
 1. System loggt Warnung: "Invalid exclusion pattern: {pattern}"
 2. Ungültiges Muster wird übersprungen
 3. Restliche Muster werden normal angewandt
@@ -79,6 +83,7 @@ Case-insensitive Matching (`.NFO` wird von `*.nfo` erfasst).
 ### BR-002: Muster-Syntax
 
 Glob-Syntax mit `*` (beliebige Zeichen) und `?` (ein Zeichen):
+
 - `*.nfo` — alle `.nfo`-Dateien
 - `*.jpg` — alle JPEG-Dateien
 - `*sample*` — alles mit "sample" im Namen
@@ -161,6 +166,7 @@ Alternativ reicht eine einfache Eigenimplementierung für `*` und `?` — Entsch
 ### Integration in Download-Flow
 
 **GUI:**
+
 ```
 Container geladen → compute_exclusion_mask() → selected_files invertiert initialisieren
   selected_files[i] = !exclusion_mask[i]
@@ -169,6 +175,7 @@ Container geladen → compute_exclusion_mask() → selected_files invertiert ini
 Die bestehende UC-04 Logik (Checkbox-Auswahl) bleibt unverändert. Der Ausschluss setzt nur die initiale Auswahl — alles Weitere läuft über den bestehenden `selected_files`-Mechanismus.
 
 **CLI:**
+
 ```
 Container geladen → CLI --exclude + settings patterns zusammenführen
   → compute_exclusion_mask() → ausgeschlossene Dateien aus packages entfernen
@@ -178,6 +185,7 @@ Container geladen → CLI --exclude + settings patterns zusammenführen
 ### Settings-Persistenz
 
 Neues Feld in `settings.json`:
+
 ```json
 {
   "file_exclusion_patterns": ["*.nfo", "*.jpg", "*sample*"],
@@ -197,6 +205,7 @@ exclude: Vec<String>,
 ```
 
 Die CLI-Muster werden mit den Settings-Mustern zusammengeführt:
+
 ```rust
 let mut patterns = settings.file_exclusion_patterns.clone();
 patterns.extend(cli_exclude_patterns);
@@ -205,6 +214,7 @@ patterns.extend(cli_exclude_patterns);
 ### GUI: Einstellungen
 
 In `SettingsView` wird ein Textarea-Feld hinzugefügt (analog zur Auto-Password-Liste):
+
 - Label: "Datei-Ausschluss-Muster (ein Muster pro Zeile)"
 - Placeholder: `*.nfo\n*.jpg\n*sample*`
 - Parsing: `lines().map(trim).filter(not_empty).collect()`

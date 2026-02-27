@@ -9,61 +9,25 @@ use uuid::Uuid;
 use rsfdl_core::download::manager::DownloadManager;
 use rsfdl_core::download::progress::ProgressEvent;
 use rsfdl_core::format_bytes;
-use rsfdl_core::sfdl::crypto::{decrypt_container, try_passwords, validate_password};
-use rsfdl_core::sfdl::parser::parse_sfdl;
+
+use super::common::{SfdlArgs, load_and_decrypt};
 
 pub async fn run(
-    file: &str,
-    password: Option<&str>,
+    args: &SfdlArgs,
     password_list: &[String],
     dest: Option<&str>,
     threads: u32,
     cli_exclude: &[String],
 ) {
-    // 1. Parse SFDL
-    let xml = match std::fs::read_to_string(file) {
-        Ok(s) => s,
+    let (mut container, mut settings, _outcome) = match load_and_decrypt(args, password_list) {
+        Ok(result) => result,
         Err(e) => {
-            eprintln!("Error: Cannot read file '{}': {}", file, e);
+            eprintln!("Error: {e}");
             std::process::exit(1);
         }
     };
 
-    let mut container = match parse_sfdl(&xml) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("Error: {}", e);
-            std::process::exit(1);
-        }
-    };
-
-    // 2. Decrypt if needed
-    if container.encrypted {
-        if let Some(pw) = password {
-            if !validate_password(&container, pw) {
-                eprintln!("Error: Invalid password");
-                std::process::exit(1);
-            }
-            if let Err(e) = decrypt_container(&mut container, pw) {
-                eprintln!("Error: Decryption failed: {}", e);
-                std::process::exit(1);
-            }
-        } else if let Some(pw) = try_passwords(&container, password_list) {
-            if let Err(e) = decrypt_container(&mut container, &pw) {
-                eprintln!("Error: Auto-decrypt failed: {}", e);
-                std::process::exit(1);
-            }
-            eprintln!("Auto-decrypted with password from list");
-        } else {
-            eprintln!("Error: File is encrypted. Provide a password with -p <password>");
-            std::process::exit(1);
-        }
-    }
-
-    // 3. Build settings (load saved, then override with CLI args)
-    let saved_settings =
-        rsfdl_core::settings::load_settings(&rsfdl_core::settings::default_settings_path());
-    let mut settings = saved_settings;
+    // Apply CLI overrides to settings
     if let Some(d) = dest {
         settings.download_directory = PathBuf::from(d);
     } else {
@@ -81,15 +45,14 @@ pub async fn run(
         for package in &mut container.packages {
             let mask =
                 rsfdl_core::filter::compute_exclusion_mask(&package.file_list, &all_patterns);
-            let mut idx = 0;
-            package.file_list.retain(|_| {
-                let excluded = mask[idx];
-                idx += 1;
-                if excluded {
-                    excluded_count += 1;
-                }
-                !excluded
-            });
+            excluded_count += mask.iter().filter(|&&ex| ex).count();
+            package.file_list = package
+                .file_list
+                .drain(..)
+                .zip(mask)
+                .filter(|(_, excluded)| !excluded)
+                .map(|(file, _)| file)
+                .collect();
         }
         if excluded_count > 0 {
             eprintln!("Excluded {} file(s) matching patterns", excluded_count);
@@ -127,10 +90,10 @@ pub async fn run(
         eprintln!("Resolving {} bulk folder(s) via FTP...", bulk_count);
     }
 
-    // 4. Create download manager
+    // Create download manager
     let (manager, cancel_token, _file_cancel_tx) = DownloadManager::new(container, &settings);
 
-    // 5. Ctrl+C handler
+    // Ctrl+C handler
     let cancel_for_signal = cancel_token.clone();
     tokio::spawn(async move {
         tokio::signal::ctrl_c().await.ok();
@@ -138,13 +101,13 @@ pub async fn run(
         cancel_for_signal.cancel();
     });
 
-    // 6. Progress channel
+    // Progress channel
     let (tx, mut rx) = mpsc::unbounded_channel::<ProgressEvent>();
 
-    // 7. Run downloads in background
+    // Run downloads in background
     let manager_handle = tokio::spawn(async move { manager.run(tx).await });
 
-    // 8. Progress display loop
+    // Progress display loop
     let multi = MultiProgress::new();
     let mut bars: HashMap<Uuid, ProgressBar> = HashMap::new();
 
@@ -260,7 +223,7 @@ pub async fn run(
         }
     }
 
-    // 9. Check result
+    // Check result
     let download_failed = match manager_handle.await {
         Ok(Ok(result)) => result.failed > 0,
         Ok(Err(e)) => {
@@ -273,7 +236,7 @@ pub async fn run(
         }
     };
 
-    // 10. Auto-extraction (UC-14)
+    // Auto-extraction (UC-14)
     if settings.auto_extract_archives {
         let (ext_tx, mut ext_rx) = mpsc::unbounded_channel::<ProgressEvent>();
         let ext_dir = settings.download_directory.clone();
@@ -331,9 +294,17 @@ pub async fn run(
 }
 
 fn truncate_name(name: &str, max: usize) -> String {
-    if name.len() <= max {
+    if name.chars().count() <= max {
         name.to_string()
     } else {
-        format!("...{}", &name[name.len() - (max - 3)..])
+        let suffix: String = name
+            .chars()
+            .rev()
+            .take(max - 3)
+            .collect::<Vec<_>>()
+            .into_iter()
+            .rev()
+            .collect();
+        format!("...{suffix}")
     }
 }

@@ -23,17 +23,18 @@ Die alternativen Implementierungen (pySFDLSauger, goSFDLSauger, SFDLSaugerPro) l
 
 ## Kernwerte
 
-| Wert | Bedeutung |
-|---|---|
-| **Plattformübergreifend** | macOS, Linux, Windows — eine Codebasis |
-| **Dual-Interface** | Desktop-GUI und headless CLI aus demselben Core |
-| **Zuverlässig** | Resume bei Abbrüchen, Retry-Logik, Hash-Verifikation |
-| **Einfach** | Datei öffnen → Passwort eingeben → Download starten |
-| **Automatisierbar** | CLI für Scripting, Cronjobs, Server-Betrieb |
+| Wert                      | Bedeutung                                            |
+|---------------------------|------------------------------------------------------|
+| **Plattformübergreifend** | macOS, Linux, Windows — eine Codebasis               |
+| **Dual-Interface**        | Desktop-GUI und headless CLI aus demselben Core      |
+| **Zuverlässig**           | Resume bei Abbrüchen, Retry-Logik, Hash-Verifikation |
+| **Einfach**               | Datei öffnen → Passwort eingeben → Download starten  |
+| **Automatisierbar**       | CLI für Scripting, Cronjobs, Server-Betrieb          |
 
 ## Abgrenzung
 
 rsfdl ist **kein**:
+
 - Media-Center oder Film-Verwaltung (kein TMDB, keine Metadaten)
 - Streaming-Tool (kein Instant-Video wie SFDL.NET)
 - Forum-Scraper (kein automatisches SFDL-Extrahieren von Webseiten)

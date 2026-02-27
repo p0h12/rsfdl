@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>10</ContainerVersion>
+  <Description>b/QdLTwJq042HnltjfokCFyQD1C2PLYXRphnDgpJfHhvve2C0dIrW1xNH3gR0MWj</Description>
+  <Uploader>IrQPEQ2cCHRe9d0YUFg3EE2U8bwG9Zg58IoBKORW7tE=</Uploader>
+  <Encrypted>true</Encrypted>
+  <MaxDownloadThreads>3</MaxDownloadThreads>
+  <Connection>
+    <Host>hgoMSRLyL05clrWVEXTMAUERcvDUfzrhD3cB4D37i9s=</Host>
+    <Port>21</Port>
+    <Username>3EJuW5mD1hKaRnzlgeqZE51tabAgZ6pSDyvg0RyWGJI=</Username>
+    <Password>unHpNiMQZmFrl3W2ifgV9gk4BYq7LMLJQtuiIjoPXU8=</Password>
+    <AuthRequired>true</AuthRequired>
+    <DataConnectionType>Passive</DataConnectionType>
+    <DataType>Binary</DataType>
+    <CharacterEncoding>UTF8</CharacterEncoding>
+    <SSLProtocol>None</SSLProtocol>
+    <ConnectTimeout>10</ConnectTimeout>
+    <CommandTimeout>10</CommandTimeout>
+  </Connection>
+  <Packages>
+    <Package>
+      <Name>0hcQGZ480jdnEBqjIrX2mATATnVgE4/wG+wiAUZQWiY=</Name>
+      <BulkFolderMode>true</BulkFolderMode>
+      <FileList />
+      <BulkFolderList>
+        <BulkFolder>
+          <BulkFolderPath>LIQtpS68ClePLGZyhCExb5k4D20MQq4s9hhVSdag3O/Wwc2xK8pcZEuBsRXSLUgh</BulkFolderPath>
+          <PackageName>PF4sBFVBfCB1lwbe21NPMFp5FXxLxSeeJj2qgSEG1PU=</PackageName>
+        </BulkFolder>
+        <BulkFolder>
+          <BulkFolderPath>Gr2dq9pbZ/o5h9W/Xbc5YWRPioMQP5Uju8YOSDhrFC42LhmIt8c/c2pPHCGv4b/h</BulkFolderPath>
+          <PackageName>OW9Mp48HMhervKto6MccG64VEBweDJAXPoiTPu4XKZY=</PackageName>
+        </BulkFolder>
+      </BulkFolderList>
+    </Package>
+  </Packages>
+</Container>

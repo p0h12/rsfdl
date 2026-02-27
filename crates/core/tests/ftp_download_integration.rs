@@ -8,12 +8,12 @@ use std::path::Path;
 use tokio::sync::mpsc;
 
 use common::{
-    FtpTestServer, create_ftp_file, generate_empty_sfdl_xml, generate_sfdl_xml, parse_sfdl_from_xml,
+    FtpTestServer, create_ftp_file, generate_bulkfolder_sfdl_xml, generate_empty_sfdl_xml,
+    generate_sfdl_xml, parse_sfdl_from_xml,
 };
 use rsfdl_core::download::manager::DownloadManager;
 use rsfdl_core::download::progress::ProgressEvent;
 use rsfdl_core::settings::AppSettings;
-use rsfdl_core::sfdl::models::SfdlContainer;
 
 /// Build AppSettings pointing to `dest_dir` with given thread count.
 fn test_settings(dest_dir: &Path, threads: u32) -> AppSettings {
@@ -404,4 +404,131 @@ async fn download_empty_file_list() {
             .iter()
             .any(|e| matches!(e, ProgressEvent::AllDone { total_files: 0, .. }))
     );
+}
+
+// ---------------------------------------------------------------------------
+// BulkFolder tests
+// ---------------------------------------------------------------------------
+
+#[tokio::test]
+async fn download_bulkfolder_single_dir() {
+    let ftp_root = tempfile::tempdir().unwrap();
+    let dest = tempfile::tempdir().unwrap();
+
+    // Create files in a directory that will be bulk-listed
+    create_ftp_file(ftp_root.path(), "releases/movie/part1.rar", &[0xAA; 512]);
+    create_ftp_file(ftp_root.path(), "releases/movie/part2.rar", &[0xBB; 256]);
+
+    let server = FtpTestServer::start(ftp_root.path().to_path_buf()).await;
+
+    let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/releases/movie/"]);
+    let container = parse_sfdl_from_xml(&xml);
+
+    let settings = test_settings(dest.path(), 2);
+    let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
+    let (tx, rx) = mpsc::unbounded_channel();
+
+    let result = manager.run(tx).await.unwrap();
+    let _events = collect_events(rx).await;
+
+    assert_eq!(result.total_files, 2);
+    assert_eq!(result.completed, 2);
+    assert_eq!(result.failed, 0);
+
+    // Verify files exist (path: TestPkg/<ftp_path>/<filename>)
+    let base = dest.path().join("TestPkg/releases/movie");
+    assert!(base.join("part1.rar").exists());
+    assert!(base.join("part2.rar").exists());
+    assert_eq!(fs::read(base.join("part1.rar")).unwrap(), vec![0xAA; 512]);
+    assert_eq!(fs::read(base.join("part2.rar")).unwrap(), vec![0xBB; 256]);
+}
+
+#[tokio::test]
+async fn download_bulkfolder_recursive() {
+    let ftp_root = tempfile::tempdir().unwrap();
+    let dest = tempfile::tempdir().unwrap();
+
+    // Create nested directory structure
+    create_ftp_file(ftp_root.path(), "data/season1/ep01.mkv", &[0x01; 100]);
+    create_ftp_file(ftp_root.path(), "data/season1/ep02.mkv", &[0x02; 100]);
+    create_ftp_file(ftp_root.path(), "data/season2/ep01.mkv", &[0x03; 100]);
+
+    let server = FtpTestServer::start(ftp_root.path().to_path_buf()).await;
+
+    let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/data/"]);
+    let container = parse_sfdl_from_xml(&xml);
+
+    let settings = test_settings(dest.path(), 3);
+    let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
+    let (tx, rx) = mpsc::unbounded_channel();
+
+    let result = manager.run(tx).await.unwrap();
+    let _events = collect_events(rx).await;
+
+    assert_eq!(result.total_files, 3);
+    assert_eq!(result.completed, 3);
+    assert_eq!(result.failed, 0);
+
+    // Verify nested structure is preserved
+    assert!(dest.path().join("TestPkg/data/season1/ep01.mkv").exists());
+    assert!(dest.path().join("TestPkg/data/season1/ep02.mkv").exists());
+    assert!(dest.path().join("TestPkg/data/season2/ep01.mkv").exists());
+}
+
+#[tokio::test]
+async fn download_bulkfolder_multiple_folders() {
+    let ftp_root = tempfile::tempdir().unwrap();
+    let dest = tempfile::tempdir().unwrap();
+
+    create_ftp_file(ftp_root.path(), "movies/film.mkv", &[0x10; 200]);
+    create_ftp_file(ftp_root.path(), "extras/behind.mkv", &[0x20; 150]);
+
+    let server = FtpTestServer::start(ftp_root.path().to_path_buf()).await;
+
+    let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/movies/", "/extras/"]);
+    let container = parse_sfdl_from_xml(&xml);
+
+    let settings = test_settings(dest.path(), 2);
+    let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
+    let (tx, rx) = mpsc::unbounded_channel();
+
+    let result = manager.run(tx).await.unwrap();
+    let _events = collect_events(rx).await;
+
+    assert_eq!(result.total_files, 2);
+    assert_eq!(result.completed, 2);
+
+    assert_eq!(
+        fs::read(dest.path().join("TestPkg/movies/film.mkv")).unwrap(),
+        vec![0x10; 200]
+    );
+    assert_eq!(
+        fs::read(dest.path().join("TestPkg/extras/behind.mkv")).unwrap(),
+        vec![0x20; 150]
+    );
+}
+
+#[tokio::test]
+async fn download_bulkfolder_empty_dir() {
+    let ftp_root = tempfile::tempdir().unwrap();
+    let dest = tempfile::tempdir().unwrap();
+
+    // Create the directory but put no files in it
+    fs::create_dir_all(ftp_root.path().join("empty")).unwrap();
+
+    let server = FtpTestServer::start(ftp_root.path().to_path_buf()).await;
+
+    let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/empty/"]);
+    let container = parse_sfdl_from_xml(&xml);
+
+    let settings = test_settings(dest.path(), 1);
+    let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
+    let (tx, rx) = mpsc::unbounded_channel();
+
+    let result = manager.run(tx).await.unwrap();
+    let _events = collect_events(rx).await;
+
+    assert_eq!(result.total_files, 0);
+    assert_eq!(result.completed, 0);
+    assert_eq!(result.failed, 0);
 }

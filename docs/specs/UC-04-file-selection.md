@@ -3,6 +3,7 @@
 ## Scope
 
 Dateiauswahl in der GUI vor dem Download:
+
 - Per-File Checkbox (einzelne Datei an-/abwählen)
 - Per-Package Checkbox (ganzes Paket an-/abwählen)
 - Select All Checkbox (alle Dateien an-/abwählen)

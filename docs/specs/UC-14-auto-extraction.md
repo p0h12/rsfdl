@@ -35,6 +35,7 @@
 
 **Trigger:** Keine RAR- oder ZIP-Dateien im Download-Verzeichnis gefunden
 **Flow:**
+
 1. Keine Extraktion findet statt
 2. `ProgressEvent::ExtractionAllDone { total: 0, ... }` wird gesendet
 3. Download gilt als normal abgeschlossen
@@ -43,6 +44,7 @@
 
 **Trigger:** `unrar` oder `zip`-Crate meldet Fehler (korrupte Daten, unvollständiges Archiv)
 **Flow:**
+
 1. System sendet `ProgressEvent::ExtractionFailed { path, error }`
 2. Archivdateien bleiben erhalten (werden nicht gelöscht)
 3. Extraktion weiterer Archive wird fortgesetzt (ein fehlerhaftes Archiv blockiert nicht die anderen)
@@ -52,6 +54,7 @@
 
 **Trigger:** Archiv verlangt ein Passwort
 **Flow:**
+
 1. System erkennt Password-Requirement beim Öffnen des Archivs
 2. System sendet `ProgressEvent::ExtractionFailed { error: "Passwort-geschütztes Archiv" }`
 3. Archivdateien bleiben erhalten
@@ -61,6 +64,7 @@
 
 **Trigger:** `auto_extract_archives = false` (Standard)
 **Flow:**
+
 1. Nach `AllDone` findet keine Extraktion statt
 2. Kein `Extraction*`-Event wird gesendet
 
@@ -68,6 +72,7 @@
 
 **Trigger:** Erster Teil (`.part01.rar`) vorhanden, aber nicht alle Folge-Teile
 **Flow:**
+
 1. UnRAR-Bibliothek meldet Fehler beim Entpacken
 2. Behandlung wie A2 (Fehler, Dateien bleiben erhalten)
 
@@ -75,6 +80,7 @@
 
 **Trigger:** Extrahierter Inhalt enthält weitere Archive
 **Flow:**
+
 1. Keine rekursive Extraktion (Scope-Begrenzung für Phase 2)
 2. Verschachtelte Archive bleiben als Dateien liegen
 
@@ -99,16 +105,17 @@
 
 Der erste Teil eines Multi-Part-RAR-Archivs wird anhand folgender Muster erkannt:
 
-| Muster | Beispiel | Beschreibung |
-|--------|----------|--------------|
-| `*.rar` (ohne `.partN.rar`) | `movie.rar` | Standalone RAR oder erster Teil (altes Schema) |
-| `*.part01.rar` | `movie.part01.rar` | Erster Teil (neues Schema, variable Stellenzahl) |
-| `*.part001.rar` | `movie.part001.rar` | Erster Teil mit 3 Stellen |
-| `*.part1.rar` | `movie.part1.rar` | Erster Teil mit 1 Stelle |
+| Muster                      | Beispiel            | Beschreibung                                     |
+|-----------------------------|---------------------|--------------------------------------------------|
+| `*.rar` (ohne `.partN.rar`) | `movie.rar`         | Standalone RAR oder erster Teil (altes Schema)   |
+| `*.part01.rar`              | `movie.part01.rar`  | Erster Teil (neues Schema, variable Stellenzahl) |
+| `*.part001.rar`             | `movie.part001.rar` | Erster Teil mit 3 Stellen                        |
+| `*.part1.rar`               | `movie.part1.rar`   | Erster Teil mit 1 Stelle                         |
 
 Folge-Teile (`.part02.rar`, `.r00`, `.r01`, etc.) werden **nicht** als Einstiegspunkt verwendet. Sie werden nur beim Löschen nach Extraktion berücksichtigt.
 
 **Regex für Hauptdatei:**
+
 ```
 (?i)^(?!.*\.part(?!0*1\.rar$)\d+\.rar$).*\.(rar|r0*1)$
 ```
@@ -117,11 +124,11 @@ Folge-Teile (`.part02.rar`, `.r00`, `.r01`, etc.) werden **nicht** als Einstiegs
 
 Alle Dateien, die zum selben Archiv gehören, werden nach erfolgreicher Extraktion gelöscht:
 
-| Muster | Beispiel |
-|--------|----------|
-| `*.rar` | `movie.rar` |
-| `*.part[0-9]+.rar` | `movie.part01.rar`, `movie.part02.rar` |
-| `*.r[0-9]{2}` | `movie.r00`, `movie.r01`, ..., `movie.r99` |
+| Muster             | Beispiel                                   |
+|--------------------|--------------------------------------------|
+| `*.rar`            | `movie.rar`                                |
+| `*.part[0-9]+.rar` | `movie.part01.rar`, `movie.part02.rar`     |
+| `*.r[0-9]{2}`      | `movie.r00`, `movie.r01`, ..., `movie.r99` |
 
 ### BR-003: Extraktion-Zielverzeichnis
 
@@ -340,6 +347,7 @@ regex = "1"       # Bereits vorhanden, für Archiv-Erkennung
 ```
 
 **Hinweis**: Das `unrar` Crate benötigt die UnRAR-Bibliothek auf dem System:
+
 - macOS: `brew install unrar` oder bundled
 - Linux: `apt install unrar` / `dnf install unrar`
 - Windows: `unrar.dll` muss im PATH oder neben der Binary liegen
@@ -500,6 +508,7 @@ pub fn extract_zip(
 Die Extraktion wird **nach** `DownloadManager::run()` als separater Schritt aufgerufen. Sie ist nicht Teil des Download-Managers, sondern wird vom Aufrufer (CLI oder GUI) orchestriert:
 
 **CLI:**
+
 ```rust
 // In cli/src/main.rs, nach download_manager.run():
 let result = manager.run(progress_tx.clone()).await?;
@@ -515,6 +524,7 @@ if settings.auto_extract_archives && result.completed > 0 {
 ```
 
 **GUI:**
+
 ```rust
 // In gui/src/views/main_view.rs, nach AllDone-Event:
 ProgressEvent::AllDone { .. } => {
@@ -548,6 +558,7 @@ Die Löschung erfolgt nur nach **erfolgreicher** Extraktion. Bei Fehlern bleiben
 ### Settings-Persistenz
 
 Neue Felder in `settings.json`:
+
 ```json
 {
   "auto_extract_archives": false,
@@ -560,12 +571,12 @@ Neue Felder in `settings.json`:
 
 ### Entscheidungen und Trade-offs
 
-| Entscheidung | Gewählt | Alternative | Begründung |
-|---|---|---|---|
-| Extraktionsbibliothek RAR | `unrar` Crate (FFI) | `unrar` CLI-Tool | Kein externer Prozess nötig, bessere Fehlerbehandlung |
-| Extraktionsbibliothek ZIP | `zip` Crate (pure Rust) | — | Kein nativer Dependency, gut maintained |
-| Trigger | Nach `AllDone` (alle Downloads) | Per-Paket | Einfacher, weniger Komplexität, Referenz-Impls machen beides |
-| Zielverzeichnis | Neben den Archiven | Separates Unterverzeichnis | Konsistent mit allen Referenz-Impls |
-| Rekursive Extraktion | Nein | Ja (wie goSFDLSauger) | Scope-Begrenzung Phase 2, kann später ergänzt werden |
-| Passwort-Support | Fehler melden | Auto-Crack (wie SFDL.NET) | Zu komplex für Phase 2, kann in Phase 3 ergänzt werden |
-| Fortschrittsgranularität | Pro Datei im Archiv | Pro Byte | `unrar` Crate limitiert auf File-Level |
+| Entscheidung              | Gewählt                         | Alternative                | Begründung                                                   |
+|---------------------------|---------------------------------|----------------------------|--------------------------------------------------------------|
+| Extraktionsbibliothek RAR | `unrar` Crate (FFI)             | `unrar` CLI-Tool           | Kein externer Prozess nötig, bessere Fehlerbehandlung        |
+| Extraktionsbibliothek ZIP | `zip` Crate (pure Rust)         | —                          | Kein nativer Dependency, gut maintained                      |
+| Trigger                   | Nach `AllDone` (alle Downloads) | Per-Paket                  | Einfacher, weniger Komplexität, Referenz-Impls machen beides |
+| Zielverzeichnis           | Neben den Archiven              | Separates Unterverzeichnis | Konsistent mit allen Referenz-Impls                          |
+| Rekursive Extraktion      | Nein                            | Ja (wie goSFDLSauger)      | Scope-Begrenzung Phase 2, kann später ergänzt werden         |
+| Passwort-Support          | Fehler melden                   | Auto-Crack (wie SFDL.NET)  | Zu komplex für Phase 2, kann in Phase 3 ergänzt werden       |
+| Fortschrittsgranularität  | Pro Datei im Archiv             | Pro Byte                   | `unrar` Crate limitiert auf File-Level                       |

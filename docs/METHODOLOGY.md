@@ -11,11 +11,13 @@ Tests protect behavior consistency across code regeneration cycles.
 ## Phases for rsfdl
 
 ### 1. Inception
+
 - [x] Vision (see docs/VISION.md)
 - [x] Business Requirements Catalog (see docs/REQUIREMENTS.md)
 - [x] Test Strategy (see docs/TEST-STRATEGY.md)
 
 ### 2. Elaboration
+
 - [x] Entity Model with ER diagrams (see docs/ENTITY-MODEL.md)
 - [x] System Use Cases (see docs/USE-CASES.md)
 - [x] Acceptance Test Cases (see docs/ACCEPTANCE-TESTS.md)
@@ -23,6 +25,7 @@ Tests protect behavior consistency across code regeneration cycles.
 ### 3. Construction (per Use Case, iterative)
 
 #### Phase 1 MVP — Complete
+
 - [x] UC-01/02: SFDL Open & Decrypt (spec + code + tests)
 - [x] UC-03: Show Container Info (code + tests)
 - [x] UC-05: FTP Download (code + 9 integration tests)
@@ -33,9 +36,13 @@ Tests protect behavior consistency across code regeneration cycles.
 - [x] UC-12: CLI Download (code + 4 E2E tests)
 
 #### Phase 2 — In Progress
+
 - [x] UC-15: File Exclusion Patterns (spec + code + 20 unit tests + CLI + GUI integration)
 - [x] UC-14: Auto-Extraction (spec + code + 72 tests + CLI integration, GUI events deferred)
 - [x] UC-04: File Selection (GUI implementation complete: per-file/package/all checkboxes, size display, download filtering; no automated tests — GUI-only)
+- [x] UC-18: SFDL Creator — Serialize (serialize_v3 + round-trip tests AT-34, AT-35)
+- [x] UC-19: SFDL Creator — Encrypt (encrypt_string, encrypt_container + round-trip tests AT-36, AT-37, AT-38)
+- [x] SFDL Creator GUI (Creator View with form, BulkFolder/FileList modes, save dialog)
 - [ ] UC-09: Settings Persistence (schema defined, not integrated)
 - [ ] UC-13: Bandwidth Limiting
 - [ ] UC-16: Speedreport
@@ -43,6 +50,7 @@ Tests protect behavior consistency across code regeneration cycles.
 - [ ] GUI automated tests (zero coverage)
 
 #### Phase 3 (deferred)
+
 - [ ] FR-08: FTPS/TLS support
 - [ ] FR-09: Hash verification (server-side)
 - [ ] FR-10: Granular retry logic
@@ -50,6 +58,7 @@ Tests protect behavior consistency across code regeneration cycles.
 - [ ] FR-14: File association
 
 ### 4. Transition
+
 - [ ] User Acceptance Testing
 - [ ] Continuous Delivery setup
 - [ ] Production optimization
@@ -72,41 +81,42 @@ flowchart TD
 
 ## Adapted for Rust/Dioxus (no Vaadin/jOOQ)
 
-| AIUP Step | Our Equivalent |
-|---|---|
-| Requirements | docs/REQUIREMENTS.md |
-| Entity Model | docs/ENTITY-MODEL.md (Mermaid ER diagram) |
-| Use Case Diagram | docs/USE-CASES.md (PlantUML or Mermaid) |
-| Settings Persistence | JSON file via core/src/settings.rs |
-| Use Case Spec | docs/specs/UC-{nn}-{name}.md |
-| Implementation | AI generates Rust code from spec |
-| Unit Tests | cargo test (per use case) |
-| Integration Tests | CLI E2E tests |
+| AIUP Step            | Our Equivalent                            |
+|----------------------|-------------------------------------------|
+| Requirements         | docs/REQUIREMENTS.md                      |
+| Entity Model         | docs/ENTITY-MODEL.md (Mermaid ER diagram) |
+| Use Case Diagram     | docs/USE-CASES.md (PlantUML or Mermaid)   |
+| Settings Persistence | JSON file via core/src/settings.rs        |
+| Use Case Spec        | docs/specs/UC-{nn}-{name}.md              |
+| Implementation       | AI generates Rust code from spec          |
+| Unit Tests           | cargo test (per use case)                 |
+| Integration Tests    | CLI E2E tests                             |
 
 ## Detailed Use Case Specifications
 
-| Spec | Status |
-|---|---|
-| docs/specs/UC-01-02-sfdl-open-decrypt.md | ✅ Complete |
-| docs/specs/UC-11-cli-info-list.md | ✅ Complete |
-| docs/specs/UC-03-container-display.md | ✅ Complete |
-| docs/specs/UC-04-file-selection.md | ✅ Complete |
+| Spec                                         | Status     |
+|----------------------------------------------|------------|
+| docs/specs/UC-01-02-sfdl-open-decrypt.md     | ✅ Complete |
+| docs/specs/UC-11-cli-info-list.md            | ✅ Complete |
+| docs/specs/UC-03-container-display.md        | ✅ Complete |
+| docs/specs/UC-04-file-selection.md           | ✅ Complete |
 | docs/specs/UC-05-06-07-08-download-engine.md | ✅ Complete |
-| docs/specs/UC-09-settings.md | ✅ Complete |
-| docs/specs/UC-12-cli-download.md | ✅ Complete |
-| docs/specs/UC-15-file-exclusion.md | ✅ Complete |
-| docs/specs/UC-14-auto-extraction.md | ✅ Complete |
+| docs/specs/UC-09-settings.md                 | ✅ Complete |
+| docs/specs/UC-12-cli-download.md             | ✅ Complete |
+| docs/specs/UC-15-file-exclusion.md           | ✅ Complete |
+| docs/specs/UC-14-auto-extraction.md          | ✅ Complete |
+| docs/specs/UC-18-19-sfdl-creator.md          | ✅ Complete |
 
 ## Test Coverage (current)
 
-| Level | Count | Scope |
-|---|---|---|
-| Unit tests | 137 | Crypto, parser, models, filter, download, errors, extraction (detector, rar, zip, mod) |
-| Crypto integration | 3 | Parse + decrypt pipeline |
-| FTP integration | 9 | Download manager (feature-gated) |
-| CLI E2E | 11 | info, list, download commands |
-| GUI | 0 | Manual testing only |
-| **Total** | **151** | (+ 9 FTP behind feature gate) |
+| Level           | Count   | Scope                                                                                                                               |
+|-----------------|---------|-------------------------------------------------------------------------------------------------------------------------------------|
+| Unit tests      | 149     | Crypto (encrypt+decrypt), parser (serialize+parse), builder, models, filter, download, errors, extraction (detector, rar, zip, mod) |
+| Integration     | 6       | Parse + decrypt + serialize pipeline                                                                                                |
+| FTP integration | 9       | Download manager (feature-gated)                                                                                                    |
+| CLI E2E         | 11      | info, list, download commands                                                                                                       |
+| GUI             | 0       | Manual testing only                                                                                                                 |
+| **Total**       | **166** | (+ 9 FTP behind feature gate)                                                                                                       |
 
 ## Six Principles (applied)
 

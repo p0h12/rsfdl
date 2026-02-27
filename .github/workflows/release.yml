@@ -78,7 +78,7 @@ jobs:
           bunx @tailwindcss/cli -i input.css -o assets/tailwind.css --minify
 
       - name: Run tests
-        run: cargo test --workspace
+        run: cargo test --workspace --features ftp-tests
 
       - name: Build
         run: cargo build --release --target ${{ matrix.target }}

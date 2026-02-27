@@ -3,6 +3,7 @@
 ## Scope
 
 Kern-Download-Logik, die von GUI und CLI gleichermassen konsumiert wird:
+
 - DownloadManager: Orchestrierung paralleler Downloads
 - DownloadItem: Per-File-Status und Resume-Logik
 - ProgressEvent: Fortschrittsmeldungen via Channel

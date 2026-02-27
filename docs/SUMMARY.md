@@ -35,3 +35,7 @@
 - [UC-12: CLI Download ausführen](./specs/UC-12-cli-download.md)
 - [UC-14: Archive automatisch entpacken](./specs/UC-14-auto-extraction.md)
 - [UC-15: Dateien per Muster ausschliessen](./specs/UC-15-file-exclusion.md)
+
+# UI Design
+
+- [UI Prototyp](./ui-prototype.md)

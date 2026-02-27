@@ -3,6 +3,7 @@
 ## Scope
 
 Anzeige des geparsten (und ggf. entschlüsselten) SFDL-Containers:
+
 - Container-Header: Beschreibung, Uploader, Server, Port
 - Paketliste mit Dateien: Name, Pfad, Grösse
 - BulkFolder-Auflösung via FTP (rekursives Directory-Listing)
@@ -99,6 +100,7 @@ recursive_list(client, path, bulk, items):
 ### GUI: Container-Anzeige
 
 **ContainerInfo-Komponente** zeigt:
+
 - Beschreibung (fett), Server:Port, Uploader
 - Files: `selected_count/file_count`
 - Bulk Folders: Anzahl (nur wenn > 0)

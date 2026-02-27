@@ -132,6 +132,57 @@ pub fn generate_empty_sfdl_xml(port: u16) -> String {
     generate_sfdl_xml(port, &[])
 }
 
+/// Generate a valid SFDL v3 XML string with BulkFolderMode=true.
+/// `folders` is a slice of bulk folder paths (e.g. "/releases/movie/").
+pub fn generate_bulkfolder_sfdl_xml(port: u16, folders: &[&str]) -> String {
+    let bulk_items: String = folders
+        .iter()
+        .map(|path| {
+            format!(
+                r#"        <BulkFolder>
+          <BulkFolderPath>{path}</BulkFolderPath>
+          <PackageName>TestPkg</PackageName>
+        </BulkFolder>"#
+            )
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    format!(
+        r#"<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>10</ContainerVersion>
+  <Description>BulkFolder.Test</Description>
+  <Uploader>test</Uploader>
+  <Encrypted>false</Encrypted>
+  <MaxDownloadThreads>3</MaxDownloadThreads>
+  <Connection>
+    <Host>127.0.0.1</Host>
+    <Port>{port}</Port>
+    <Username>anonymous</Username>
+    <Password></Password>
+    <AuthRequired>false</AuthRequired>
+    <DataConnectionType>Passive</DataConnectionType>
+    <DataType>Binary</DataType>
+    <CharacterEncoding>UTF8</CharacterEncoding>
+    <SSLProtocol>None</SSLProtocol>
+    <ConnectTimeout>10</ConnectTimeout>
+    <CommandTimeout>10</CommandTimeout>
+  </Connection>
+  <Packages>
+    <Package>
+      <Name>TestPkg</Name>
+      <BulkFolderMode>true</BulkFolderMode>
+      <FileList />
+      <BulkFolderList>
+{bulk_items}
+      </BulkFolderList>
+    </Package>
+  </Packages>
+</Container>"#
+    )
+}
+
 /// Write SFDL XML to a file in the given directory. Returns the file path.
 #[allow(dead_code)]
 pub fn write_sfdl_to_file(dir: &Path, xml: &str) -> PathBuf {

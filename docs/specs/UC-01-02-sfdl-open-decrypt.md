@@ -3,6 +3,7 @@
 ## Scope
 
 Implementiert die Grundlage für alle weiteren Use Cases:
+
 - SFDL-Datei lesen und Version erkennen
 - XML in Rust-Structs parsen (v3 und v2)
 - Verschlüsselte Felder mit AES-128-CBC entschlüsseln
@@ -63,50 +64,50 @@ Sonst → SfdlError::ParseError
 
 ### Parser: v3 XML-Mapping
 
-| XML Element | Rust Feld |
-|---|---|
-| `<Container>` | `SfdlContainer` |
-| `<ContainerVersion>` | `container_version: u32` |
-| `<Description>` | `description: String` |
-| `<Uploader>` | `uploader: String` |
-| `<Encrypted>` | `encrypted: bool` |
-| `<MaxDownloadThreads>` | `max_download_threads: u32` |
-| `<Connection>` | `connection: Connection` |
-| `<Host>` | `connection.host: String` |
-| `<Port>` | `connection.port: u16` |
-| `<Username>` | `connection.username: String` |
-| `<Password>` | `connection.password: String` |
-| `<AuthRequired>` | `connection.auth_required: bool` |
-| `<DataConnectionType>` | `connection.data_connection_type: FtpDataConnectionType` |
-| `<DataType>` | `connection.data_type: FtpDataType` |
-| `<CharacterEncoding>` | `connection.character_encoding: CharacterEncoding` |
-| `<SSLProtocol>` | `connection.ssl_protocol: SslProtocol` |
-| `<ConnectTimeout>` | `connection.connect_timeout: u32` |
-| `<CommandTimeout>` | `connection.command_timeout: u32` |
-| `<Packages><Package>` | `packages: Vec<Package>` |
-| `<Name>` | `package.name: String` |
-| `<BulkFolderMode>` | `package.bulk_folder_mode: bool` |
-| `<FileList><FileItem>` | `package.file_list: Vec<FileItem>` |
-| `<FileName>` | `file_item.file_name: String` |
-| `<DirectoryRoot>` | `file_item.directory_root: String` |
-| `<DirectoryPath>` | `file_item.directory_path: String` |
-| `<FullPath>` | `file_item.full_path: String` |
-| `<FileSize>` | `file_item.file_size: u64` |
-| `<HashType>` | `file_item.hash_type: HashType` |
-| `<FileHash>` | `file_item.file_hash: String` |
-| `<PackageName>` | `file_item.package_name: String` |
-| `<BulkFolderList><BulkFolder>` | `package.bulk_folder_list: Vec<BulkFolder>` |
-| `<BulkFolderPath>` | `bulk_folder.bulk_folder_path: String` |
-| `<PackageName>` | `bulk_folder.package_name: String` |
+| XML Element                    | Rust Feld                                                |
+|--------------------------------|----------------------------------------------------------|
+| `<Container>`                  | `SfdlContainer`                                          |
+| `<ContainerVersion>`           | `container_version: u32`                                 |
+| `<Description>`                | `description: String`                                    |
+| `<Uploader>`                   | `uploader: String`                                       |
+| `<Encrypted>`                  | `encrypted: bool`                                        |
+| `<MaxDownloadThreads>`         | `max_download_threads: u32`                              |
+| `<Connection>`                 | `connection: Connection`                                 |
+| `<Host>`                       | `connection.host: String`                                |
+| `<Port>`                       | `connection.port: u16`                                   |
+| `<Username>`                   | `connection.username: String`                            |
+| `<Password>`                   | `connection.password: String`                            |
+| `<AuthRequired>`               | `connection.auth_required: bool`                         |
+| `<DataConnectionType>`         | `connection.data_connection_type: FtpDataConnectionType` |
+| `<DataType>`                   | `connection.data_type: FtpDataType`                      |
+| `<CharacterEncoding>`          | `connection.character_encoding: CharacterEncoding`       |
+| `<SSLProtocol>`                | `connection.ssl_protocol: SslProtocol`                   |
+| `<ConnectTimeout>`             | `connection.connect_timeout: u32`                        |
+| `<CommandTimeout>`             | `connection.command_timeout: u32`                        |
+| `<Packages><Package>`          | `packages: Vec<Package>`                                 |
+| `<Name>`                       | `package.name: String`                                   |
+| `<BulkFolderMode>`             | `package.bulk_folder_mode: bool`                         |
+| `<FileList><FileItem>`         | `package.file_list: Vec<FileItem>`                       |
+| `<FileName>`                   | `file_item.file_name: String`                            |
+| `<DirectoryRoot>`              | `file_item.directory_root: String`                       |
+| `<DirectoryPath>`              | `file_item.directory_path: String`                       |
+| `<FullPath>`                   | `file_item.full_path: String`                            |
+| `<FileSize>`                   | `file_item.file_size: u64`                               |
+| `<HashType>`                   | `file_item.hash_type: HashType`                          |
+| `<FileHash>`                   | `file_item.file_hash: String`                            |
+| `<PackageName>`                | `file_item.package_name: String`                         |
+| `<BulkFolderList><BulkFolder>` | `package.bulk_folder_list: Vec<BulkFolder>`              |
+| `<BulkFolderPath>`             | `bulk_folder.bulk_folder_path: String`                   |
+| `<PackageName>`                | `bulk_folder.package_name: String`                       |
 
 ### Parser: v2 → v3 Normalisierung
 
-| v2 Element | v3 Mapping |
-|---|---|
-| `<SFDLFile>` | → `SfdlContainer` |
+| v2 Element          | v3 Mapping                |
+|---------------------|---------------------------|
+| `<SFDLFile>`        | → `SfdlContainer`         |
 | `<SFDLFileVersion>` | → `container_version = 2` |
-| `<ConnectionInfo>` | → `Connection` |
-| `<SFDLPackage>` | → `Package` |
+| `<ConnectionInfo>`  | → `Connection`            |
+| `<SFDLPackage>`     | → `Package`               |
 
 ### Crypto: Entschlüsselungsalgorithmus
 
@@ -124,6 +125,7 @@ Fallback bei Fehler: Schritt 1 mit Latin-1 Encoding wiederholen.
 ### Crypto: Zu entschlüsselnde Felder
 
 Wenn `container.encrypted == true`:
+
 - `container.description`
 - `container.uploader`
 - `connection.host`

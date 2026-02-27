@@ -11,6 +11,9 @@ pub enum SfdlError {
     #[error("Crypto error: {0}")]
     Crypto(#[from] CryptoError),
 
+    #[error("Failed to serialize SFDL file: {0}")]
+    SerializeError(String),
+
     #[error("IO error: {0}")]
     Io(#[from] std::io::Error),
 }

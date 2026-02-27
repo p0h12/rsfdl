@@ -7,15 +7,15 @@ SFDL-Dateien sind XML-Container mit FTP-Verbindungsdaten und Dateilisten, option
 
 ## Tech Stack
 
-| Bereich | Technologie |
-|---|---|
-| GUI | Dioxus 0.7.x Desktop |
-| Styling | Tailwind CSS |
-| FTP | suppaftp (async, native-tls) |
-| SFDL Parsing | quick-xml + serde |
-| Encryption | aes + cbc + md-5 + base64 |
-| CLI | clap + indicatif |
-| Async | tokio |
+| Bereich      | Technologie                  |
+|--------------|------------------------------|
+| GUI          | Dioxus 0.7.x Desktop         |
+| Styling      | Tailwind CSS                 |
+| FTP          | suppaftp (async, native-tls) |
+| SFDL Parsing | quick-xml + serde            |
+| Encryption   | aes + cbc + md-5 + base64    |
+| CLI          | clap + indicatif             |
+| Async        | tokio                        |
 
 ## Implementierungs-Schritte
 

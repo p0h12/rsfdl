@@ -1,5 +1,6 @@
 use quick_xml::de::from_str;
-use serde::Deserialize;
+use quick_xml::se::to_string as xml_to_string;
+use serde::{Deserialize, Serialize};
 
 use crate::error::SfdlError;
 use crate::sfdl::models::*;
@@ -29,7 +30,7 @@ pub fn parse_sfdl(xml: &str) -> Result<SfdlContainer, SfdlError> {
 
 // --- v3 parsing ---
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 #[serde(rename = "Container")]
 struct RawContainerV3 {
     #[serde(rename = "ContainerVersion", default)]
@@ -52,7 +53,7 @@ fn default_threads() -> u32 {
     3
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct RawConnectionV3 {
     #[serde(rename = "Host", default)]
     host: String,
@@ -88,13 +89,13 @@ fn default_true() -> bool {
     true
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct RawPackagesV3 {
     #[serde(rename = "Package", default)]
     packages: Vec<RawPackageV3>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct RawPackageV3 {
     #[serde(rename = "Name", default)]
     name: String,
@@ -106,13 +107,13 @@ struct RawPackageV3 {
     bulk_folder_list: Option<RawBulkFolderListV3>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct RawFileListV3 {
     #[serde(rename = "FileItem", default)]
     items: Vec<RawFileItemV3>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct RawFileItemV3 {
     #[serde(rename = "FileName", default)]
     file_name: String,
@@ -132,13 +133,13 @@ struct RawFileItemV3 {
     package_name: String,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct RawBulkFolderListV3 {
     #[serde(rename = "BulkFolder", default)]
     items: Vec<RawBulkFolderV3>,
 }
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, Serialize)]
 struct RawBulkFolderV3 {
     #[serde(rename = "BulkFolderPath", default)]
     bulk_folder_path: String,
@@ -208,6 +209,85 @@ fn parse_v3(xml: &str) -> Result<SfdlContainer, SfdlError> {
             })
             .collect(),
     })
+}
+
+// --- v3 serialization ---
+
+/// Serializes an SfdlContainer to SFDL v3 XML.
+pub fn serialize_v3(container: &SfdlContainer) -> Result<String, SfdlError> {
+    let raw = to_raw_v3(container);
+    let xml_body = xml_to_string(&raw).map_err(|e| SfdlError::SerializeError(e.to_string()))?;
+    Ok(format!(
+        "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n{}",
+        xml_body
+    ))
+}
+
+fn to_raw_v3(c: &SfdlContainer) -> RawContainerV3 {
+    RawContainerV3 {
+        container_version: c.container_version,
+        description: c.description.clone(),
+        uploader: c.uploader.clone(),
+        encrypted: c.encrypted,
+        max_download_threads: c.max_download_threads,
+        connection: RawConnectionV3 {
+            host: c.connection.host.clone(),
+            port: c.connection.port,
+            username: c.connection.username.clone(),
+            password: c.connection.password.clone(),
+            auth_required: c.connection.auth_required,
+            data_connection_type: c.connection.data_connection_type,
+            data_type: c.connection.data_type,
+            character_encoding: c.connection.character_encoding,
+            ssl_protocol: c.connection.ssl_protocol,
+            connect_timeout: c.connection.connect_timeout,
+            command_timeout: c.connection.command_timeout,
+        },
+        packages: RawPackagesV3 {
+            packages: c
+                .packages
+                .iter()
+                .map(|p| RawPackageV3 {
+                    name: p.name.clone(),
+                    bulk_folder_mode: p.bulk_folder_mode,
+                    file_list: if p.file_list.is_empty() {
+                        None
+                    } else {
+                        Some(RawFileListV3 {
+                            items: p
+                                .file_list
+                                .iter()
+                                .map(|f| RawFileItemV3 {
+                                    file_name: f.file_name.clone(),
+                                    directory_root: f.directory_root.clone(),
+                                    directory_path: f.directory_path.clone(),
+                                    full_path: f.full_path.clone(),
+                                    file_size: f.file_size,
+                                    hash_type: f.hash_type,
+                                    file_hash: f.file_hash.clone(),
+                                    package_name: f.package_name.clone(),
+                                })
+                                .collect(),
+                        })
+                    },
+                    bulk_folder_list: if p.bulk_folder_list.is_empty() {
+                        None
+                    } else {
+                        Some(RawBulkFolderListV3 {
+                            items: p
+                                .bulk_folder_list
+                                .iter()
+                                .map(|b| RawBulkFolderV3 {
+                                    bulk_folder_path: b.bulk_folder_path.clone(),
+                                    package_name: b.package_name.clone(),
+                                })
+                                .collect(),
+                        })
+                    },
+                })
+                .collect(),
+        },
+    }
 }
 
 // --- v2 parsing ---
@@ -341,6 +421,9 @@ mod tests {
     const UNENCRYPTED_V3: &str = include_str!("../../tests/fixtures/unencrypted_v3.sfdl");
     const UNENCRYPTED_V2: &str = include_str!("../../tests/fixtures/unencrypted_v2.sfdl");
     const ENCRYPTED_V3: &str = include_str!("../../tests/fixtures/encrypted_v3.sfdl");
+    const BULKFOLDER_V3: &str = include_str!("../../tests/fixtures/bulkfolder_v3.sfdl");
+    const ENCRYPTED_BULKFOLDER_V3: &str =
+        include_str!("../../tests/fixtures/encrypted_bulkfolder_v3.sfdl");
     const INVALID: &str = include_str!("../../tests/fixtures/invalid.sfdl");
 
     // --- AT-01: Unverschlüsselte v3-Datei parsen ---
@@ -445,6 +528,66 @@ mod tests {
         assert_eq!(container.connection.port, 21);
     }
 
+    // --- v3 BulkFolderMode=true ---
+
+    #[test]
+    fn parse_bulkfolder_v3() {
+        let container = parse_sfdl(BULKFOLDER_V3).unwrap();
+
+        assert_eq!(container.container_version, 10);
+        assert_eq!(container.description, "BulkFolder.Test.2026");
+        assert!(!container.encrypted);
+
+        // Package
+        assert_eq!(container.packages.len(), 1);
+        let pkg = &container.packages[0];
+        assert_eq!(pkg.name, "BulkPkg1");
+        assert!(pkg.bulk_folder_mode);
+        assert!(pkg.file_list.is_empty());
+
+        // BulkFolderList
+        assert_eq!(pkg.bulk_folder_list.len(), 2);
+        assert_eq!(pkg.bulk_folder_list[0].bulk_folder_path, "/releases/movie/");
+        assert_eq!(pkg.bulk_folder_list[0].package_name, "BulkPkg1");
+        assert_eq!(
+            pkg.bulk_folder_list[1].bulk_folder_path,
+            "/releases/extras/"
+        );
+        assert_eq!(pkg.bulk_folder_list[1].package_name, "BulkPkg1");
+    }
+
+    #[test]
+    fn parse_bulkfolder_v3_has_correct_connection() {
+        let container = parse_sfdl(BULKFOLDER_V3).unwrap();
+
+        assert_eq!(container.connection.host, "ftp.example.com");
+        assert_eq!(container.connection.port, 21);
+        assert_eq!(container.connection.username, "ftpuser");
+        assert_eq!(container.connection.password, "ftppass");
+        assert!(container.connection.auth_required);
+    }
+
+    #[test]
+    fn parse_encrypted_bulkfolder_v3_raw() {
+        let container = parse_sfdl(ENCRYPTED_BULKFOLDER_V3).unwrap();
+
+        assert_eq!(container.container_version, 10);
+        assert!(container.encrypted);
+
+        // Fields should be Base64-encoded ciphertext
+        assert_ne!(container.description, "BulkFolder.Test.2026");
+        assert_ne!(container.connection.host, "ftp.example.com");
+
+        // Structure: BulkFolderMode=true, empty FileList, populated BulkFolderList
+        let pkg = &container.packages[0];
+        assert!(pkg.bulk_folder_mode);
+        assert!(pkg.file_list.is_empty());
+        assert_eq!(pkg.bulk_folder_list.len(), 2);
+
+        // Paths are still encrypted
+        assert_ne!(pkg.bulk_folder_list[0].bulk_folder_path, "/releases/movie/");
+    }
+
     // --- AT-06: Ungültiges XML ---
 
     #[test]
@@ -463,5 +606,114 @@ mod tests {
     fn detect_version_empty() {
         let result = detect_version("");
         assert!(result.is_err());
+    }
+
+    // --- AT-35: Serializer round-trip tests ---
+
+    #[test]
+    fn serialize_v3_round_trip_filelist() {
+        let original = parse_sfdl(UNENCRYPTED_V3).unwrap();
+        let xml = serialize_v3(&original).unwrap();
+        let reparsed = parse_sfdl(&xml).unwrap();
+
+        assert_eq!(reparsed.container_version, original.container_version);
+        assert_eq!(reparsed.description, original.description);
+        assert_eq!(reparsed.uploader, original.uploader);
+        assert_eq!(reparsed.encrypted, original.encrypted);
+        assert_eq!(reparsed.max_download_threads, original.max_download_threads);
+        assert_eq!(reparsed.connection.host, original.connection.host);
+        assert_eq!(reparsed.connection.port, original.connection.port);
+        assert_eq!(reparsed.connection.username, original.connection.username);
+        assert_eq!(reparsed.connection.password, original.connection.password);
+        assert_eq!(reparsed.packages.len(), original.packages.len());
+
+        let orig_pkg = &original.packages[0];
+        let re_pkg = &reparsed.packages[0];
+        assert_eq!(re_pkg.name, orig_pkg.name);
+        assert_eq!(re_pkg.bulk_folder_mode, orig_pkg.bulk_folder_mode);
+        assert_eq!(re_pkg.file_list.len(), orig_pkg.file_list.len());
+        assert_eq!(re_pkg.file_list[0], orig_pkg.file_list[0]);
+        assert_eq!(re_pkg.file_list[1], orig_pkg.file_list[1]);
+    }
+
+    #[test]
+    fn serialize_v3_round_trip_bulkfolder() {
+        let original = parse_sfdl(BULKFOLDER_V3).unwrap();
+        let xml = serialize_v3(&original).unwrap();
+        let reparsed = parse_sfdl(&xml).unwrap();
+
+        assert_eq!(reparsed.description, original.description);
+        assert_eq!(reparsed.uploader, original.uploader);
+        let orig_pkg = &original.packages[0];
+        let re_pkg = &reparsed.packages[0];
+        assert_eq!(re_pkg.name, orig_pkg.name);
+        assert!(re_pkg.bulk_folder_mode);
+        assert!(re_pkg.file_list.is_empty());
+        assert_eq!(
+            re_pkg.bulk_folder_list.len(),
+            orig_pkg.bulk_folder_list.len()
+        );
+        assert_eq!(
+            re_pkg.bulk_folder_list[0].bulk_folder_path,
+            orig_pkg.bulk_folder_list[0].bulk_folder_path
+        );
+        assert_eq!(
+            re_pkg.bulk_folder_list[1].bulk_folder_path,
+            orig_pkg.bulk_folder_list[1].bulk_folder_path
+        );
+    }
+
+    #[test]
+    fn serialize_v3_has_xml_header() {
+        let container = SfdlContainer::default();
+        let xml = serialize_v3(&container).unwrap();
+        assert!(xml.starts_with("<?xml version=\"1.0\" encoding=\"utf-8\"?>"));
+    }
+
+    #[test]
+    fn serialize_v3_full_pipeline() {
+        use crate::sfdl::crypto::{decrypt_container, encrypt_container};
+
+        // Build a container from scratch
+        let mut container = SfdlContainer {
+            description: "Pipeline.Test.2026".into(),
+            uploader: "rsfdl".into(),
+            connection: Connection {
+                host: "ftp.test.com".into(),
+                port: 21,
+                username: "user".into(),
+                password: "pass".into(),
+                auth_required: true,
+                ..Connection::default()
+            },
+            packages: vec![Package {
+                name: "TestPkg".into(),
+                bulk_folder_mode: true,
+                bulk_folder_list: vec![BulkFolder {
+                    bulk_folder_path: "/data/release/".into(),
+                    package_name: "TestPkg".into(),
+                }],
+                ..Package::default()
+            }],
+            ..SfdlContainer::default()
+        };
+
+        // Encrypt → serialize → parse → decrypt → verify
+        encrypt_container(&mut container, "mypassword");
+        assert!(container.encrypted);
+
+        let xml = serialize_v3(&container).unwrap();
+        let mut reparsed = parse_sfdl(&xml).unwrap();
+        assert!(reparsed.encrypted);
+
+        decrypt_container(&mut reparsed, "mypassword").unwrap();
+        assert_eq!(reparsed.description, "Pipeline.Test.2026");
+        assert_eq!(reparsed.connection.host, "ftp.test.com");
+        assert_eq!(reparsed.connection.username, "user");
+        assert_eq!(reparsed.packages[0].name, "TestPkg");
+        assert_eq!(
+            reparsed.packages[0].bulk_folder_list[0].bulk_folder_path,
+            "/data/release/"
+        );
     }
 }

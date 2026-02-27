@@ -9,3 +9,5 @@ node_modules/
 package.json
 bun.lock
 tailwind.css
+
+!/.claude

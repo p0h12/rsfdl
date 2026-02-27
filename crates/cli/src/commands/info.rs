@@ -1,51 +1,22 @@
-use rsfdl_core::sfdl::crypto::{decrypt_container, try_passwords, validate_password};
 use rsfdl_core::sfdl::models::{FtpDataConnectionType, SfdlContainer, SslProtocol};
-use rsfdl_core::sfdl::parser::parse_sfdl;
-use std::process;
 
 use rsfdl_core::format_bytes;
 
-pub fn run(file: &str, password: Option<&str>, password_list: &[String]) {
-    let xml = match std::fs::read_to_string(file) {
-        Ok(s) => s,
+use super::common::{DecryptOutcome, SfdlArgs, load_and_decrypt};
+
+pub fn run(args: &SfdlArgs, password_list: &[String]) {
+    let (container, _settings, outcome) = match load_and_decrypt(args, password_list) {
+        Ok(result) => result,
         Err(e) => {
-            eprintln!("Error: Cannot read file '{}': {}", file, e);
-            process::exit(1);
+            eprintln!("Error: {e}");
+            std::process::exit(1);
         }
     };
 
-    let mut container = match parse_sfdl(&xml) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("Error: {}", e);
-            process::exit(1);
-        }
-    };
-
-    let encrypted_label = if container.encrypted {
-        if let Some(pw) = password {
-            if !validate_password(&container, pw) {
-                eprintln!("Error: Invalid password");
-                process::exit(1);
-            }
-            if let Err(e) = decrypt_container(&mut container, pw) {
-                eprintln!("Error: Decryption failed: {}", e);
-                process::exit(1);
-            }
-            "yes (decrypted)"
-        } else if let Some(pw) = try_passwords(&container, password_list) {
-            if let Err(e) = decrypt_container(&mut container, &pw) {
-                eprintln!("Error: Auto-decrypt failed: {}", e);
-                process::exit(1);
-            }
-            eprintln!("Auto-decrypted with password from list");
-            "yes (auto-decrypted)"
-        } else {
-            eprintln!("Error: File is encrypted. Provide a password with -p <password>");
-            process::exit(1);
-        }
-    } else {
-        "no"
+    let encrypted_label = match outcome {
+        DecryptOutcome::WasPlaintext => "no",
+        DecryptOutcome::Decrypted => "yes (decrypted)",
+        DecryptOutcome::AutoDecrypted => "yes (auto-decrypted)",
     };
 
     print_info(&container, encrypted_label);

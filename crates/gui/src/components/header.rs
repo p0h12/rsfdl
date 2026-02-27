@@ -26,6 +26,13 @@ pub fn Header() -> Element {
                     "Open File"
                 }
                 button {
+                    class: "px-3 py-1.5 bg-green-600 hover:bg-green-700 rounded text-sm font-medium",
+                    onclick: move |_| {
+                        state.current_view.set(AppView::Creator);
+                    },
+                    "Create"
+                }
+                button {
                     class: "px-3 py-1.5 bg-gray-600 hover:bg-gray-700 rounded text-sm",
                     onclick: move |_| {
                         state.current_view.set(AppView::Settings);
@@ -75,12 +82,8 @@ async fn open_sfdl_file(mut state: AppState) {
                 // No auto-password matched — show dialog
                 state.container.set(Some(container));
                 state.container_path.set(Some(path));
+                state.reset_for_new_container();
                 state.needs_password.set(true);
-                state.password_error.set(None);
-                state.download_phase.set(DownloadPhase::Idle);
-                state.file_states.write().clear();
-                state.summary.set(None);
-                state.error_message.set(None);
             } else {
                 finish_container_load(&mut state, container, path);
             }
@@ -107,13 +110,8 @@ pub fn finish_container_load(
 
     state.container.set(Some(container));
     state.container_path.set(Some(path));
-    state.needs_password.set(false);
-    state.password_error.set(None);
     state.selected_files.set(selection);
-    state.download_phase.set(DownloadPhase::Idle);
-    state.file_states.write().clear();
-    state.summary.set(None);
-    state.error_message.set(None);
+    state.reset_for_new_container();
 
     // Trigger async BulkFolder resolution
     let mut state_copy = *state;

@@ -1,48 +1,17 @@
-use rsfdl_core::sfdl::crypto::{decrypt_container, try_passwords, validate_password};
 use rsfdl_core::sfdl::models::HashType;
-use rsfdl_core::sfdl::parser::parse_sfdl;
-use std::process;
 
 use rsfdl_core::format_bytes;
 
-pub async fn run(file: &str, password: Option<&str>, password_list: &[String], resolve: bool) {
-    let xml = match std::fs::read_to_string(file) {
-        Ok(s) => s,
+use super::common::{SfdlArgs, load_and_decrypt};
+
+pub async fn run(args: &SfdlArgs, password_list: &[String], resolve: bool) {
+    let (mut container, settings, _outcome) = match load_and_decrypt(args, password_list) {
+        Ok(result) => result,
         Err(e) => {
-            eprintln!("Error: Cannot read file '{}': {}", file, e);
-            process::exit(1);
+            eprintln!("Error: {e}");
+            std::process::exit(1);
         }
     };
-
-    let mut container = match parse_sfdl(&xml) {
-        Ok(c) => c,
-        Err(e) => {
-            eprintln!("Error: {}", e);
-            process::exit(1);
-        }
-    };
-
-    if container.encrypted {
-        if let Some(pw) = password {
-            if !validate_password(&container, pw) {
-                eprintln!("Error: Invalid password");
-                process::exit(1);
-            }
-            if let Err(e) = decrypt_container(&mut container, pw) {
-                eprintln!("Error: Decryption failed: {}", e);
-                process::exit(1);
-            }
-        } else if let Some(pw) = try_passwords(&container, password_list) {
-            if let Err(e) = decrypt_container(&mut container, &pw) {
-                eprintln!("Error: Auto-decrypt failed: {}", e);
-                process::exit(1);
-            }
-            eprintln!("Auto-decrypted with password from list");
-        } else {
-            eprintln!("Error: File is encrypted. Provide a password with -p <password>");
-            process::exit(1);
-        }
-    }
 
     // Resolve bulk folders if requested
     if resolve {
@@ -56,7 +25,7 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], r
             match rsfdl_core::ftp::listing::resolve_container_bulk_folders(
                 &container.connection,
                 &container.packages,
-                30, // default FTP timeout in seconds
+                settings.ftp_timeout_seconds,
             )
             .await
             {

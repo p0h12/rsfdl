@@ -10,6 +10,7 @@ Basis für UC-12 (CLI Download) und für Debugging/Scripting.
 ### `rsfdl-cli info <datei.sfdl> [-p <password>]`
 
 Zeigt Container-Übersicht:
+
 ```
 Container: Test.Release.2026.1080p
 Uploader:  testuser
@@ -24,6 +25,7 @@ Total:     200.0 MB
 ### `rsfdl-cli list <datei.sfdl> [-p <password>]`
 
 Zeigt Dateiliste:
+
 ```
 Package: Package1
 
@@ -34,6 +36,7 @@ Package: Package1
 ```
 
 Bei BulkFolder-Modus (ohne FTP-Auflösung):
+
 ```
 Package: Package1 (Bulk Folder Mode)
 

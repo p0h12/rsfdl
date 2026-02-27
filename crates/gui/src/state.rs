@@ -14,6 +14,7 @@ use rsfdl_core::sfdl::models::SfdlContainer;
 pub enum AppView {
     Main,
     Settings,
+    Creator,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -52,26 +53,13 @@ pub struct DownloadSummary {
     pub skipped: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Default)]
 pub struct GlobalProgressState {
     pub total_bytes_all: u64,
     pub total_written_all: u64,
     pub files_done: u32,
     pub files_total: u32,
     pub started_at: Option<Instant>,
-}
-
-impl Default for GlobalProgressState {
-    #[allow(clippy::derivable_impls)]
-    fn default() -> Self {
-        Self {
-            total_bytes_all: 0,
-            total_written_all: 0,
-            files_done: 0,
-            files_total: 0,
-            started_at: None,
-        }
-    }
 }
 
 impl GlobalProgressState {
@@ -193,6 +181,22 @@ impl AppState {
     /// Count of selected files.
     pub fn selected_count(&self) -> usize {
         self.selected_files.read().iter().filter(|&&s| s).count()
+    }
+
+    /// Reset download-related state (phase, file states, summary, progress).
+    pub fn reset_download_state(&mut self) {
+        self.download_phase.set(DownloadPhase::Idle);
+        self.file_states.write().clear();
+        self.summary.set(None);
+        self.global_progress.set(GlobalProgressState::default());
+    }
+
+    /// Reset all container/download state for loading a new container.
+    pub fn reset_for_new_container(&mut self) {
+        self.needs_password.set(false);
+        self.password_error.set(None);
+        self.error_message.set(None);
+        self.reset_download_state();
     }
 
     /// Total bulk folder count.

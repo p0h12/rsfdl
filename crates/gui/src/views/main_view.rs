@@ -59,10 +59,7 @@ pub fn MainView() -> Element {
                             button {
                                 class: "px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded text-sm font-medium",
                                 onclick: move |_| {
-                                    state.download_phase.set(DownloadPhase::Idle);
-                                    state.file_states.write().clear();
-                                    state.summary.set(None);
-                                    state.global_progress.set(GlobalProgressState::default());
+                                    state.reset_download_state();
                                 },
                                 "Reset"
                             }
@@ -96,13 +93,11 @@ fn start_download(mut state: AppState) {
 
     // Filter out unselected files
     let selected = state.selected_files.read().clone();
-    let mut idx = 0;
+    let mut sel_iter = selected.iter();
     for package in &mut container.packages {
-        package.file_list.retain(|_| {
-            let keep = selected.get(idx).copied().unwrap_or(true);
-            idx += 1;
-            keep
-        });
+        package
+            .file_list
+            .retain(|_| *sel_iter.next().unwrap_or(&true));
     }
 
     // Check if there's anything to download
@@ -145,6 +140,7 @@ fn start_download(mut state: AppState) {
     spawn(async move {
         let mut last_update = Instant::now();
         let throttle = std::time::Duration::from_millis(100);
+        let mut pending_bytes: u64 = 0;
 
         // Set download start time
         state.global_progress.write().started_at = Some(Instant::now());
@@ -176,15 +172,18 @@ fn start_download(mut state: AppState) {
                     total_written,
                     ..
                 } => {
+                    pending_bytes += bytes_delta;
+
                     // Throttle UI updates to avoid excessive re-renders
                     let now = Instant::now();
                     if now.duration_since(last_update) >= throttle {
                         if let Some(fs) = state.file_states.write().get_mut(&item_id) {
                             fs.bytes_written = total_written;
                         }
+                        state.global_progress.write().total_written_all += pending_bytes;
+                        pending_bytes = 0;
                         last_update = now;
                     }
-                    state.global_progress.write().total_written_all += bytes_delta;
                 }
                 ProgressEvent::Completed { item_id } => {
                     if let Some(fs) = state.file_states.write().get_mut(&item_id) {
@@ -230,6 +229,10 @@ fn start_download(mut state: AppState) {
                     cancelled,
                     skipped,
                 } => {
+                    if pending_bytes > 0 {
+                        state.global_progress.write().total_written_all += pending_bytes;
+                        pending_bytes = 0;
+                    }
                     state.download_phase.set(DownloadPhase::Done);
                     state.summary.set(Some(DownloadSummary {
                         total_files,

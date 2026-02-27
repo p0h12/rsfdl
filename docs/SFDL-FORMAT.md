@@ -13,78 +13,79 @@ Fields can be optionally encrypted with AES-128-CBC.
 ```xml
 <?xml version="1.0" encoding="utf-8"?>
 <Container>
-  <ContainerVersion>10</ContainerVersion>
-  <Description>[encrypted if Encrypted=true]</Description>
-  <Uploader>[encrypted]</Uploader>
-  <Encrypted>true/false</Encrypted>
-  <MaxDownloadThreads>3</MaxDownloadThreads>
+    <ContainerVersion>10</ContainerVersion>
+    <Description>[encrypted if Encrypted=true]</Description>
+    <Uploader>[encrypted]</Uploader>
+    <Encrypted>true/false</Encrypted>
+    <MaxDownloadThreads>3</MaxDownloadThreads>
 
-  <Connection>
-    <Host>[encrypted]</Host>
-    <Port>21</Port>
-    <Username>[encrypted]</Username>
-    <Password>[encrypted]</Password>
-    <AuthRequired>true/false</AuthRequired>
-    <DataConnectionType>Passive|Active|ExtendedPassive</DataConnectionType>
-    <DataType>Binary|ASCII</DataType>
-    <CharacterEncoding>Standard|ASCII|UTF7|UTF8</CharacterEncoding>
-    <SSLProtocol>None|Tls|Tls11|Tls12|Ssl2|Ssl3</SSLProtocol>
-    <ConnectTimeout>10</ConnectTimeout>
-    <CommandTimeout>10</CommandTimeout>
-  </Connection>
+    <Connection>
+        <Host>[encrypted]</Host>
+        <Port>21</Port>
+        <Username>[encrypted]</Username>
+        <Password>[encrypted]</Password>
+        <AuthRequired>true/false</AuthRequired>
+        <DataConnectionType>Passive|Active|ExtendedPassive</DataConnectionType>
+        <DataType>Binary|ASCII</DataType>
+        <CharacterEncoding>Standard|ASCII|UTF7|UTF8</CharacterEncoding>
+        <SSLProtocol>None|Tls|Tls11|Tls12|Ssl2|Ssl3</SSLProtocol>
+        <ConnectTimeout>10</ConnectTimeout>
+        <CommandTimeout>10</CommandTimeout>
+    </Connection>
 
-  <Packages>
-    <Package>
-      <Name>[encrypted]</Name>
-      <BulkFolderMode>false</BulkFolderMode>
+    <Packages>
+        <Package>
+            <Name>[encrypted]</Name>
+            <BulkFolderMode>false</BulkFolderMode>
 
-      <FileList>
-        <FileItem>
-          <FileName>[encrypted]</FileName>
-          <DirectoryRoot>[encrypted]</DirectoryRoot>
-          <DirectoryPath>[encrypted]</DirectoryPath>
-          <FullPath>[encrypted]</FullPath>
-          <FileSize>1024000</FileSize>
-          <HashType>MD5|CRC|SHA1|default</HashType>
-          <FileHash>[hash value]</FileHash>
-          <PackageName>[encrypted]</PackageName>
-        </FileItem>
-      </FileList>
+            <FileList>
+                <FileItem>
+                    <FileName>[encrypted]</FileName>
+                    <DirectoryRoot>[encrypted]</DirectoryRoot>
+                    <DirectoryPath>[encrypted]</DirectoryPath>
+                    <FullPath>[encrypted]</FullPath>
+                    <FileSize>1024000</FileSize>
+                    <HashType>MD5|CRC|SHA1|default</HashType>
+                    <FileHash>[hash value]</FileHash>
+                    <PackageName>[encrypted]</PackageName>
+                </FileItem>
+            </FileList>
 
-      <BulkFolderList>
-        <BulkFolder>
-          <BulkFolderPath>[encrypted]</BulkFolderPath>
-          <PackageName>[encrypted]</PackageName>
-        </BulkFolder>
-      </BulkFolderList>
-    </Package>
-  </Packages>
+            <BulkFolderList>
+                <BulkFolder>
+                    <BulkFolderPath>[encrypted]</BulkFolderPath>
+                    <PackageName>[encrypted]</PackageName>
+                </BulkFolder>
+            </BulkFolderList>
+        </Package>
+    </Packages>
 </Container>
 ```
 
 ## v2 Format (Legacy)
 
 ```xml
+
 <SFDLFile>
-  <Description>...</Description>
-  <Uploader>...</Uploader>
-  <SFDLFileVersion>1.0</SFDLFileVersion>
-  <Encrypted>true/false</Encrypted>
-  <ConnectionInfo>
-    <Host>...</Host>
-    <Port>21</Port>
-    <Username>...</Username>
-    <Password>...</Password>
-  </ConnectionInfo>
-  <Packages>
-    <SFDLPackage>
-      <BulkFolderList>
-        <BulkFolder>
-          <BulkFolderPath>/path/to/files</BulkFolderPath>
-        </BulkFolder>
-      </BulkFolderList>
-    </SFDLPackage>
-  </Packages>
+    <Description>...</Description>
+    <Uploader>...</Uploader>
+    <SFDLFileVersion>1.0</SFDLFileVersion>
+    <Encrypted>true/false</Encrypted>
+    <ConnectionInfo>
+        <Host>...</Host>
+        <Port>21</Port>
+        <Username>...</Username>
+        <Password>...</Password>
+    </ConnectionInfo>
+    <Packages>
+        <SFDLPackage>
+            <BulkFolderList>
+                <BulkFolder>
+                    <BulkFolderPath>/path/to/files</BulkFolderPath>
+                </BulkFolder>
+            </BulkFolderList>
+        </SFDLPackage>
+    </Packages>
 </SFDLFile>
 ```
 
