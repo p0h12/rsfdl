@@ -12,7 +12,7 @@ Kern-Download-Logik, die von GUI und CLI gleichermassen konsumiert wird:
 - Cancellation: Global + Per-File via CancellationToken
 - Resume: Erkennung lokaler Teildownloads, Fortsetzung ab Offset
 
-## Akzeptanzkriterien (aus ACCEPTANCE-TESTS.md)
+## Akzeptanzkriterien (aus acceptance-tests.md)
 
 - AT-09: FTP-Verbindung herstellen
 - AT-10: Datei herunterladen

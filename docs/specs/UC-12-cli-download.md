@@ -10,7 +10,7 @@ CLI-Befehl zum Herunterladen aller Dateien eines SFDL-Containers:
 - Ctrl+C Cancellation
 - Exit-Codes
 
-## Akzeptanzkriterien (aus ACCEPTANCE-TESTS.md)
+## Akzeptanzkriterien (aus acceptance-tests.md)
 
 - AT-18: `--help` zeigt Subcommands inkl. `download`
 

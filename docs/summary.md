@@ -4,25 +4,25 @@
 
 # Projekt
 
-- [Vision](./VISION.md)
-- [Implementierungsplan](./PLAN.md)
-- [Methodik (AIUP)](./METHODOLOGY.md)
+- [Vision](./vision.md)
+- [Implementierungsplan](./plan.md)
+- [Methodik (AIUP)](./methodology.md)
 
 # Anforderungen & Design
 
-- [Geschäftsanforderungen](./REQUIREMENTS.md)
-- [Use Cases](./USE-CASES.md)
-- [Entitätsmodell](./ENTITY-MODEL.md)
+- [Geschäftsanforderungen](./requirements.md)
+- [Use Cases](./use-cases.md)
+- [Entitätsmodell](./entity-model.md)
 
 # Technische Spezifikationen
 
-- [SFDL-Dateiformat](./SFDL-FORMAT.md)
-- [Referenz-Analyse](./REFERENCE-ANALYSIS.md)
+- [SFDL-Dateiformat](./sfdl-format.md)
+- [Referenz-Analyse](./reference-analysis.md)
 
 # Testing
 
-- [Teststrategie](./TEST-STRATEGY.md)
-- [Akzeptanztests](./ACCEPTANCE-TESTS.md)
+- [Teststrategie](./test-strategy.md)
+- [Akzeptanztests](./acceptance-tests.md)
 
 # Use Case Spezifikationen
 

@@ -9,7 +9,7 @@ Anzeige des geparsten (und ggf. entschlüsselten) SFDL-Containers:
 - BulkFolder-Auflösung via FTP (rekursives Directory-Listing)
 - Gesamtgrösse und Dateianzahl
 
-## Akzeptanzkriterien (aus ACCEPTANCE-TESTS.md)
+## Akzeptanzkriterien (aus acceptance-tests.md)
 
 - AT-17: BulkFolder-Auflösung (3 Dateien in /release/ → 3 FileItems)
 

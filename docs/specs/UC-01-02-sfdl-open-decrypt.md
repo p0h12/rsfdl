@@ -16,7 +16,7 @@ Implementiert die Grundlage für alle weiteren Use Cases:
 - `sfdl/crypto.rs` — AES-128-CBC Entschlüsselung
 - `error.rs` — Fehlertypen
 
-## Akzeptanzkriterien (aus ACCEPTANCE-TESTS.md)
+## Akzeptanzkriterien (aus acceptance-tests.md)
 
 - AT-01: Unverschlüsselte v3-Datei parsen
 - AT-02: Unverschlüsselte v2-Datei parsen und normalisieren

@@ -313,7 +313,7 @@ Die Settings-Datei wird **nicht** verändert. Overrides gelten nur für den aktu
 4. "Back" Button → `current_view = AppView::Main`
 5. Browse-Dialog: `rfd::AsyncFileDialog::new().pick_folder()`
 
-## Akzeptanzkriterien (aus ACCEPTANCE-TESTS.md)
+## Akzeptanzkriterien (aus acceptance-tests.md)
 
 - AT-39: CLI `config show` zeigt Einstellungen an
 - AT-40: CLI `config show` mit Defaults (keine Datei)

@@ -12,15 +12,15 @@ Tests protect behavior consistency across code regeneration cycles.
 
 ### 1. Inception
 
-- [x] Vision (see docs/VISION.md)
-- [x] Business Requirements Catalog (see docs/REQUIREMENTS.md)
-- [x] Test Strategy (see docs/TEST-STRATEGY.md)
+- [x] Vision (see docs/vision.md)
+- [x] Business Requirements Catalog (see docs/requirements.md)
+- [x] Test Strategy (see docs/test-strategy.md)
 
 ### 2. Elaboration
 
-- [x] Entity Model with ER diagrams (see docs/ENTITY-MODEL.md)
-- [x] System Use Cases (see docs/USE-CASES.md)
-- [x] Acceptance Test Cases (see docs/ACCEPTANCE-TESTS.md)
+- [x] Entity Model with ER diagrams (see docs/entity-model.md)
+- [x] System Use Cases (see docs/use-cases.md)
+- [x] Acceptance Test Cases (see docs/acceptance-tests.md)
 
 ### 3. Construction (per Use Case, iterative)
 
@@ -83,9 +83,9 @@ flowchart TD
 
 | AIUP Step            | Our Equivalent                            |
 |----------------------|-------------------------------------------|
-| Requirements         | docs/REQUIREMENTS.md                      |
-| Entity Model         | docs/ENTITY-MODEL.md (Mermaid ER diagram) |
-| Use Case Diagram     | docs/USE-CASES.md (PlantUML or Mermaid)   |
+| Requirements         | docs/requirements.md                      |
+| Entity Model         | docs/entity-model.md (Mermaid ER diagram) |
+| Use Case Diagram     | docs/use-cases.md (PlantUML or Mermaid)   |
 | Settings Persistence | JSON file via core/src/settings.rs        |
 | Use Case Spec        | docs/specs/UC-{nn}-{name}.md              |
 | Implementation       | AI generates Rust code from spec          |

@@ -162,7 +162,7 @@ Auto-Extraktion ist standardmässig **deaktiviert** (`auto_extract_archives: fal
 - `gui/src/views/settings_view.rs` — Checkboxen für Extraktions-Settings
 - `cli/src/main.rs` — Extraktions-Fortschritt in indicatif-Bars anzeigen
 
-## Akzeptanzkriterien (aus ACCEPTANCE-TESTS.md)
+## Akzeptanzkriterien (aus acceptance-tests.md)
 
 - **AT-21**: Auto-Extraktion RAR Multi-Part — Paket mit `archive.part01.rar`, `.part02.rar`, `.part03.rar` wird nach Download automatisch extrahiert
 - **AT-22**: Auto-Extraktion ZIP — `files.zip` wird nach Download entpackt

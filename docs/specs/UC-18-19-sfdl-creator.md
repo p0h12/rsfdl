@@ -19,7 +19,7 @@ Implementiert die Erstellung neuer SFDL-Dateien — das Gegenstück zu UC-01/02 
 - `error.rs` — `SerializeError` Variante
 - `gui/views/creator_view.rs` — Creator-Formular und async Erstellungslogik
 
-## Akzeptanzkriterien (aus ACCEPTANCE-TESTS.md)
+## Akzeptanzkriterien (aus acceptance-tests.md)
 
 - AT-34: v3 XML-Serialisierung Round-Trip (FileList)
 - AT-35: v3 XML-Serialisierung Round-Trip (BulkFolder)

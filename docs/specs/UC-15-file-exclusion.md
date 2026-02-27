@@ -110,7 +110,7 @@ Bei erster Benutzung (leere Settings) ist `file_exclusion_patterns` leer — kei
 - `gui/src/views/settings_view.rs` — UI für Muster-Verwaltung (Textarea)
 - `cli/src/main.rs` — Neuer `--exclude` Parameter am `Download`-Subcommand
 
-## Akzeptanzkriterien (aus ACCEPTANCE-TESTS.md)
+## Akzeptanzkriterien (aus acceptance-tests.md)
 
 - AT-24: Datei-Ausschluss per Muster — Container mit gemischten Dateien, Muster schliessen `.nfo`, `.jpg`, `*sample*` aus
 - AT-25: Datei-Ausschluss CLI — `--exclude "*.nfo"` überspringt `.nfo`-Dateien

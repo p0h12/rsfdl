@@ -2,7 +2,7 @@
 
 ## Ziel
 
-Jede Anforderung aus REQUIREMENTS.md ist durch mindestens einen automatisierten Test abgedeckt.
+Jede Anforderung aus requirements.md ist durch mindestens einen automatisierten Test abgedeckt.
 Tests werden **vor oder parallel** zum Code geschrieben (Test-First / TDD).
 Tests schützen das Verhalten bei Code-Regeneration durch AI (AIUP-Prinzip).
 

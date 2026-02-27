@@ -1,6 +1,6 @@
 # Acceptance Tests: rsfdl
 
-Abgeleitet aus USE-CASES.md und REQUIREMENTS.md.
+Abgeleitet aus use-cases.md und requirements.md.
 Jeder Test referenziert den Use Case und das Requirement, das er verifiziert.
 
 ---
