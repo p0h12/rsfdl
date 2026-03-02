@@ -142,7 +142,7 @@ jobs:
 
       # Upload artifacts
       - name: Upload CLI artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.cli_artifact }}
           path: |
@@ -151,7 +151,7 @@ jobs:
           if-no-files-found: ignore
 
       - name: Upload GUI binary artifact
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.gui_artifact }}
           path: |
@@ -161,7 +161,7 @@ jobs:
 
       - name: Upload GUI installer (macOS)
         if: runner.os == 'macOS'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.gui_artifact }}-installer
           path: target/dx/rsfdl-gui/bundle/macos/**/*.dmg
@@ -169,7 +169,7 @@ jobs:
 
       - name: Upload GUI installer (Linux)
         if: runner.os == 'Linux'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.gui_artifact }}-installer
           path: |
@@ -180,7 +180,7 @@ jobs:
 
       - name: Upload GUI installer (Windows)
         if: runner.os == 'Windows'
-        uses: actions/upload-artifact@v6
+        uses: actions/upload-artifact@v7
         with:
           name: ${{ matrix.gui_artifact }}-installer
           path: |
