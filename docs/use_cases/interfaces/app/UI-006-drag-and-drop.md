@@ -1,32 +1,93 @@
-# UI-006: Drag-and-Drop
+# Use Case: Drag-and-Drop
 
-**Interface Spec ID:** UI-006
+## Overview
+
+**Use Case ID:** UI-006
+**Use Case Name:** Drag-and-Drop
+**Primary Actor:** Benutzer
+**Goal:** Eine SFDL-Datei per Drag-and-Drop auf das App-Fenster ziehen, um sie zu öffnen.
+**Implements:** SFDL-001
 **Interface:** GUI (Dioxus Desktop)
-**Implementiert:** SFDL-001
 **Requirements:** FR-13
+**Status:** Stable
 
----
+## Preconditions
 
-## Beschreibung
+- Die Desktop-App ist gestartet.
 
-SFDL-Dateien können per Drag-and-Drop auf das App-Fenster gezogen werden, als Alternative zum Dateidialog.
+## Main Success Scenario
 
-## Verhalten
+1. Benutzer zieht eine `.sfdl`-Datei auf das App-Fenster.
+2. System zeigt visuellen Drop-Indikator (Rand leuchtet, Overlay „Datei hier ablegen").
+3. Benutzer lässt die Datei los (Drop).
+4. System prüft die Dateiendung.
+5. System öffnet die SFDL-Datei (-> SFDL-001, wie UI-001 Schritt 5ff).
+6. Container wird geladen und angezeigt.
 
-| Phase      | UI-Feedback                                                                          |
-|------------|--------------------------------------------------------------------------------------|
-| Drag-Enter | Fenster zeigt visuellen Drop-Indikator (Rand leuchtet, Overlay „Datei hier ablegen") |
-| Drag-Over  | Drop-Indikator bleibt aktiv                                                          |
-| Drag-Leave | Drop-Indikator verschwindet                                                          |
-| Drop       | System prüft die Dateiendung                                                         |
+## Alternative Flows
 
-### Nach Drop
+### A1: Falsche Dateiendung
 
-- **`.sfdl`-Datei:** → SFDL-001 mit dem Dateipfad aufrufen. Bisheriger Container wird ersetzt.
-- **Andere Datei:** Fehlermeldung: „Nur .sfdl-Dateien werden unterstützt."
-- **Mehrere Dateien:** Nur die erste `.sfdl`-Datei wird geöffnet, Rest ignoriert mit Hinweis.
+**Trigger:** Die gedropte Datei hat nicht die Endung `.sfdl` (Schritt 4)
+**Flow:**
 
-## Hinweise
+1. System zeigt Fehlermeldung: „Nur .sfdl-Dateien werden unterstützt."
+2. Kein Container wird geladen.
 
-- Drop funktioniert in allen Fenstern-Zuständen (leer, Container geladen, Download läuft).
-- Während eines laufenden Downloads: Bestätigungsdialog „Laufenden Download abbrechen und neue Datei öffnen?"
+### A2: Mehrere Dateien
+
+**Trigger:** Benutzer zieht mehrere Dateien gleichzeitig (Schritt 3)
+**Flow:**
+
+1. System öffnet nur die erste `.sfdl`-Datei.
+2. Restliche Dateien werden ignoriert, mit Hinweis.
+
+### A3: Drop während laufendem Download
+
+**Trigger:** Ein Download läuft bereits (Schritt 3)
+**Flow:**
+
+1. System zeigt Bestätigungsdialog: „Laufenden Download abbrechen und neue Datei öffnen?"
+2. Bei Bestätigung: Download wird abgebrochen, neuer Container wird geladen.
+3. Bei Abbrechen: Nichts passiert, Download läuft weiter.
+
+### A4: Drag-Leave
+
+**Trigger:** Benutzer zieht die Datei wieder aus dem Fenster heraus (Schritt 2)
+**Flow:**
+
+1. Drop-Indikator verschwindet.
+2. Kein weiterer Effekt.
+
+## Postconditions
+
+### Success Postconditions
+
+- Container ist geladen und Dateiliste wird angezeigt.
+- Bisheriger Container (falls vorhanden) wurde ersetzt.
+
+### Failure Postconditions
+
+- Bei A1: Kein Container geladen, vorheriger Zustand bleibt erhalten.
+- Bei A3 (Abbrechen): Laufender Download läuft weiter.
+
+## Business Rules
+
+### BR-UI-006-001: Dateifilter
+
+- Nur Dateien mit Endung `.sfdl` werden akzeptiert.
+- Gross-/Kleinschreibung wird ignoriert.
+
+### BR-UI-006-002: Fenster-Zustand
+
+- Drop funktioniert in allen Zuständen (leer, Container geladen, Download läuft).
+- Bei laufendem Download: Bestätigungsdialog erforderlich.
+
+### BR-UI-006-003: Visuelles Feedback
+
+| Phase      | UI-Feedback                           |
+|------------|---------------------------------------|
+| Drag-Enter | Drop-Indikator sichtbar               |
+| Drag-Over  | Drop-Indikator bleibt aktiv           |
+| Drag-Leave | Drop-Indikator verschwindet           |
+| Drop       | Datei wird verarbeitet                |
