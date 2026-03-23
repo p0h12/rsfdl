@@ -1,11 +1,14 @@
 use serde::{Deserialize, Serialize};
+use std::fmt::Write;
 use std::path::{Path, PathBuf};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct AppSettings {
 	pub download_directory: PathBuf,
 	pub max_download_threads: u32,
+	/// Not yet used by the download manager — retry logic is planned but unimplemented.
 	pub max_retries: u32,
+	/// Not yet used by the download manager — retry logic is planned but unimplemented.
 	pub retry_wait_seconds: u32,
 	pub auto_password_list: Vec<String>,
 	pub resume_downloads: bool,
@@ -61,6 +64,30 @@ pub fn load_settings(path: &Path) -> AppSettings {
 		}),
 		Err(_) => AppSettings::default(),
 	}
+}
+
+/// Format settings as human-readable key=value output for `config show`.
+/// Passwords are masked — only the count is shown.
+pub fn format_settings(path: &Path, settings: &AppSettings) -> String {
+	let mut out = String::new();
+	writeln!(out, "Settings file: {}", path.display()).unwrap();
+	writeln!(out).unwrap();
+	writeln!(out, "download_directory       = {}", settings.download_directory.display()).unwrap();
+	writeln!(out, "max_download_threads     = {}", settings.max_download_threads).unwrap();
+	writeln!(out, "max_retries              = {}", settings.max_retries).unwrap();
+	writeln!(out, "retry_wait_seconds       = {}", settings.retry_wait_seconds).unwrap();
+	writeln!(out, "ftp_timeout_seconds      = {}", settings.ftp_timeout_seconds).unwrap();
+	writeln!(out, "resume_downloads         = {}", settings.resume_downloads).unwrap();
+	writeln!(out, "create_package_subfolder = {}", settings.create_package_subfolder).unwrap();
+	writeln!(out, "auto_extract_archives    = {}", settings.auto_extract_archives).unwrap();
+	writeln!(out, "delete_archives_after_extraction = {}", settings.delete_archives_after_extraction).unwrap();
+	if settings.file_exclusion_patterns.is_empty() {
+		writeln!(out, "file_exclusion_patterns  = (none)").unwrap();
+	} else {
+		writeln!(out, "file_exclusion_patterns  = {}", settings.file_exclusion_patterns.join(", ")).unwrap();
+	}
+	writeln!(out, "auto_password_list       = ({} entries)", settings.auto_password_list.len()).unwrap();
+	out
 }
 
 /// Save settings to a JSON file. Creates parent directories if needed.
@@ -211,6 +238,85 @@ mod tests {
 
 		assert!(loaded.auto_extract_archives);
 		assert!(loaded.delete_archives_after_extraction);
+	}
+
+	// --- UC-09: format_settings ---
+
+	/// AT-39 / BR-003: format_settings includes file path
+	#[test]
+	fn format_settings_includes_path() {
+		let settings = AppSettings::default();
+		let path = Path::new("/home/user/.config/rsfdl/settings.json");
+		let output = format_settings(path, &settings);
+		assert!(output.contains("Settings file: /home/user/.config/rsfdl/settings.json"));
+	}
+
+	/// AT-39 / BR-003: format_settings shows all fields
+	#[test]
+	fn format_settings_shows_all_fields() {
+		let settings = AppSettings {
+			max_download_threads: 5,
+			max_retries: 2,
+			retry_wait_seconds: 15,
+			ftp_timeout_seconds: 60,
+			resume_downloads: false,
+			create_package_subfolder: false,
+			auto_extract_archives: true,
+			delete_archives_after_extraction: true,
+			file_exclusion_patterns: vec!["*.nfo".into(), "*.jpg".into()],
+			auto_password_list: vec!["pw1".into(), "pw2".into(), "pw3".into()],
+			..Default::default()
+		};
+		let path = Path::new("/tmp/settings.json");
+		let output = format_settings(path, &settings);
+
+		assert!(output.contains("max_download_threads"));
+		assert!(output.contains("5"));
+		assert!(output.contains("max_retries"));
+		assert!(output.contains("2"));
+		assert!(output.contains("retry_wait_seconds"));
+		assert!(output.contains("15"));
+		assert!(output.contains("ftp_timeout_seconds"));
+		assert!(output.contains("60"));
+		assert!(output.contains("resume_downloads"));
+		assert!(output.contains("false"));
+		assert!(output.contains("create_package_subfolder"));
+		assert!(output.contains("auto_extract_archives"));
+		assert!(output.contains("true"));
+		assert!(output.contains("delete_archives_after_extraction"));
+		assert!(output.contains("file_exclusion_patterns"));
+		assert!(output.contains("*.nfo"));
+		assert!(output.contains("*.jpg"));
+	}
+
+	/// AT-39 / BR-003: Passwords are not shown in cleartext
+	#[test]
+	fn format_settings_hides_passwords() {
+		let settings = AppSettings {
+			auto_password_list: vec!["secret1".into(), "secret2".into()],
+			..Default::default()
+		};
+		let path = Path::new("/tmp/settings.json");
+		let output = format_settings(path, &settings);
+
+		assert!(!output.contains("secret1"));
+		assert!(!output.contains("secret2"));
+		assert!(output.contains("2"));
+	}
+
+	/// AT-40: format_settings with defaults shows default values
+	#[test]
+	fn format_settings_with_defaults() {
+		let settings = AppSettings::default();
+		let path = Path::new("/tmp/settings.json");
+		let output = format_settings(path, &settings);
+
+		assert!(output.contains("max_download_threads"));
+		assert!(output.contains("3"));
+		assert!(output.contains("resume_downloads"));
+		assert!(output.contains("true"));
+		assert!(output.contains("auto_extract_archives"));
+		assert!(output.contains("false"));
 	}
 
 	/// UC-14: Old settings file without extraction fields → defaults to false
