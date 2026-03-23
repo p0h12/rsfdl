@@ -9,53 +9,19 @@ use uuid::Uuid;
 use rsfdl_core::download::manager::DownloadManager;
 use rsfdl_core::download::progress::ProgressEvent;
 use rsfdl_core::format_bytes;
-use rsfdl_core::sfdl::crypto::{decrypt_container, try_passwords, validate_password};
-use rsfdl_core::sfdl::parser::parse_sfdl;
 
-pub async fn run(file: &str, password: Option<&str>, password_list: &[String], dest: Option<&str>, threads: u32, cli_exclude: &[String]) {
-	// 1. Parse SFDL
-	let xml = match std::fs::read_to_string(file) {
-		Ok(s) => s,
+use super::common::{SfdlArgs, load_and_decrypt};
+
+pub async fn run(args: &SfdlArgs, password_list: &[String], dest: Option<&str>, threads: u32, cli_exclude: &[String]) {
+	let (mut container, mut settings, _outcome) = match load_and_decrypt(args, password_list) {
+		Ok(result) => result,
 		Err(e) => {
-			eprintln!("Error: Cannot read file '{}': {}", file, e);
+			eprintln!("Error: {e}");
 			std::process::exit(1);
 		}
 	};
 
-	let mut container = match parse_sfdl(&xml) {
-		Ok(c) => c,
-		Err(e) => {
-			eprintln!("Error: {}", e);
-			std::process::exit(1);
-		}
-	};
-
-	// 2. Decrypt if needed
-	if container.encrypted {
-		if let Some(pw) = password {
-			if !validate_password(&container, pw) {
-				eprintln!("Error: Invalid password");
-				std::process::exit(1);
-			}
-			if let Err(e) = decrypt_container(&mut container, pw) {
-				eprintln!("Error: Decryption failed: {}", e);
-				std::process::exit(1);
-			}
-		} else if let Some(pw) = try_passwords(&container, password_list) {
-			if let Err(e) = decrypt_container(&mut container, &pw) {
-				eprintln!("Error: Auto-decrypt failed: {}", e);
-				std::process::exit(1);
-			}
-			eprintln!("Auto-decrypted with password from list");
-		} else {
-			eprintln!("Error: File is encrypted. Provide a password with -p <password>");
-			std::process::exit(1);
-		}
-	}
-
-	// 3. Build settings (load saved, then override with CLI args)
-	let saved_settings = rsfdl_core::settings::load_settings(&rsfdl_core::settings::default_settings_path());
-	let mut settings = saved_settings;
+	// Apply CLI overrides to settings
 	if let Some(d) = dest {
 		settings.download_directory = PathBuf::from(d);
 	} else {
@@ -63,28 +29,16 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 	}
 	settings.max_download_threads = threads;
 
-	// Apply file exclusion patterns (UC-15)
+	// UC-DL-001 + UC-DL-002: Apply file exclusion patterns
 	let mut all_patterns = settings.file_exclusion_patterns.clone();
 	all_patterns.extend_from_slice(cli_exclude);
 
-	if !all_patterns.is_empty() {
-		let mut excluded_count = 0usize;
-		for package in &mut container.packages {
-			let mask = rsfdl_core::filter::compute_exclusion_mask(&package.file_list, &all_patterns);
-			let mut idx = 0;
-			package.file_list.retain(|_| {
-				let excluded = mask[idx];
-				idx += 1;
-				if excluded {
-					excluded_count += 1;
-				}
-				!excluded
-			});
-		}
-		if excluded_count > 0 {
-			eprintln!("Excluded {} file(s) matching patterns", excluded_count);
-		}
+	let selection = rsfdl_core::container::compute_file_selection(&container, &all_patterns);
+	let excluded_count = selection.iter().filter(|&&keep| !keep).count();
+	if excluded_count > 0 {
+		eprintln!("Excluded {} file(s) matching patterns", excluded_count);
 	}
+	rsfdl_core::container::filter_container(&mut container, &selection);
 
 	// Count files
 	let file_count: usize = container.packages.iter().map(|p| p.file_list.len()).sum();
@@ -100,10 +54,10 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 		eprintln!("Resolving {} bulk folder(s) via FTP...", bulk_count);
 	}
 
-	// 4. Create download manager
+	// Create download manager
 	let (manager, cancel_token, _file_cancel_tx) = DownloadManager::new(container, &settings);
 
-	// 5. Ctrl+C handler
+	// Ctrl+C handler
 	let cancel_for_signal = cancel_token.clone();
 	tokio::spawn(async move {
 		tokio::signal::ctrl_c().await.ok();
@@ -111,17 +65,16 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 		cancel_for_signal.cancel();
 	});
 
-	// 6. Progress channel
+	// Progress channel
 	let (tx, mut rx) = mpsc::unbounded_channel::<ProgressEvent>();
 
-	// 7. Run downloads in background
+	// Run downloads in background
 	let manager_handle = tokio::spawn(async move { manager.run(tx).await });
 
-	// 8. Progress display loop
+	// Progress display loop
 	let multi = MultiProgress::new();
 	let mut bars: HashMap<Uuid, ProgressBar> = HashMap::new();
 
-	// Global progress bar (inserted first, stays at top)
 	let global_bar = multi.add(ProgressBar::new(0));
 	global_bar.set_style(
 		ProgressStyle::with_template("{prefix:.bold} [{bar:40.cyan/dim}] {bytes}/{total_bytes} {binary_bytes_per_sec} ETA {eta}")
@@ -134,7 +87,6 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 		.unwrap()
 		.progress_chars("=>-");
 
-	// Global tracking state
 	let mut global_total_bytes: u64 = 0;
 	let mut global_written: u64 = 0;
 	let mut files_done: u32 = 0;
@@ -213,7 +165,6 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 				);
 				break;
 			}
-			// Extraction events handled in extraction loop below
 			ProgressEvent::ExtractionStarted { .. }
 			| ProgressEvent::ExtractionProgress { .. }
 			| ProgressEvent::ExtractionCompleted { .. }
@@ -222,7 +173,7 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 		}
 	}
 
-	// 9. Check result
+	// Check result
 	let download_failed = match manager_handle.await {
 		Ok(Ok(result)) => result.failed > 0,
 		Ok(Err(e)) => {
@@ -235,7 +186,7 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 		}
 	};
 
-	// 10. Auto-extraction (UC-14)
+	// UC-POST-002: Auto-extraction
 	if settings.auto_extract_archives {
 		let (ext_tx, mut ext_rx) = mpsc::unbounded_channel::<ProgressEvent>();
 		let ext_dir = settings.download_directory.clone();
@@ -265,7 +216,6 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 			}
 		}
 
-		// Wait for extraction task to finish
 		let _ = ext_handle.await;
 	}
 
@@ -275,5 +225,10 @@ pub async fn run(file: &str, password: Option<&str>, password_list: &[String], d
 }
 
 fn truncate_name(name: &str, max: usize) -> String {
-	if name.len() <= max { name.to_string() } else { format!("...{}", &name[name.len() - (max - 3)..]) }
+	if name.chars().count() <= max {
+		name.to_string()
+	} else {
+		let suffix: String = name.chars().rev().take(max - 3).collect::<Vec<_>>().into_iter().rev().collect();
+		format!("...{suffix}")
+	}
 }
