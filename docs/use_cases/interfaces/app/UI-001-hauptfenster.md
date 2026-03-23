@@ -17,19 +17,19 @@
 
 ## Main Success Scenario
 
-1. System zeigt das Hauptfenster mit Header (App-Name, Buttons: Open File, Create, Settings) und einer leeren Fläche mit Hinweis „Open an .sfdl file to begin".
-2. Benutzer klickt „Open File".
-3. System öffnet den OS-Dateidialog (Filter: `*.sfdl`).
-4. Benutzer wählt eine SFDL-Datei.
-5. System liest und parst die Datei (-> SFDL-001).
-6. System prüft ob Auto-Passwörter greifen. Bei unverschlüsseltem oder auto-entschlüsseltem Container: weiter.
+1. System zeigt das Hauptfenster mit Header (App-Name, Buttons: Open File, Create, Settings) und der Drop-Zone.
+2. Benutzer klickt „Open File" oder zieht eine Datei per Drag-and-Drop (-> UI-006).
+3. System öffnet den OS-Dateidialog (Filter: `*.sfdl`) bzw. übernimmt die gedropte Datei.
+4. Benutzer wählt eine oder mehrere SFDL-Dateien.
+5. System liest und parst jede Datei (-> SFDL-001) und fügt sie als Card zur Container-Liste hinzu.
+6. System prüft pro Container ob Auto-Passwörter greifen. Bei unverschlüsseltem oder auto-entschlüsseltem Container: weiter.
 7. System löst BulkFolders auf, falls vorhanden (-> SFDL-003), und zeigt einen Lade-Indikator.
-8. System zeigt Container-Info (Beschreibung, Uploader, Host, Protokoll) und Dateiliste mit Checkboxen.
+8. System zeigt pro Container eine Card mit Info-Banner und Dateiliste mit Checkboxen.
 9. System wendet Ausschlussmuster an (-> DL-002) und setzt die initiale Selektion.
 10. Benutzer wählt/deselektiert Dateien über Checkboxen.
-11. Benutzer klickt „Start Download".
-12. System startet den Download (-> DL-004) und zeigt das Progress-Panel (-> UI-003).
-13. Nach Abschluss zeigt System die Zusammenfassung (-> UI-004 via SummaryBanner).
+11. Benutzer klickt „Download starten" in einer Container-Card.
+12. System startet den Download (-> DL-004) und zeigt das Progress-Panel (-> UI-003) in der Card.
+13. Nach Abschluss zeigt System die Zusammenfassung (-> UI-004) in der Card.
 
 ## Alternative Flows
 
@@ -77,12 +77,14 @@
 2. Progress-Panel zeigt abgebrochene Dateien.
 3. System zeigt Zusammenfassung mit Cancelled-Status.
 
-### A6: Neuen Container während Download öffnen
+### A6: Weiteren Container hinzufügen
 
-**Trigger:** Benutzer klickt „Open File" während ein Download läuft
+**Trigger:** Benutzer klickt „Hinzufügen" oder öffnet eine weitere Datei (jederzeit)
 **Flow:**
 
-1. „Open File" ist deaktiviert während eines laufenden Downloads.
+1. System fügt den neuen Container als weitere Card zur Liste hinzu.
+2. Bestehende Container und laufende Downloads bleiben unberührt.
+3. Use Case fährt mit Schritt 5 für den neuen Container fort.
 
 ### A7: Download abgeschlossen — Reset
 
@@ -112,12 +114,20 @@
 
 Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 
-### BR-UI-001-002: Button-Zustände
+### BR-UI-001-002: Button-Zustände (pro Container-Card)
 
-- „Start Download": Aktiv nur wenn Selektion > 0 und Phase = Idle.
-- „Cancel": Sichtbar nur während Phase = Downloading.
+- „Download starten": Aktiv nur wenn Selektion > 0 und Phase = Idle.
+- „Abbrechen": Sichtbar nur während Phase = Downloading.
 - „Reset": Sichtbar nur wenn Phase = Done.
-- „Open File": Deaktiviert während Phase = Downloading.
+- „Entfernen" (X): Jederzeit verfügbar, entfernt den Container aus der Liste.
+
+### BR-UI-001-004: Multi-Container
+
+- Mehrere Container können gleichzeitig geladen sein.
+- Jeder Container hat einen eigenen Download-Zustand (Idle, Downloading, Done).
+- Container werden als Cards in einer sortierbaren Liste dargestellt.
+- Drag-Handle erlaubt die Reihenfolge der Cards per Drag-and-Drop zu ändern.
+- „Alle entfernen" löscht alle Container aus der Liste.
 
 ### BR-UI-001-003: Selektion
 
@@ -128,33 +138,28 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 
 ### Zustand: Kein Container geladen
 
-- Header mit App-Logo, App-Name und Buttons (Open File, Create, Settings, Theme-Toggle)
-- Drop-Zone: Gestrichelter Rahmen, Icon, „SFDL-Container laden", „Dateien per Drag-and-Drop hier ablegen"
-- Button „Datei auswählen" + Hinweis „.sfdl (v2 / v3)"
+- Header mit App-Name und Buttons (Open File, Create, Settings)
+- Drop-Zone: „SFDL-Container laden" + „Datei auswählen"-Button
 
 ### Zustand: Container geladen
 
 - Container-Toolbar: Zähler „N Container", Buttons „Hinzufügen" / „Alle entfernen"
 - Pro Container eine aufklappbare **Card** mit:
-    - Drag-Handle zum Sortieren
-    - Icon (Lock bei verschlüsselt, Archiv bei offen)
-    - Container-Name, Badges (Encrypted, V2/V3, Downloading)
+    - Drag-Handle zum Sortieren per Drag-and-Drop
+    - Container-Name, Badges (Encrypted, V2/V3)
     - Entfernen-Button (X)
     - **Info-Banner**: Server, Beschreibung, Pakete, Dateien
-    - **Dateiliste**: Paket-Header mit Checkbox + Chevron, Dateien mit Checkbox, Icon, Name, Grösse
-    - **Datei-Toolbar**: „Alle" / „Keine" Buttons, Selektionszähler
-    - **Download-Aktionen**: Dateizähler + „Download starten" Button
+    - **Dateiliste**: Paket-Header mit Checkbox, Dateien mit Checkbox, Dateiname, Grösse
+    - **Download-Aktionen**: Selektionszähler + „Download starten" Button
 
 ### Zustand: Download läuft
 
-- Progress-Sektion ersetzt Dateiliste in der Card
-- Pro-Datei-Fortschritt mit Balken und Status
-- Globaler Fortschritt + Geschwindigkeit
+- Progress-Panel (-> UI-003) ersetzt Dateiliste in der Card
 - „Abbrechen"-Button
 
 ### Zustand: Download abgeschlossen
 
-- Ergebnis-Sektion in der Card (-> UI-004)
+- Summary-Banner (-> UI-004) in der Card
 
 ## Interaktionen
 

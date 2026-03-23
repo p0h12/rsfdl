@@ -89,9 +89,9 @@
 
 ## Layout
 
-- Inline-Sektion in der Container-Card (kein separater modaler Dialog)
-- Icon (Schlüssel) + Titel „Passwort erforderlich"
-- Hinweis: „Dieser Container ist verschlüsselt. Bitte Passwort eingeben."
-- Passwort-Eingabefeld (verdeckt) mit Sichtbarkeits-Toggle (Auge-Icon)
-- Button „Entschlüsseln"
-- Fehleranzeige (rot, unter dem Eingabefeld, nur bei Fehler): „Falsches Passwort. Bitte erneut versuchen."
+- Modaler Dialog (Backdrop blockiert Hauptfenster)
+- Titel: „Password Required"
+- Hinweis: „This container is encrypted."
+- Passwort-Eingabefeld (verdeckt, `type="password"`)
+- Fehleranzeige (rot, unter dem Eingabefeld, nur bei Fehler)
+- Buttons: „Cancel", „Decrypt" (Primary)

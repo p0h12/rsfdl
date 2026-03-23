@@ -114,15 +114,13 @@ Eingabefelder begrenzen Werte gemäss BR-CFG-003:
 
 ### BR-UI-005-003: Passwort-Anzeige
 
-- Passwörter werden verdeckt als Tags angezeigt (Bullet-Zeichen).
-- Eingabefeld (`type="password"`) + „Hinzufügen"-Button zum Hinzufügen.
-- Jedes Tag hat einen „Entfernen"-Button.
+- Passwörter werden als Klartext im Textarea bearbeitet (ein Passwort pro Zeile).
+- Leere Zeilen werden beim Parsen ignoriert.
 
 ### BR-UI-005-004: Ausschlussmuster
 
-- Muster werden als Tags angezeigt (ein Tag pro Muster).
-- Eingabefeld + „Hinzufügen"-Button für neue Muster.
-- Jedes Tag hat einen „Entfernen"-Button.
+- Ein Glob-Muster pro Zeile im Textarea.
+- Leere Zeilen werden beim Parsen ignoriert.
 
 ## Layout
 
@@ -139,27 +137,20 @@ Eingabefelder begrenzen Werte gemäss BR-CFG-003:
 
 ### Nachbearbeitung
 
-- Auto-Extraktion: Toggle (Standard: aus)
-- Archive nach Extraktion löschen: Toggle (Standard: aus, nur aktiv wenn Auto-Extraktion an)
-- Speicherplatz strikt prüfen: Toggle
+- Auto-Extraktion: Checkbox (Standard: aus)
+- Archive nach Extraktion löschen: Checkbox (Standard: aus, nur aktiv wenn Auto-Extraktion an)
+- Speicherplatz strikt prüfen: Checkbox
 
 ### Ausschlussmuster
 
-- Tag-Liste der aktuellen Muster mit „Entfernen"-Button pro Tag
-- Eingabefeld + „Hinzufügen"-Button für neue Muster
+- Mehrzeiliges Textfeld, ein Glob-Muster pro Zeile
 
 ### Passwörter
 
-- Tag-Liste gespeicherter Passwörter (verdeckt als Bullet-Zeichen)
-- Eingabefeld (`type="password"`) + „Hinzufügen"-Button
-- Hinweis: „Passwörter werden verschlüsselt gespeichert."
-
-### Speed-Report
-
-- Benutzername: Textfeld (Placeholder: „Forum-Username")
+- Mehrzeiliges Textfeld, ein Passwort pro Zeile
 
 ### Aktionen
 
-- „Speichern" -> CFG-001 Variante B
-- „Abbrechen" -> Änderungen verwerfen, zurück zum Hauptfenster (UI-001)
-- Zurück-Pfeil (Header) -> wie „Abbrechen"
+- „Save" -> CFG-001 Variante B
+- „Reset" -> CFG-001 Variante C
+- „Back" -> Zurück zum Hauptfenster (UI-001)

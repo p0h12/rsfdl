@@ -22,7 +22,7 @@
 3. Benutzer lässt die Datei los (Drop).
 4. System prüft die Dateiendung.
 5. System öffnet die SFDL-Datei (-> SFDL-001, wie UI-001 Schritt 5ff).
-6. Container wird geladen und angezeigt.
+6. Container wird als neue Card zur Container-Liste hinzugefügt.
 
 ## Alternative Flows
 
@@ -39,17 +39,16 @@
 **Trigger:** Benutzer zieht mehrere Dateien gleichzeitig (Schritt 3)
 **Flow:**
 
-1. System öffnet nur die erste `.sfdl`-Datei.
-2. Restliche Dateien werden ignoriert, mit Hinweis.
+1. System öffnet alle `.sfdl`-Dateien und fügt sie als separate Cards zur Container-Liste hinzu.
+2. Nicht-`.sfdl`-Dateien werden ignoriert.
 
 ### A3: Drop während laufendem Download
 
-**Trigger:** Ein Download läuft bereits (Schritt 3)
+**Trigger:** Ein Download läuft bereits in einem anderen Container (Schritt 3)
 **Flow:**
 
-1. System zeigt Bestätigungsdialog: „Laufenden Download abbrechen und neue Datei öffnen?"
-2. Bei Bestätigung: Download wird abgebrochen, neuer Container wird geladen.
-3. Bei Abbrechen: Nichts passiert, Download läuft weiter.
+1. System fügt den neuen Container als weitere Card hinzu.
+2. Bestehende Downloads laufen ungestört weiter.
 
 ### A4: Drag-Leave
 
@@ -63,13 +62,12 @@
 
 ### Success Postconditions
 
-- Container ist geladen und Dateiliste wird angezeigt.
-- Bisheriger Container (falls vorhanden) wurde ersetzt.
+- Container ist als neue Card in der Container-Liste geladen und Dateiliste wird angezeigt.
 
 ### Failure Postconditions
 
 - Bei A1: Kein Container geladen, vorheriger Zustand bleibt erhalten.
-- Bei A3 (Abbrechen): Laufender Download läuft weiter.
+- Bei A3: Laufende Downloads anderer Container bleiben unberührt.
 
 ## Business Rules
 
@@ -81,7 +79,7 @@
 ### BR-UI-006-002: Fenster-Zustand
 
 - Drop funktioniert in allen Zuständen (leer, Container geladen, Download läuft).
-- Bei laufendem Download: Bestätigungsdialog erforderlich.
+- Neue Container werden immer zur Liste hinzugefügt, bestehende bleiben unberührt.
 
 ### BR-UI-006-003: Visuelles Feedback
 
