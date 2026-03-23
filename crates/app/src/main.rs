@@ -5,6 +5,7 @@ mod views;
 use dioxus::prelude::*;
 
 use state::{AppState, AppView};
+use views::creator_view::CreatorView;
 use views::main_view::MainView;
 use views::settings_view::SettingsView;
 
@@ -69,6 +70,7 @@ fn app() -> Element {
 							match view {
 									AppView::Main => rsx! { MainView {} },
 									AppView::Settings => rsx! { SettingsView {} },
+									AppView::Creator => rsx! { CreatorView {} },
 							}
 					}
 			}

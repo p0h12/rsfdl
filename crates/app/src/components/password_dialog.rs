@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
-use rsfdl_core::sfdl::crypto::{decrypt_container, validate_password};
+use rsfdl_core::container::decrypt_with_password;
+use rsfdl_core::error::AppError;
 
 use crate::components::header::finish_container_load;
 use crate::state::AppState;
@@ -30,7 +31,7 @@ pub fn PasswordDialog() -> Element {
 									placeholder: "Enter password...",
 									value: "{password}",
 									oninput: move |e| password.set(e.value()),
-									onkeypress: move |e| {
+									onkeydown: move |e| {
 											if e.key() == Key::Enter {
 													try_decrypt(state, password.read().clone());
 											}
@@ -68,16 +69,16 @@ fn try_decrypt(mut state: AppState, password: String) {
 		return;
 	};
 
-	if !validate_password(&container, &password) {
-		state.password_error.set(Some("Invalid password".to_string()));
-		return;
+	match decrypt_with_password(&mut container, &password) {
+		Ok(()) => {
+			let path = state.container_path.read().clone().unwrap_or_default();
+			finish_container_load(&mut state, container, path);
+		}
+		Err(AppError::InvalidPassword) => {
+			state.password_error.set(Some("Invalid password".to_string()));
+		}
+		Err(e) => {
+			state.password_error.set(Some(format!("Decryption failed: {e}")));
+		}
 	}
-
-	if let Err(e) = decrypt_container(&mut container, &password) {
-		state.password_error.set(Some(format!("Decryption failed: {e}")));
-		return;
-	}
-
-	let path = state.container_path.read().clone().unwrap_or_default();
-	finish_container_load(&mut state, container, path);
 }
