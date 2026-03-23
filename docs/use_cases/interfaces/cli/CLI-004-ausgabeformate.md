@@ -1,36 +1,82 @@
-# CLI-004: Ausgabeformate und Konventionen
+# Use Case: Ausgabeformate und Konventionen
 
-**Interface Spec ID:** CLI-004
+## Overview
+
+**Use Case ID:** CLI-004
+**Use Case Name:** Ausgabeformate und Konventionen
+**Primary Actor:** Benutzer / Scripting-Tool
+**Goal:** Einheitliche und maschinenlesbare Ausgabe aller CLI-Kommandos sicherstellen.
+**Implements:** Querschnittlich für alle CLI-Kommandos
 **Interface:** CLI (headless)
-**Implementiert:** Querschnittlich für alle CLI-Kommandos
+**Status:** Stable
 
----
+## Preconditions
 
-## Beschreibung
+- Der Benutzer ruft ein rsfdl CLI-Kommando auf.
 
-Definiert die allgemeinen Ausgabe-Konventionen der CLI, insbesondere das Zusammenspiel von stdout, stderr und JSON-Modus.
+## Main Success Scenario
 
-## Kanäle
+1. System leitet Ergebnis-Daten (Container-Info, Dateilisten, Speed-Report) auf stdout.
+2. System leitet Fortschritt, Warnungen und Fehlermeldungen auf stderr.
+3. Benutzer kann stdout in eine Datei umleiten, ohne Fortschritts-Rauschen.
+
+## Alternative Flows
+
+### A1: JSON-Modus
+
+**Trigger:** Benutzer gibt `--json` an
+**Flow:**
+
+1. stdout: Ergebnis als JSON-Objekt.
+2. stderr: JSON-Lines pro Progress-Event (bei download).
+3. Keine menschenlesbaren Texte.
+
+### A2: Quiet-Modus
+
+**Trigger:** Benutzer gibt `--quiet` an
+**Flow:**
+
+1. stderr: Keine Fortschrittsanzeige. Nur Fehler und Warnungen.
+2. stdout: Nur Ergebnis-Zusammenfassung.
+3. Kombinierbar mit `--json`.
+
+### A3: Nicht-Terminal (Pipe/Redirect)
+
+**Trigger:** stderr ist kein Terminal
+**Flow:**
+
+1. Keine `\r`-basierten In-Place-Updates.
+2. Eine Zeile pro abgeschlossener Datei.
+
+## Postconditions
+
+### Success Postconditions
+
+- Ausgabe erfolgte auf dem korrekten Kanal (stdout/stderr).
+- Bei `--json`: Ausgabe ist valides JSON.
+
+### Failure Postconditions
+
+- Fehlermeldung auf stderr.
+
+## Business Rules
+
+### BR-CLI-004-001: Kanaltrennung
 
 | Kanal    | Inhalt                                                     |
 |----------|------------------------------------------------------------|
 | `stdout` | Ergebnis-Daten (Container-Info, Dateilisten, Speed-Report) |
 | `stderr` | Fortschritt, Warnungen, Fehlermeldungen, Logging           |
 
-Diese Trennung ermöglicht: `rsfdl list file.sfdl > filelist.txt` ohne Fortschritts-Rauschen.
+### BR-CLI-004-002: Fortschrittsanzeige
 
-## Menschenlesbare Ausgabe (Standard)
+- Terminal: `\r` für In-Place-Updates mit Progress-Bars.
+- Nicht-Terminal: Eine Zeile pro Datei-Abschluss.
+- Debouncing: Max. 10 Updates/Sekunde.
 
-- Fortschritt auf stderr mit `\r` für In-Place-Updates (wenn Terminal).
-- Wenn stderr kein Terminal ist (Pipe/Redirect): Eine Zeile pro abgeschlossener Datei.
-- Ergebnis auf stdout als formatierter Text.
+### BR-CLI-004-003: JSON-Format
 
-## JSON-Modus (`--json`)
-
-Alle Kommandos unterstützen `--json` für maschinenlesbare Ausgabe.
-
-### stdout: Ergebnis als JSON-Objekt
-
+stdout (Ergebnis):
 ```json
 {
     "status": "partial",
@@ -40,77 +86,26 @@ Alle Kommandos unterstützen `--json` für maschinenlesbare Ausgabe.
     "total_bytes": 4509715660,
     "duration_seconds": 402,
     "avg_speed_bps": 10785000,
-    "failures": [
-        {
-            "filename": "movie.part03.rar",
-            "error_type": "ConnectionError",
-            "retries": 3
-        },
-        {
-            "filename": "subs.de.srt",
-            "error_type": "FileNotFound",
-            "ftp_code": 550
-        }
-    ]
+    "failures": [...]
 }
 ```
 
-### stderr: JSON-Lines für Progress-Events
-
-Ein JSON-Objekt pro Zeile, ein Event pro Änderung:
-
+stderr (Progress-Events als JSON-Lines):
 ```json
-{
-    "event": "task_started",
-    "filename": "movie.part01.rar",
-    "bytes_total": 1610612736
-}
-{
-    "event": "task_progress",
-    "filename": "movie.part01.rar",
-    "bytes_downloaded": 67108864,
-    "speed_bps": 12300000
-}
-{
-    "event": "task_completed",
-    "filename": "movie.part01.rar",
-    "bytes_total": 1610612736,
-    "duration_seconds": 131
-}
-{
-    "event": "task_failed",
-    "filename": "movie.part03.rar",
-    "error_type": "ConnectionError",
-    "retry": 2
-}
-{
-    "event": "session_completed",
-    "status": "partial",
-    "completed": 45,
-    "failed": 2
-}
+{"event": "task_started", "filename": "movie.part01.rar", "bytes_total": 1610612736}
+{"event": "task_progress", "filename": "movie.part01.rar", "bytes_downloaded": 67108864, "speed_bps": 12300000}
+{"event": "task_completed", "filename": "movie.part01.rar", "bytes_total": 1610612736, "duration_seconds": 131}
+{"event": "session_completed", "status": "partial", "completed": 45, "failed": 2}
 ```
 
-## Quiet-Modus (`--quiet`)
-
-- stderr: Keine Fortschrittsanzeige. Nur Fehler und Warnungen.
-- stdout: Nur Ergebnis-Zusammenfassung.
-- Kombinierbar mit `--json`.
-
-## Logging
+### BR-CLI-004-004: Logging
 
 - Gesteuert über `RSFDL_LOG` Umgebungsvariable oder `--log-level`.
-- Werte: `error`, `warn`, `info`, `debug`, `trace`
-- Standard: `warn`
+- Werte: `error`, `warn`, `info`, `debug`, `trace`. Standard: `warn`.
 - Log-Ausgabe auf stderr, prefixed mit Timestamp und Level.
 
-```
-2026-02-20T14:30:00Z [DEBUG] FTP RETR /path/to/file.rar
-2026-02-20T14:30:00Z [WARN]  Server returned 421, retrying in 20s
-```
+### BR-CLI-004-005: Farben
 
-## Farben
-
-- Farben werden nur verwendet, wenn stderr ein Terminal ist.
+- Farben nur wenn stderr ein Terminal ist.
 - `NO_COLOR` Umgebungsvariable deaktiviert Farben (gemäss no-color.org).
 - Rot: Fehler. Gelb: Warnungen. Grün: Erfolg. Blau: Info/Fortschritt.
