@@ -1,0 +1,83 @@
+@startuml Use Cases Overview
+left to right direction
+skinparam packageStyle rectangle
+
+actor "Benutzer" as user
+actor "System\n(Timer/Event)" as system
+
+rectangle "rsfdl" {
+
+    package "SFDL — Container-Verwaltung" {
+        usecase "SFDL-001\nSFDL-Datei öffnen\nund parsen" as UC_SFDL_001
+        usecase "SFDL-002\nContainer\nentschlüsseln" as UC_SFDL_002
+        usecase "SFDL-003\nContainer-Inhalt\nauflösen" as UC_SFDL_003
+    }
+
+    package "CR — Container-Erstellung" {
+        usecase "CR-001\nSFDL-Container\nerstellen" as UC_CR_001
+        usecase "CR-002\nFTP-Verzeichnis\nauflisten" as UC_CR_002
+        usecase "CR-003\nBulkFolder-Modus" as UC_CR_003
+        usecase "CR-004\nContainer\nverschlüsseln" as UC_CR_004
+        usecase "CR-005\nContainer\nserialisieren" as UC_CR_005
+        usecase "CR-006\nMetadaten\nsetzen" as UC_CR_006
+    }
+
+    package "DL — Download-Engine" {
+        usecase "DL-001\nDateien zum\nDownload auswählen" as UC_DL_001
+        usecase "DL-002\nAusschlussmuster\nanwenden" as UC_DL_002
+        usecase "DL-003\nSpeicherplatz\nprüfen" as UC_DL_003
+        usecase "DL-004\nFTP-Download\ndurchführen" as UC_DL_004
+        usecase "DL-005\nDownload\nfortsetzen" as UC_DL_005
+        usecase "DL-006\nDownload\nabbrechen" as UC_DL_006
+        usecase "DL-007\nFehlgeschlagene\nDownloads wiederholen" as UC_DL_007
+        usecase "DL-008\nBandbreite\nbegrenzen" as UC_DL_008
+    }
+
+    package "POST — Nachbearbeitung" {
+        usecase "POST-001\nDateien\nverifizieren" as UC_POST_001
+        usecase "POST-002\nArchive\nextrahieren" as UC_POST_002
+        usecase "POST-003\nSpeed-Report\ngenerieren" as UC_POST_003
+    }
+
+    package "CFG — Konfiguration" {
+        usecase "CFG-001\nEinstellungen\nverwalten" as UC_CFG_001
+    }
+}
+
+' --- Benutzer-Assoziationen ---
+user --> UC_SFDL_001
+user --> UC_DL_001
+user --> UC_DL_004
+user --> UC_DL_006
+user --> UC_POST_003
+user --> UC_CFG_001
+user --> UC_CR_001
+
+' --- SFDL-Beziehungen ---
+UC_SFDL_001 ..> UC_SFDL_002 : <<extend>>\n[wenn verschlüsselt]
+UC_SFDL_001 ..> UC_SFDL_003 : <<include>>
+UC_SFDL_003 ..> UC_DL_002 : <<include>>
+
+' --- Download-Beziehungen ---
+UC_DL_001 ..> UC_DL_002 : <<include>>
+UC_DL_004 ..> UC_DL_003 : <<include>>
+UC_DL_004 ..> UC_DL_005 : <<extend>>\n[wenn teilweise vorhanden]
+UC_DL_004 ..> UC_DL_008 : <<extend>>\n[wenn konfiguriert]
+
+' --- System-Trigger ---
+system --> UC_DL_007 : [bei Fehler]
+system --> UC_POST_001 : [nach Download]
+system --> UC_POST_002 : [nach Download]
+
+UC_DL_007 ..> UC_DL_004 : <<include>>
+UC_POST_001 ..> UC_DL_004 : <<extend>>\n[nach Abschluss]
+UC_POST_002 ..> UC_DL_004 : <<extend>>\n[nach Abschluss]
+
+' --- Creator-Beziehungen ---
+UC_CR_001 ..> UC_CR_002 : <<extend>>\n[wenn FTP-Listing]
+UC_CR_001 ..> UC_CR_003 : <<extend>>\n[wenn BulkFolder]
+UC_CR_001 ..> UC_CR_004 : <<extend>>\n[wenn verschlüsselt]
+UC_CR_001 ..> UC_CR_005 : <<include>>
+UC_CR_001 ..> UC_CR_006 : <<extend>>\n[wenn Metadaten gesetzt]
+
+@enduml

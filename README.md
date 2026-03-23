@@ -1,5 +1,7 @@
 # rsfdl
 
+[![Build](https://github.com/p0h12/rsfdl/actions/workflows/build.yml/badge.svg)](https://github.com/p0h12/rsfdl/actions/workflows/build.yml)
+
 A cross-platform SFDL downloader written in Rust. Alternative to [SFDL.NET](https://github.com/n0ix/SFDL.NET) with both a desktop GUI and a CLI.
 
 ## What is SFDL?
