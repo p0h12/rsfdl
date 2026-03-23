@@ -50,7 +50,8 @@ impl FtpClient {
 			AsyncNativeTlsFtpStream::connect(&addr).await.map_err(FtpError::from)?
 		};
 
-		// Set passive mode (default for SFDL)
+		// TODO: Respect conn.data_connection_type (Active, ExtendedPassive, etc.)
+		// Currently hardcoded to Passive — the SFDL container's FtpDataConnectionType is ignored.
 		stream.set_mode(Mode::Passive);
 
 		// Login
