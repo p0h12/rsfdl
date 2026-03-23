@@ -11,6 +11,9 @@ pub enum SfdlError {
 	#[error("Crypto error: {0}")]
 	Crypto(#[from] CryptoError),
 
+	#[error("Failed to serialize SFDL file: {0}")]
+	SerializeError(String),
+
 	#[error("IO error: {0}")]
 	Io(#[from] std::io::Error),
 }
@@ -152,4 +155,19 @@ mod tests {
 		assert!(matches!(err, ExtractionError::Io(_)));
 		assert!(err.to_string().contains("not found"));
 	}
+}
+
+#[derive(Debug, Error)]
+pub enum AppError {
+	#[error("Parse error: {0}")]
+	Parse(#[from] SfdlError),
+
+	#[error("Decryption failed: {0}")]
+	Decrypt(#[from] CryptoError),
+
+	#[error("Invalid password")]
+	InvalidPassword,
+
+	#[error("FTP error: {0}")]
+	Ftp(#[from] FtpError),
 }

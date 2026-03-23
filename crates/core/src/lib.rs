@@ -1,3 +1,4 @@
+pub mod container;
 pub mod download;
 pub mod error;
 pub mod extraction;
