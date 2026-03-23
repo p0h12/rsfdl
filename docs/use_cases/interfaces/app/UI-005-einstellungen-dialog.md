@@ -8,7 +8,7 @@
 **Goal:** App-Einstellungen in einer eigenen View einsehen, bearbeiten, speichern und auf Standardwerte zurücksetzen.
 **Implements:** CFG-001
 **Interface:** GUI (Dioxus Desktop)
-**Status:** Draft
+**Status:** Stable
 
 ## Preconditions
 

@@ -8,7 +8,7 @@
 **Goal:** Einstellungen über die Kommandozeile anzeigen, bearbeiten oder den Dateipfad ermitteln.
 **Interface:** CLI (headless)
 **Implementiert:** CFG-001
-**Status:** Draft
+**Status:** Stable
 
 ## Preconditions
 

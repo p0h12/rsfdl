@@ -8,7 +8,7 @@
 **Goal:** Eine neue SFDL-Datei aus FTP-Verbindungsdaten und Pfaden erstellen.
 **Implements:** CR-001 bis CR-006
 **Interface:** CLI (headless)
-**Status:** Stable
+**Status:** Draft
 
 ## Preconditions
 
