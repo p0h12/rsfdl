@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>10</ContainerVersion>
+  <Description>BulkFolder.Test.2026</Description>
+  <Uploader>testuser</Uploader>
+  <Encrypted>false</Encrypted>
+  <MaxDownloadThreads>3</MaxDownloadThreads>
+  <Connection>
+    <Host>ftp.example.com</Host>
+    <Port>21</Port>
+    <Username>ftpuser</Username>
+    <Password>ftppass</Password>
+    <AuthRequired>true</AuthRequired>
+    <DataConnectionType>Passive</DataConnectionType>
+    <DataType>Binary</DataType>
+    <CharacterEncoding>UTF8</CharacterEncoding>
+    <SSLProtocol>None</SSLProtocol>
+    <ConnectTimeout>10</ConnectTimeout>
+    <CommandTimeout>10</CommandTimeout>
+  </Connection>
+  <Packages>
+    <Package>
+      <Name>BulkPkg1</Name>
+      <BulkFolderMode>true</BulkFolderMode>
+      <FileList />
+      <BulkFolderList>
+        <BulkFolder>
+          <BulkFolderPath>/releases/movie/</BulkFolderPath>
+          <PackageName>BulkPkg1</PackageName>
+        </BulkFolder>
+        <BulkFolder>
+          <BulkFolderPath>/releases/extras/</BulkFolderPath>
+          <PackageName>BulkPkg1</PackageName>
+        </BulkFolder>
+      </BulkFolderList>
+    </Package>
+  </Packages>
+</Container>
