@@ -1,10 +1,10 @@
 [package]
-name = "rsfdl-gui"
+name = "rsfdl-app"
 version.workspace = true
 edition.workspace = true
 
 [[bin]]
-name = "rsfdl-gui"
+name = "rsfdl-app"
 path = "src/main.rs"
 
 [dependencies]

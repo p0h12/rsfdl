@@ -20,22 +20,22 @@ jobs:
           - platform: macos-latest
             target: aarch64-apple-darwin
             cli_artifact: rsfdl-cli-macos-arm64
-            gui_artifact: rsfdl-gui-macos-arm64
+            app_artifact: rsfdl-app-macos-arm64
             package_types: '--package-types dmg'
           - platform: macos-latest
             target: x86_64-apple-darwin
             cli_artifact: rsfdl-cli-macos-x64
-            gui_artifact: rsfdl-gui-macos-x64
+            app_artifact: rsfdl-app-macos-x64
             package_types: '--package-types dmg'
           - platform: ubuntu-24.04
             target: x86_64-unknown-linux-gnu
             cli_artifact: rsfdl-cli-linux-x64
-            gui_artifact: rsfdl-gui-linux-x64
+            app_artifact: rsfdl-app-linux-x64
             package_types: '--package-types deb --package-types rpm --package-types appimage'
           - platform: windows-latest
             target: x86_64-pc-windows-msvc
             cli_artifact: rsfdl-cli-windows-x64
-            gui_artifact: rsfdl-gui-windows-x64
+            app_artifact: rsfdl-app-windows-x64
             package_types: '--package-types msi --package-types nsis'
 
     runs-on: ${{ matrix.platform }}
@@ -72,7 +72,7 @@ jobs:
         uses: oven-sh/setup-bun@v2
 
       - name: Generate Tailwind CSS
-        working-directory: crates/gui
+        working-directory: crates/app
         run: |
           bun install tailwindcss
           bunx @tailwindcss/cli -i input.css -o assets/tailwind.css --minify
@@ -106,7 +106,7 @@ jobs:
           CI: true
           APPIMAGE_EXTRACT_AND_RUN: 1
           NO_STRIP: true
-        run: dx bundle --release -p rsfdl-gui --desktop --target ${{ matrix.target }} ${{ matrix.package_types }}
+        run: dx bundle --release -p rsfdl-app --desktop --target ${{ matrix.target }} ${{ matrix.package_types }}
 
       # Package CLI artifacts
       - name: Package CLI (Unix)
@@ -128,17 +128,17 @@ jobs:
       - name: Package GUI binary (Unix)
         if: runner.os != 'Windows'
         run: |
-          mkdir -p staging-gui
-          cp target/${{ matrix.target }}/release/rsfdl-gui staging-gui/rsfdl-gui
-          cd staging-gui && tar czf ../${{ matrix.gui_artifact }}.tar.gz rsfdl-gui
+          mkdir -p staging-app
+          cp target/${{ matrix.target }}/release/rsfdl-app staging-app/rsfdl-app
+          cd staging-app && tar czf ../${{ matrix.app_artifact }}.tar.gz rsfdl-app
 
       - name: Package GUI binary (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path staging-gui
-          Copy-Item "target/${{ matrix.target }}/release/rsfdl-gui.exe" "staging-gui/rsfdl-gui.exe"
-          Compress-Archive -Path "staging-gui/rsfdl-gui.exe" -DestinationPath "${{ matrix.gui_artifact }}.zip"
+          New-Item -ItemType Directory -Force -Path staging-app
+          Copy-Item "target/${{ matrix.target }}/release/rsfdl-app.exe" "staging-app/rsfdl-app.exe"
+          Compress-Archive -Path "staging-app/rsfdl-app.exe" -DestinationPath "${{ matrix.app_artifact }}.zip"
 
       # Upload artifacts
       - name: Upload CLI artifact
@@ -153,39 +153,39 @@ jobs:
       - name: Upload GUI binary artifact
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.gui_artifact }}
+          name: ${{ matrix.app_artifact }}
           path: |
-            ${{ matrix.gui_artifact }}.tar.gz
-            ${{ matrix.gui_artifact }}.zip
+            ${{ matrix.app_artifact }}.tar.gz
+            ${{ matrix.app_artifact }}.zip
           if-no-files-found: ignore
 
       - name: Upload GUI installer (macOS)
         if: runner.os == 'macOS'
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.gui_artifact }}-installer
-          path: target/dx/rsfdl-gui/bundle/macos/**/*.dmg
+          name: ${{ matrix.app_artifact }}-installer
+          path: target/dx/rsfdl-app/bundle/macos/**/*.dmg
           if-no-files-found: ignore
 
       - name: Upload GUI installer (Linux)
         if: runner.os == 'Linux'
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.gui_artifact }}-installer
+          name: ${{ matrix.app_artifact }}-installer
           path: |
-            target/dx/rsfdl-gui/bundle/linux/**/*.deb
-            target/dx/rsfdl-gui/bundle/linux/**/*.rpm
-            target/dx/rsfdl-gui/bundle/linux/**/*.AppImage
+            target/dx/rsfdl-app/bundle/linux/**/*.deb
+            target/dx/rsfdl-app/bundle/linux/**/*.rpm
+            target/dx/rsfdl-app/bundle/linux/**/*.AppImage
           if-no-files-found: ignore
 
       - name: Upload GUI installer (Windows)
         if: runner.os == 'Windows'
         uses: actions/upload-artifact@v7
         with:
-          name: ${{ matrix.gui_artifact }}-installer
+          name: ${{ matrix.app_artifact }}-installer
           path: |
-            target/dx/rsfdl-gui/bundle/windows/**/*.msi
-            target/dx/rsfdl-gui/bundle/windows/**/*.exe
+            target/dx/rsfdl-app/bundle/windows/**/*.msi
+            target/dx/rsfdl-app/bundle/windows/**/*.exe
           if-no-files-found: ignore
 
   publish:
@@ -219,10 +219,10 @@ jobs:
             **GUI** (desktop app):
             | Platform | Binary | Installer |
             |----------|--------|-----------|
-            | macOS ARM (M1+) | `rsfdl-gui-macos-arm64.tar.gz` | `.dmg` (if available) |
-            | macOS Intel | `rsfdl-gui-macos-x64.tar.gz` | `.dmg` (if available) |
-            | Linux x64 | `rsfdl-gui-linux-x64.tar.gz` | `.deb` / `.rpm` / `.AppImage` (if available) |
-            | Windows x64 | `rsfdl-gui-windows-x64.zip` | `.msi` (if available) |
+            | macOS ARM (M1+) | `rsfdl-app-macos-arm64.tar.gz` | `.dmg` (if available) |
+            | macOS Intel | `rsfdl-app-macos-x64.tar.gz` | `.dmg` (if available) |
+            | Linux x64 | `rsfdl-app-linux-x64.tar.gz` | `.deb` / `.rpm` / `.AppImage` (if available) |
+            | Windows x64 | `rsfdl-app-windows-x64.zip` | `.msi` (if available) |
           draft: false
           prerelease: false
           files: |
