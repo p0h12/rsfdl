@@ -121,12 +121,14 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 - „Reset": Sichtbar nur wenn Phase = Done.
 - „Entfernen" (X): Jederzeit verfügbar, entfernt den Container aus der Liste.
 
-### BR-UI-001-004: Multi-Container
+### BR-UI-001-004: Multi-Container und Download-Reihenfolge
 
 - Mehrere Container können gleichzeitig geladen sein.
-- Jeder Container hat einen eigenen Download-Zustand (Idle, Downloading, Done).
 - Container werden als Cards in einer sortierbaren Liste dargestellt.
 - Drag-Handle erlaubt die Reihenfolge der Cards per Drag-and-Drop zu ändern.
+- Downloads werden von oben nach unten abgearbeitet: Der oberste Container wird zuerst heruntergeladen, dann der nächste, usw.
+- Die verfügbaren Download-Slots (`max_threads`) werden auf den aktuell aktiven Container verteilt.
+- Erst wenn ein Container fertig ist (Done), beginnt der nächste.
 - „Alle entfernen" löscht alle Container aus der Liste.
 
 ### BR-UI-001-003: Selektion
