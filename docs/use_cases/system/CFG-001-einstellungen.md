@@ -1,55 +1,105 @@
-# CFG-001: Einstellungen verwalten
+# Use Case: Einstellungen verwalten
+
+## Overview
 
 **Use Case ID:** CFG-001
-**Requirements:** FR-11
+**Use Case Name:** Einstellungen verwalten
 **Primary Actor:** Benutzer
-**Preconditions:** —
-**Postconditions (Laden):** Settings-Objekt mit aktuellen Werten im Speicher.
-**Postconditions (Speichern):** Settings-Datei auf Disk aktualisiert.
+**Goal:** Applikations-Einstellungen laden, ändern und zurücksetzen, damit sie über Neustarts hinweg erhalten bleiben.
+**Requirements:** FR-11, C-03
+**Status:** Draft
 
----
+## Preconditions
+
+- Der Konfigurationspfad wurde von der aufrufenden Schicht (CLI, GUI, Mobile) bereitgestellt.
 
 ## Main Success Scenario
 
 ### Variante A: Einstellungen laden
 
-1. System erhält den Konfigurationspfad (→ BR-CFG-001).
+1. System erhält den Konfigurationspfad (-> BR-CFG-001).
 2. System prüft, ob die Konfigurationsdatei existiert.
-3. **[Datei vorhanden]** System liest und parst die TOML-Datei.
-4. System validiert die Werte (→ BR-CFG-003).
+3. System liest und parst die TOML-Datei.
+4. System validiert die Werte (-> BR-CFG-003).
 5. System erstellt ein Settings-Objekt und gibt es zurück.
 
 ### Variante B: Einstellungen ändern
 
 1. Actor ändert einen oder mehrere Einstellungswerte.
-2. System validiert die neuen Werte (→ BR-CFG-003).
+2. System validiert die neuen Werte (-> BR-CFG-003).
 3. System aktualisiert das Settings-Objekt im Speicher.
 4. System schreibt die aktualisierte TOML-Datei auf Disk.
 
 ### Variante C: Einstellungen zurücksetzen
 
 1. Actor fordert einen Reset auf Standardwerte an.
-2. System erstellt ein Settings-Objekt mit Standardwerten (→ BR-CFG-002).
+2. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-002).
 3. System schreibt die Standardwerte auf Disk.
 
-## Alternative Paths
+## Alternative Flows
 
-**2a. (Laden) Datei nicht vorhanden:**
-2a.1. System erstellt ein Settings-Objekt mit Standardwerten (→ BR-CFG-002).
-2a.2. System schreibt die Standardwerte als neue Datei.
+### A1: Konfigurationsdatei nicht vorhanden
 
-**3a. (Laden) Datei beschädigt / ungültiges TOML:**
-3a.1. System meldet: „Konfigurationsdatei beschädigt. Standardwerte werden verwendet."
-3a.2. System erstellt Settings mit Standardwerten.
-3a.3. Beschädigte Datei wird als `.bak` umbenannt.
+**Trigger:** Datei existiert nicht (Variante A, Schritt 2)
+**Flow:**
 
-**2b. (Ändern) Validierung fehlgeschlagen:**
-2b.1. System meldet: „Ungültiger Wert für [Feld]: [Grund]."
-2b.2. Alter Wert bleibt erhalten.
+1. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-002).
+2. System schreibt die Standardwerte als neue Datei auf Disk.
+3. Use Case endet erfolgreich mit Standardwerten.
+
+### A2: Konfigurationsdatei beschädigt / ungültiges TOML
+
+**Trigger:** Datei kann nicht geparst werden (Variante A, Schritt 3)
+**Flow:**
+
+1. System meldet: "Konfigurationsdatei beschädigt. Standardwerte werden verwendet."
+2. System benennt die beschädigte Datei als `.bak` um.
+3. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-002).
+4. Use Case endet erfolgreich mit Standardwerten.
+
+### A3: Validierung beim Laden fehlgeschlagen
+
+**Trigger:** Einzelne Werte liegen ausserhalb der gültigen Bereiche (Variante A, Schritt 4)
+**Flow:**
+
+1. System ersetzt ungültige Werte durch die jeweiligen Standardwerte (-> BR-CFG-002).
+2. System meldet: "Ungültige Werte korrigiert: [Feldliste]."
+3. Use Case fährt mit Schritt 5 fort.
+
+### A4: Validierung beim Ändern fehlgeschlagen
+
+**Trigger:** Neuer Wert verletzt Validierungsregeln (Variante B, Schritt 2)
+**Flow:**
+
+1. System meldet: "Ungültiger Wert für [Feld]: [Grund]."
+2. Der alte Wert bleibt erhalten.
+3. Use Case endet ohne Änderung.
+
+### A5: Schreibfehler auf Disk
+
+**Trigger:** Dateisystem-Fehler beim Schreiben (Variante B Schritt 4, Variante C Schritt 3, A1 Schritt 2)
+**Flow:**
+
+1. System meldet: "Konfigurationsdatei konnte nicht geschrieben werden: [Fehlerdetail]."
+2. Das Settings-Objekt im Speicher bleibt aktuell.
+3. Use Case endet mit Fehler.
+
+## Postconditions
+
+### Success Postconditions
+
+- Settings-Objekt mit aktuellen Werten ist im Speicher verfügbar.
+- Bei Variante B/C: Konfigurationsdatei auf Disk entspricht dem Settings-Objekt.
+- Bei A1: Neue Konfigurationsdatei mit Standardwerten existiert auf Disk.
+
+### Failure Postconditions
+
+- Bei A4: Settings-Objekt bleibt unverändert; Konfigurationsdatei auf Disk bleibt unverändert.
+- Bei A5: Settings-Objekt im Speicher ist aktuell, aber die Datei auf Disk ist veraltet oder fehlt.
 
 ## Business Rules
 
-**BR-CFG-001: Dateipfad**
+### BR-CFG-001: Dateipfad
 
 - Der Konfigurationspfad wird von der aufrufenden Schicht (CLI, GUI, Mobile) übergeben.
 - Der Core ermittelt keinen Pfad selbst — er nimmt ihn als Parameter entgegen.
@@ -60,24 +110,24 @@
     - iOS/Android: vom OS-Framework bereitgestelltes App-Verzeichnis
 - Umgebungsvariable `RSFDL_CONFIG` überschreibt den Standardpfad (CLI/Desktop).
 
-**BR-CFG-002: Standardwerte**
+### BR-CFG-002: Standardwerte
 
-```toml
-download_directory = "~/Downloads/rsfdl"
-max_threads = 3
-max_speed_kbps = 0
-max_retries = 3
-retry_delay_seconds = 10
-auto_extract = false
-delete_archives_after_extract = false
-strict_disk_check = false
-exclusion_patterns = ["*.nfo", "*.jpg", "*.png", "*.txt", "*sample*"]
-password_list = []
-speedreport_username = ""
-speedreport_template = "[Standard-Template, siehe POST-003]"
-```
+| Feld                         | Standardwert                                    |
+|------------------------------|-------------------------------------------------|
+| download_directory           | ~/Downloads/rsfdl                               |
+| max_threads                  | 3                                               |
+| max_speed_kbps               | 0                                               |
+| max_retries                  | 3                                               |
+| retry_delay_seconds          | 10                                              |
+| auto_extract                 | false                                           |
+| delete_archives_after_extract| false                                           |
+| strict_disk_check            | false                                           |
+| ftp_timeout_seconds          | 30                                              |
+| exclusion_patterns           | ["*.nfo", "*.jpg", "*.png", "*.txt", "*sample*"]|
+| auto_passwords               | []                                              |
+| speedreport_template         | ""                                              |
 
-**BR-CFG-003: Validierung**
+### BR-CFG-003: Validierung
 
 - `max_threads`: 1–20
 - `max_speed_kbps`: >= 0 (0 = unbegrenzt)
@@ -86,13 +136,13 @@ speedreport_template = "[Standard-Template, siehe POST-003]"
 - `download_directory`: Pfad muss existieren oder erstellbar sein
 - `exclusion_patterns`: Jedes Muster muss gültiger Glob-Syntax entsprechen
 
-**BR-CFG-004: CLI-Überschreibung**
+### BR-CFG-004: CLI-Überschreibung
 
 - CLI-Parameter überschreiben gespeicherte Werte für die aktuelle Ausführung.
 - CLI-Parameter werden nicht in die Datei zurückgeschrieben.
 - Priorität: CLI-Parameter > Konfigurationsdatei > Standardwerte
 
-**BR-CFG-005: Passwort-Speicherung**
+### BR-CFG-005: Passwort-Speicherung
 
 - Passwörter in der `password_list` werden verschlüsselt gespeichert (NFR-06).
 - Verschlüsselung: OS-spezifischer Keyring oder AES mit maschinengebundenem Schlüssel.
@@ -101,8 +151,9 @@ speedreport_template = "[Standard-Template, siehe POST-003]"
 
 - `path`: Dateisystempfad zur Konfigurationsdatei (von der UI-Schicht bereitgestellt)
 - `action`: Load | Save | Reset
-- `changes`: Key-Value-Paare (für Save)
+- `changes`: Key-Value-Paare (nur bei Save)
 
 ## Output
 
 - `Settings`-Objekt mit aktuellen Werten
+- Fehlermeldung bei Validierungs- oder Schreibfehlern

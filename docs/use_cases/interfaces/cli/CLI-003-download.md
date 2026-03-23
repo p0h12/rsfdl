@@ -18,9 +18,7 @@
 
 ## Syntax
 
-```
-rsfdl download <datei.sfdl> [Optionen]
-```
+`rsfdl download <datei.sfdl> [Optionen]`
 
 ## Parameter
 
@@ -133,21 +131,11 @@ rsfdl download <datei.sfdl> [Optionen]
 
 ## Fortschrittsanzeige (stderr)
 
-```
-[2/47] movie.part01.rar  ████████████░░░░  75%  12.3 MB/s  ETA 0:42
-       movie.part02.rar  ████░░░░░░░░░░░░  25%   8.1 MB/s  ETA 2:15
-Gesamt: 1.8 GB / 4.2 GB (43%)  Ø 10.2 MB/s  ETA 4:02
-```
+Zeigt pro aktiver Datei: Zähler, Dateiname, Fortschrittsbalken, Prozent, Geschwindigkeit, ETA. Darunter eine Gesamtzeile mit aggregiertem Fortschritt, Durchschnittsgeschwindigkeit und Gesamt-ETA. Updates per `\r` wenn Terminal, sonst eine Zeile pro Datei-Abschluss.
 
 ## Ergebnis-Ausgabe (stdout)
 
-```
-Download abgeschlossen: 45 OK, 2 fehlgeschlagen, 5 übersprungen
-Dauer: 6:42  Grösse: 4.2 GB  Ø 10.7 MB/s
-Fehlgeschlagen:
-  movie.part03.rar: ConnectionError nach 3 Versuchen
-  subs.de.srt: FileNotFound (550)
-```
+Zusammenfassung mit Anzahl OK/fehlgeschlagen/übersprungen, Dauer, Gesamtgrösse, Durchschnittsgeschwindigkeit. Bei Fehlern: Liste der fehlgeschlagenen Dateien mit Fehlertyp und Retry-Anzahl.
 
 ## Exit-Codes
 

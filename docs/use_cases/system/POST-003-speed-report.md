@@ -28,16 +28,8 @@
 ## Business Rules
 
 **BR-POST-006: Template-Variablen**
-Standard-Template:
 
-```
-[b]Speed Report[/b]
-[b]Tool:[/b] rsfdl
-[b]Dateien:[/b] {{total_files}} ({{completed_files}} OK, {{failed_files}} fehlgeschlagen)
-[b]Grösse:[/b] {{total_size_mb}} MB
-[b]Dauer:[/b] {{duration}}
-[b]Ø Speed:[/b] {{avg_speed_mbps}} MB/s
-```
+Das Standard-Template enthält BBCode-formatierte Zeilen mit Tool-Name, Dateizähler (total, OK, fehlgeschlagen), Gesamtgrösse, Dauer und Durchschnittsgeschwindigkeit.
 
 Verfügbare Variablen:
 

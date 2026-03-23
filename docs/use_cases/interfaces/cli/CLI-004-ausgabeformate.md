@@ -76,27 +76,28 @@
 
 ### BR-CLI-004-003: JSON-Format
 
-stdout (Ergebnis):
-```json
-{
-    "status": "partial",
-    "completed": 45,
-    "failed": 2,
-    "skipped": 5,
-    "total_bytes": 4509715660,
-    "duration_seconds": 402,
-    "avg_speed_bps": 10785000,
-    "failures": [...]
-}
-```
+**stdout (Ergebnis-Objekt):**
 
-stderr (Progress-Events als JSON-Lines):
-```json
-{"event": "task_started", "filename": "movie.part01.rar", "bytes_total": 1610612736}
-{"event": "task_progress", "filename": "movie.part01.rar", "bytes_downloaded": 67108864, "speed_bps": 12300000}
-{"event": "task_completed", "filename": "movie.part01.rar", "bytes_total": 1610612736, "duration_seconds": 131}
-{"event": "session_completed", "status": "partial", "completed": 45, "failed": 2}
-```
+| Feld             | Typ    | Beschreibung                          |
+|------------------|--------|---------------------------------------|
+| status           | string | "success", "partial", "failed"        |
+| completed        | number | Anzahl erfolgreich heruntergeladener Dateien |
+| failed           | number | Anzahl fehlgeschlagener Dateien       |
+| skipped          | number | Anzahl übersprungener Dateien         |
+| total_bytes      | number | Gesamtgrösse in Bytes                 |
+| duration_seconds | number | Dauer in Sekunden                     |
+| avg_speed_bps    | number | Durchschnittsgeschwindigkeit in Bytes/s |
+| failures[]       | array  | Liste der Fehler (filename, error_type, retries) |
+
+**stderr (Progress-Events als JSON-Lines, ein Objekt pro Zeile):**
+
+| Event-Typ        | Felder                                             |
+|------------------|----------------------------------------------------|
+| task_started     | filename, bytes_total                              |
+| task_progress    | filename, bytes_downloaded, speed_bps              |
+| task_completed   | filename, bytes_total, duration_seconds            |
+| task_failed      | filename, error_type, retry                        |
+| session_completed| status, completed, failed                          |
 
 ### BR-CLI-004-004: Logging
 

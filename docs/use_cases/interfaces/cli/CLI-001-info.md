@@ -17,9 +17,7 @@
 
 ## Syntax
 
-```
-rsfdl info <datei.sfdl> [--password <pw>] [--json]
-```
+`rsfdl info <datei.sfdl> [--password <pw>] [--json]`
 
 ## Parameter
 
@@ -99,31 +97,33 @@ Standard-Ausgabe als key-value-Text. Mit `--json`: JSON-Objekt auf stdout.
 
 ## Ausgabe (Standard)
 
-```
-Container: Movie.Pack.2024
-Uploader:  user123
-Host:      ftp.example.com:21 (FTP)
-Pakete:    2
-Dateien:   47
-Grösse:    4.2 GB
-Verschlüsselt: ja (entschlüsselt mit Auto-Passwort)
-```
+Key-value-Paare auf stdout, eines pro Zeile:
+
+| Feld           | Beschreibung                                          |
+|----------------|-------------------------------------------------------|
+| Container      | Beschreibung / Release-Name                           |
+| Uploader       | Uploader-Name                                         |
+| Host           | Hostname:Port (Protokoll)                             |
+| Pakete         | Anzahl Pakete                                         |
+| Dateien        | Anzahl Dateien                                        |
+| Grösse         | Gesamtgrösse (menschenlesbar)                         |
+| Verschlüsselt  | ja/nein, ggf. mit Hinweis auf Auto-Passwort-Entschlüsselung |
 
 ## Ausgabe (JSON)
 
-```json
-{
-    "description": "Movie.Pack.2024",
-    "uploader": "user123",
-    "host": "ftp.example.com",
-    "port": 21,
-    "protocol": "FTP",
-    "encrypted": true,
-    "packages": 2,
-    "total_files": 47,
-    "total_bytes": 4509715660
-}
-```
+JSON-Objekt auf stdout mit folgenden Feldern:
+
+| Feld         | Typ     | Beschreibung                   |
+|--------------|---------|--------------------------------|
+| description  | string  | Beschreibung / Release-Name    |
+| uploader     | string  | Uploader-Name                  |
+| host         | string  | FTP-Hostname                   |
+| port         | number  | FTP-Port                       |
+| protocol     | string  | Protokoll (z.B. "FTP")         |
+| encrypted    | boolean | Ob der Container verschlüsselt war |
+| packages     | number  | Anzahl Pakete                  |
+| total_files  | number  | Anzahl Dateien                 |
+| total_bytes  | number  | Gesamtgrösse in Bytes          |
 
 ## Exit-Codes
 

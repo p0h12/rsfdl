@@ -17,9 +17,7 @@
 
 ## Syntax
 
-```
-rsfdl create <output.sfdl> --host <host> --user <user> --pass <pass> --path <pfad> [Optionen]
-```
+`rsfdl create <output.sfdl> --host <host> --user <user> --pass <pass> --path <pfad> [Optionen]`
 
 ## Parameter
 
@@ -111,11 +109,7 @@ rsfdl create <output.sfdl> --host <host> --user <user> --pass <pass> --path <pfa
 
 ## Ausgabe
 
-```
-Verbinde mit ftp.example.com:21...
-Verzeichnis /release/ wird aufgelistet... 47 Dateien gefunden.
-Container erstellt: output.sfdl (4.2 GB, 47 Dateien)
-```
+Fortschrittsmeldungen auf stderr (Verbindungsaufbau, Verzeichnis-Listing). Abschlussmeldung auf stdout mit Dateiname, Gesamtgrösse und Dateianzahl.
 
 ## Exit-Codes
 
