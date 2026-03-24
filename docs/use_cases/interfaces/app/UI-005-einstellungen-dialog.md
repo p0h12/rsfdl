@@ -21,7 +21,7 @@
 2. System wechselt zur Einstellungen-View.
 3. System zeigt die aktuellen Einstellungswerte in Card-basierten Sektionen an (gruppiert nach Kategorien, siehe Layout).
 4. Benutzer aendert einen oder mehrere Werte.
-5. System validiert die Eingaben inline (-> BR-UI-005-001).
+5. System validiert die Eingaben inline (-> BR-UI-013).
 6. Benutzer klickt „Speichern".
 7. System speichert die Einstellungen auf Disk (-> CFG-001 Variante B).
 8. System wechselt zurueck zum Hauptfenster (UI-001).
@@ -98,7 +98,7 @@
 
 ## Business Rules
 
-### BR-UI-005-001: Inline-Validierung
+### BR-UI-013: Inline-Validierung
 
 Eingabefelder begrenzen Werte gemaess BR-CFG-003:
 
@@ -107,18 +107,18 @@ Eingabefelder begrenzen Werte gemaess BR-CFG-003:
 - Max. Retries: Spinner (0-50), Werte werden geclamp't.
 - Retry-Wartezeit: Eingabefeld (1-3600 Sekunden), Werte werden geclamp't.
 
-### BR-UI-005-002: Toggle-Switches
+### BR-UI-014: Toggle-Switches
 
 - Boolean-Einstellungen werden als Toggle-Switches dargestellt (nicht als Checkboxen).
 - Toggles: Auto-Extraktion, Archive nach Extraktion loeschen, Strikte Speicherplatzpruefung.
 
-### BR-UI-005-003: Passwort-Anzeige
+### BR-UI-015: Passwort-Anzeige
 
 - Passwoerter werden verdeckt als Bullet-Zeichen in Tags angezeigt.
 - Eingabefeld zum Hinzufuegen ist verdeckt (`type="password"`).
 - Jedes Tag hat einen Entfernen-Button.
 
-### BR-UI-005-004: Ausschlussmuster
+### BR-UI-016: Ausschlussmuster
 
 - Muster werden als Tags angezeigt (ein Tag pro Muster).
 - Eingabefeld + „+"-Button zum Hinzufuegen neuer Muster.

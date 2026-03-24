@@ -85,12 +85,12 @@
 
 ## Business Rules
 
-### BR-UI-003-001: UI-Update-Throttling
+### BR-UI-007: UI-Update-Throttling
 
 - ProgressEvents werden mit max. 100 ms Intervall verarbeitet (10 Hz).
 - BytesWritten-Events werden gesammelt und in Batches angewendet.
 
-### BR-UI-003-002: Sortierung
+### BR-UI-008: Sortierung
 
 Datei-Einträge werden nach Status sortiert:
 
@@ -101,13 +101,13 @@ Datei-Einträge werden nach Status sortiert:
 5. Failed
 6. Cancelled
 
-### BR-UI-003-003: Geschwindigkeit und ETA
+### BR-UI-009: Geschwindigkeit und ETA
 
 - Geschwindigkeit: Gesamtbytes / verstrichene Zeit seit Start.
 - ETA: Verbleibende Bytes / aktuelle Geschwindigkeit.
 - Anzeige nur wenn Geschwindigkeit > 0.
 
-### BR-UI-003-004: Panel-Sichtbarkeit
+### BR-UI-010: Panel-Sichtbarkeit
 
 - Panel ist unsichtbar wenn `download_phase` = `Idle`.
 - Panel bleibt sichtbar nach `Done` bis expliziter Reset.

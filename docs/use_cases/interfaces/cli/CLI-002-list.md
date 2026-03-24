@@ -74,16 +74,16 @@
 
 ## Business Rules
 
-### BR-CLI-002-001: Ausschluss-Anzeige
+### BR-CLI-010: Ausschluss-Anzeige
 
 - Ohne `--show-excluded`: Ausgeschlossene Dateien werden nicht aufgelistet.
 - Mit `--show-excluded`: Ausgeschlossene Dateien werden mit `[excluded]` markiert.
 
-### BR-CLI-002-002: Zusammenfassung
+### BR-CLI-011: Zusammenfassung
 
 Die letzte Zeile zeigt: "N Dateien (X GB), M ausgeschlossen".
 
-Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-CC-001), Parameter-Prioritaet (BR-CLI-CC-006), Exit-Codes (BR-CLI-CC-007).
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Parameter-Prioritaet (BR-CLI-006), Exit-Codes (BR-CLI-007).
 
 ## Ausgabe (Standard)
 

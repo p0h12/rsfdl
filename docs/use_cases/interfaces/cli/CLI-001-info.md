@@ -91,11 +91,11 @@
 
 ## Business Rules
 
-### BR-CLI-001-001: Ausgabeformat
+### BR-CLI-009: Ausgabeformat
 
 Standard-Ausgabe als key-value-Text. Mit `--json`: JSON-Objekt auf stdout.
 
-Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-CC-001), Parameter-Prioritaet (BR-CLI-CC-006), Exit-Codes (BR-CLI-CC-007).
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Parameter-Prioritaet (BR-CLI-006), Exit-Codes (BR-CLI-007).
 
 ## Ausgabe (Standard)
 

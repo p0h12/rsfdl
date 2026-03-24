@@ -19,7 +19,7 @@
 ### `rsfdl config show`
 
 1. Benutzer ruft `rsfdl config show` auf.
-2. System ermittelt den Konfigurationspfad (-> BR-CLI-005-001).
+2. System ermittelt den Konfigurationspfad (-> BR-CLI-014).
 3. System laedt die Einstellungen (-> CFG-001, Variante A).
 4. System gibt Warnings (korrupte Datei, korrigierte Werte) auf stderr aus.
 5. System gibt die Einstellungen im key=value-Format auf stdout aus.
@@ -28,9 +28,9 @@
 ### `rsfdl config edit`
 
 1. Benutzer ruft `rsfdl config edit` auf.
-2. System ermittelt den Konfigurationspfad (-> BR-CLI-005-001).
+2. System ermittelt den Konfigurationspfad (-> BR-CLI-014).
 3. System erstellt die Konfigurationsdatei mit Standardwerten, falls nicht vorhanden (-> CFG-001, A1).
-4. System ermittelt den Editor (-> BR-CLI-005-002).
+4. System ermittelt den Editor (-> BR-CLI-015).
 5. System oeffnet die Datei im Editor.
 6. Benutzer bearbeitet die Datei und schliesst den Editor.
 7. System validiert die bearbeitete Datei (-> CFG-001, Variante A).
@@ -39,7 +39,7 @@
 ### `rsfdl config path`
 
 1. Benutzer ruft `rsfdl config path` auf.
-2. System ermittelt den Konfigurationspfad (-> BR-CLI-005-001).
+2. System ermittelt den Konfigurationspfad (-> BR-CLI-014).
 3. System gibt den Pfad auf stdout aus.
 
 ## Alternative Flows
@@ -90,17 +90,17 @@
 
 ## Business Rules
 
-### BR-CLI-005-001: Pfadermittlung
+### BR-CLI-014: Pfadermittlung
 
 - `--config-file <path>` ueberschreibt den Standardpfad (-> CFG-001, BR-CFG-001).
 - Ohne `--config-file`: Plattform-spezifischer Standardpfad (-> CFG-001, BR-CFG-001).
 
-### BR-CLI-005-002: Editor-Ermittlung
+### BR-CLI-015: Editor-Ermittlung
 
 - System verwendet `$EDITOR` Umgebungsvariable.
 - Fallback: `notepad` (Windows), `vi` (Unix).
 
-### BR-CLI-005-003: Ausgabeformat
+### BR-CLI-016: Ausgabeformat
 
 - `config show` gibt key=value-Format auf stdout aus.
 - Passwoerter werden maskiert: nur `(N entries)` angezeigt (-> CFG-001, BR-CFG-005).

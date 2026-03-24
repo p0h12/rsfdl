@@ -110,18 +110,18 @@
 
 ## Business Rules
 
-### BR-UI-001-001: Dateidialog-Filter
+### BR-UI-001: Dateidialog-Filter
 
 Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 
-### BR-UI-001-002: Button-Zustände (pro Container-Card)
+### BR-UI-002: Button-Zustände (pro Container-Card)
 
 - „Download starten": Aktiv nur wenn Selektion > 0 und Phase = Idle.
 - „Abbrechen": Sichtbar nur während Phase = Downloading.
 - „Reset": Sichtbar nur wenn Phase = Done.
 - „Entfernen" (X): Jederzeit verfügbar, entfernt den Container aus der Liste.
 
-### BR-UI-001-004: Multi-Container und Download-Reihenfolge
+### BR-UI-004: Multi-Container und Download-Reihenfolge
 
 - Mehrere Container können gleichzeitig geladen sein.
 - Container werden als Cards in einer sortierbaren Liste dargestellt.
@@ -131,7 +131,7 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 - Erst wenn ein Container fertig ist (Done), beginnt der nächste.
 - „Alle entfernen" löscht alle Container aus der Liste.
 
-### BR-UI-001-003: Selektion
+### BR-UI-003: Selektion
 
 - Dateien werden per Checkbox einzeln oder paketweise ausgewählt.
 - Ausschlussmuster (DL-002) setzen die initiale Selektion.

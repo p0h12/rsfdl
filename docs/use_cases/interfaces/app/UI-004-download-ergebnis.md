@@ -57,7 +57,7 @@
 
 ## Business Rules
 
-### BR-UI-004-001: Banner-Farbkodierung
+### BR-UI-011: Banner-Farbkodierung
 
 | Bedingung                      | Farbe | CSS-Klasse                      |
 |--------------------------------|-------|---------------------------------|
@@ -65,7 +65,7 @@
 | `cancelled > 0` (kein Failure) | Gelb  | `bg-yellow-100 text-yellow-800` |
 | Sonst                          | Grün  | `bg-green-100 text-green-800`   |
 
-### BR-UI-004-002: Statistik-Format
+### BR-UI-012: Statistik-Format
 
 Anzeige: „Done: {total} total, {completed} completed, {skipped} skipped, {failed} failed, {cancelled} cancelled"
 

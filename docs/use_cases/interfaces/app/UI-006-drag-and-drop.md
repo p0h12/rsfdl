@@ -71,17 +71,17 @@
 
 ## Business Rules
 
-### BR-UI-006-001: Dateifilter
+### BR-UI-017: Dateifilter
 
 - Nur Dateien mit Endung `.sfdl` werden akzeptiert.
 - Gross-/Kleinschreibung wird ignoriert.
 
-### BR-UI-006-002: Fenster-Zustand
+### BR-UI-018: Fenster-Zustand
 
 - Drop funktioniert in allen Zuständen (leer, Container geladen, Download läuft).
 - Neue Container werden immer zur Liste hinzugefügt, bestehende bleiben unberührt.
 
-### BR-UI-006-003: Visuelles Feedback
+### BR-UI-019: Visuelles Feedback
 
 | Phase      | UI-Feedback                 |
 |------------|-----------------------------|

@@ -99,7 +99,7 @@
 **Trigger:** Benutzer gibt `--threads`, `--retries`, etc. an (Schritt 1)
 **Flow:**
 
-1. CLI-Parameter ueberschreiben die konfigurierten Werte fuer diese Ausfuehrung (-> CLI-CC, BR-CLI-CC-006).
+1. CLI-Parameter ueberschreiben die konfigurierten Werte fuer diese Ausfuehrung (-> CLI-CC, BR-CLI-006).
 2. Werte werden nicht in die Datei zurueckgeschrieben.
 
 ## Postconditions
@@ -117,19 +117,19 @@
 
 ## Business Rules
 
-### BR-CLI-003-001: Fortschrittsanzeige
+### BR-CLI-012: Fortschrittsanzeige
 
 - Fortschritt auf stderr mit Progress-Bars (wenn Terminal).
 - `--quiet`: Keine Fortschrittsanzeige.
 - `--json`: JSON-Lines auf stderr (-> CLI-CC).
 
-### BR-CLI-003-002: Signal-Handling
+### BR-CLI-013: Signal-Handling
 
 - SIGINT einmal: Graceful Shutdown.
 - SIGINT zweimal (< 2s): Sofortiger Abbruch.
 - SIGTERM: Wie einmaliges SIGINT.
 
-Weitere Regeln: -> CLI-CC (Cross-Cutting): Parameter-Prioritaet (BR-CLI-CC-006), Exit-Codes (BR-CLI-CC-007), Quiet-Modus (BR-CLI-CC-008).
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Parameter-Prioritaet (BR-CLI-006), Exit-Codes (BR-CLI-007), Quiet-Modus (BR-CLI-008).
 
 ## Fortschrittsanzeige (stderr)
 

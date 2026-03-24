@@ -77,13 +77,13 @@
 
 ## Business Rules
 
-### BR-UI-002-001: Passwort-Eingabe
+### BR-UI-005: Passwort-Eingabe
 
 - Eingabefeld ist verdeckt (`type="password"`).
 - Sichtbarkeits-Toggle (Auge-Icon) erlaubt das Passwort anzuzeigen.
 - Enter-Taste loest „Entschluesseln" aus.
 
-### BR-UI-002-002: Inline-Darstellung
+### BR-UI-006: Inline-Darstellung
 
 - Die Passwort-Eingabe ist inline im Card-Body (kein separater modaler Dialog).
 - Die Card bleibt in der Container-Liste an ihrer Position.
