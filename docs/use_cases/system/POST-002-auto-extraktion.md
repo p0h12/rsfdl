@@ -19,9 +19,9 @@
 1. System scannt die heruntergeladenen Dateien des Pakets nach Archiven (→ BR-POST-003).
 2. Fuer jedes erkannte Archiv erstellt das System eine ExtractionTask.
 3. System extrahiert das Archiv in das Zielverzeichnis:
-   - **[ZIP]** System entpackt mit Standard-ZIP-Bibliothek.
-   - **[RAR]** System entpackt mit `unrar`-Bibliothek.
-   - **[Multi-Part RAR]** System erkennt den ersten Teil und entpackt das gesamte Archiv.
+    - **[ZIP]** System entpackt mit Standard-ZIP-Bibliothek.
+    - **[RAR]** System entpackt mit `unrar`-Bibliothek.
+    - **[Multi-Part RAR]** System erkennt den ersten Teil und entpackt das gesamte Archiv.
 4. System emittiert Fortschritts-Events waehrend der Extraktion.
 5. ExtractionTask-Status → `Completed`.
 6. **[delete_archives_after_extract=true]** System loescht die Archiv-Dateien.

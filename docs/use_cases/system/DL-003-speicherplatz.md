@@ -18,8 +18,8 @@
 
 1. System ermittelt den verfuegbaren Speicherplatz im Zielverzeichnis.
 2. System berechnet den benoetigten Speicherplatz:
-   - Fuer neue Dateien: volle Dateigroesse
-   - Fuer teilweise vorhandene Dateien (Resume): nur die Restgroesse
+    - Fuer neue Dateien: volle Dateigroesse
+    - Fuer teilweise vorhandene Dateien (Resume): nur die Restgroesse
 3. System vergleicht verfuegbaren mit benoetigtem Speicherplatz.
 4. Verfuegbarer Platz >= benoetigter Platz — Use Case endet erfolgreich.
 

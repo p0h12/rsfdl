@@ -18,13 +18,13 @@
 1. Actor uebergibt einen Dateipfad an das System.
 2. System liest die Datei vom Dateisystem.
 3. System erkennt die SFDL-Version anhand der XML-Struktur und des numerischen Werts:
-   - `<ContainerVersion>` vorhanden, Wert 10 → v3
-   - `<SFDLFileVersion>` vorhanden, Wert 6–9 → v2
-   - Wert 0–5 oder >10 → ungueltig (siehe BR-SFDL-001)
+    - `<ContainerVersion>` vorhanden, Wert 10 → v3
+    - `<SFDLFileVersion>` vorhanden, Wert 6–9 → v2
+    - Wert 0–5 oder >10 → ungueltig (siehe BR-SFDL-001)
 4. System parst den XML-Inhalt gemaess erkannter Version.
 5. **[v2]** System normalisiert die v2-Struktur intern auf das v3-Datenmodell.
 6. System prueft, ob der Container verschluesselt ist (`Encrypted=true`).
-   - Falls ja: → **extend** SFDL-002 (Container entschluesseln)
+    - Falls ja: → **extend** SFDL-002 (Container entschluesseln)
 7. System erstellt ein Container-Objekt mit Metadaten und Paketstruktur.
 8. → **include** SFDL-003 (Container-Inhalt aufloesen)
 9. System gibt den aufgeloesten Container zurueck.

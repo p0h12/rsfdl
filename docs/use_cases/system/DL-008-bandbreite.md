@@ -18,8 +18,8 @@
 1. System berechnet das Limit pro Thread: `max_bytes_per_thread = (max_speed_kbps * 1024) / aktive_threads`.
 2. Nach jedem geschriebenen Block misst der Worker die aktuelle Geschwindigkeit.
 3. Wenn die Geschwindigkeit das Pro-Thread-Limit ueberschreitet:
-   - System berechnet die erforderliche Pause.
-   - Worker wartet (sleep) die berechnete Zeit.
+    - System berechnet die erforderliche Pause.
+    - Worker wartet (sleep) die berechnete Zeit.
 4. System passt das Pro-Thread-Limit dynamisch an, wenn sich die Anzahl aktiver Threads aendert (Task endet, neue Task startet).
 
 ## Alternative Flows

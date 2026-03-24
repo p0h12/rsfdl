@@ -16,26 +16,26 @@
 ## Main Success Scenario
 
 1. System erstellt eine DownloadSession mit den Parametern:
-   - `target_directory` aus Einstellungen oder Parameter
-   - `max_threads` aus Einstellungen oder Parameter (Standard: 3)
-   - `max_speed_kbps` aus Einstellungen oder Parameter (Standard: 0 = unbegrenzt)
+    - `target_directory` aus Einstellungen oder Parameter
+    - `max_threads` aus Einstellungen oder Parameter (Standard: 3)
+    - `max_speed_kbps` aus Einstellungen oder Parameter (Standard: 0 = unbegrenzt)
 2. → **include** DL-003 (Speicherplatz pruefen)
 3. System erstellt fuer jede selektierte Datei eine DownloadTask im Status `Pending`.
 4. Fuer jede Datei prueft das System, ob sie lokal bereits existiert:
-   - Vollstaendig vorhanden (Groesse stimmt) → Status `Skipped`
-   - Teilweise vorhanden → Status `Pending`, mit `bytes_downloaded` gesetzt (→ DL-005)
-   - Nicht vorhanden → Status `Pending`, `bytes_downloaded=0`
+    - Vollstaendig vorhanden (Groesse stimmt) → Status `Skipped`
+    - Teilweise vorhanden → Status `Pending`, mit `bytes_downloaded` gesetzt (→ DL-005)
+    - Nicht vorhanden → Status `Pending`, `bytes_downloaded=0`
 5. System startet den Thread-Pool mit `max_threads` parallelen Workern.
 6. Jeder Worker nimmt die naechste `Pending`-Task und:
-   - Oeffnet eine FTP-Verbindung mit ConnectionInfo aus dem Container.
-   - **[FTPS konfiguriert]** Baut TLS-Handshake auf (→ BR-DL-009).
-   - Wechselt in Passive Mode.
-   - **[Resume]** Sendet `REST <bytes_downloaded>` (→ DL-005).
-   - Sendet `RETR <remote_path>`.
-   - Empfaengt Daten in Bloecken und schreibt sie in die lokale Datei.
-   - **[Bandbreite konfiguriert]** Throttling nach jedem Block (→ DL-008).
-   - Aktualisiert `bytes_downloaded` und `current_speed_bps` nach jedem Block.
-   - System emittiert ein Progress-Event (→ Interface Specs).
+    - Oeffnet eine FTP-Verbindung mit ConnectionInfo aus dem Container.
+    - **[FTPS konfiguriert]** Baut TLS-Handshake auf (→ BR-DL-009).
+    - Wechselt in Passive Mode.
+    - **[Resume]** Sendet `REST <bytes_downloaded>` (→ DL-005).
+    - Sendet `RETR <remote_path>`.
+    - Empfaengt Daten in Bloecken und schreibt sie in die lokale Datei.
+    - **[Bandbreite konfiguriert]** Throttling nach jedem Block (→ DL-008).
+    - Aktualisiert `bytes_downloaded` und `current_speed_bps` nach jedem Block.
+    - System emittiert ein Progress-Event (→ Interface Specs).
 7. Worker schliesst die FTP-Verbindung nach Abschluss der Datei.
 8. Task-Status wechselt zu `Completed`.
 9. Wenn alle Tasks abgeschlossen: DownloadSession-Status → `Completed`.

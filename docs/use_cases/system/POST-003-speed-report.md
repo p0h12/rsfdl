@@ -17,10 +17,10 @@
 
 1. Actor fordert einen Speed-Report an.
 2. System sammelt die Statistiken der DownloadSession:
-   - Gesamtgroesse (heruntergeladene Bytes)
-   - Gesamtdauer (Start bis Ende)
-   - Durchschnittsgeschwindigkeit
-   - Anzahl Dateien (erfolgreich / fehlgeschlagen / uebersprungen)
+    - Gesamtgroesse (heruntergeladene Bytes)
+    - Gesamtdauer (Start bis Ende)
+    - Durchschnittsgeschwindigkeit
+    - Anzahl Dateien (erfolgreich / fehlgeschlagen / uebersprungen)
 3. System laedt das BBCode-Template aus den Einstellungen (→ BR-POST-006).
 4. System ersetzt die Template-Variablen durch die berechneten Werte.
 5. System gibt den gerenderten Report-Text zurueck.

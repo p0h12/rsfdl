@@ -18,8 +18,8 @@
 
 1. System laedt die Ausschlussmuster aus den Einstellungen (CFG-001).
 2. Fuer jeden FileEntry prueft das System den Dateinamen gegen alle Muster:
-   - System fuehrt einen case-insensitiven Glob-Match des Dateinamens gegen jedes Muster durch.
-   - Wenn mindestens ein Muster passt: FileEntry wird als `excluded=true` markiert.
+    - System fuehrt einen case-insensitiven Glob-Match des Dateinamens gegen jedes Muster durch.
+    - Wenn mindestens ein Muster passt: FileEntry wird als `excluded=true` markiert.
 3. System gibt die markierte Liste zurueck.
 
 ## Alternative Flows
