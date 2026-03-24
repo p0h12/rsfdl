@@ -214,8 +214,10 @@ mod tests {
 	/// CLI-004 | A3: NeedsPassword without flag, no terminal → PasswordRequired.
 	#[test]
 	fn cli004_needs_password_no_flag_no_terminal() {
-		let mut container = SfdlContainer::default();
-		container.encrypted = true;
+		let mut container = SfdlContainer {
+			encrypted: true,
+			..SfdlContainer::default()
+		};
 		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, None, false);
 		assert!(matches!(result.unwrap_err(), CliError::PasswordRequired));
 	}

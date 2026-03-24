@@ -507,13 +507,14 @@ mod tests {
 	}
 
 	fn test_settings(dir: &std::path::Path) -> Settings {
-		let mut s = Settings::default();
-		s.download_directory = dir.to_path_buf();
-		s.max_threads = 2;
-		s.max_retries = 0;
-		s.retry_delay_seconds = 0;
-		s.ftp_timeout_seconds = 1;
-		s
+		Settings {
+			download_directory: dir.to_path_buf(),
+			max_threads: 2,
+			max_retries: 0,
+			retry_delay_seconds: 0,
+			ftp_timeout_seconds: 1,
+			..Settings::default()
+		}
 	}
 
 	/// DL-006 | Variante B: Global cancel before downloads start → all cancelled.

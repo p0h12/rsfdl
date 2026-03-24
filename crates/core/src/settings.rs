@@ -278,9 +278,10 @@ mod tests {
 	/// CFG-001 | BR-CFG-002: max_threads must be 1–20.
 	#[test]
 	fn cfg001_validate_max_threads_bounds() {
-		let mut s = Settings::default();
-
-		s.max_threads = 0;
+		let mut s = Settings {
+			max_threads: 0,
+			..Settings::default()
+		};
 		assert!(!validate(&s).is_empty());
 
 		s.max_threads = 21;
@@ -296,9 +297,10 @@ mod tests {
 	/// CFG-001 | BR-CFG-002: max_retries must be 0–50.
 	#[test]
 	fn cfg001_validate_max_retries_bounds() {
-		let mut s = Settings::default();
-
-		s.max_retries = 51;
+		let mut s = Settings {
+			max_retries: 51,
+			..Settings::default()
+		};
 		assert!(!validate(&s).is_empty());
 
 		s.max_retries = 0;
@@ -311,9 +313,10 @@ mod tests {
 	/// CFG-001 | BR-CFG-002: retry_delay_seconds must be 1–3600.
 	#[test]
 	fn cfg001_validate_retry_delay_bounds() {
-		let mut s = Settings::default();
-
-		s.retry_delay_seconds = 0;
+		let mut s = Settings {
+			retry_delay_seconds: 0,
+			..Settings::default()
+		};
 		assert!(!validate(&s).is_empty());
 
 		s.retry_delay_seconds = 3601;
@@ -342,10 +345,12 @@ mod tests {
 	/// CFG-001 | A3: Out-of-range values are replaced with defaults.
 	#[test]
 	fn cfg001_fix_invalid_corrects_out_of_range() {
-		let mut s = Settings::default();
-		s.max_threads = 100;
-		s.max_retries = 999;
-		s.retry_delay_seconds = 0;
+		let mut s = Settings {
+			max_threads: 100,
+			max_retries: 999,
+			retry_delay_seconds: 0,
+			..Settings::default()
+		};
 		s.exclusion_patterns.push(String::new());
 
 		let corrected = fix_invalid(&mut s);
@@ -362,8 +367,10 @@ mod tests {
 	/// CFG-001 | A3: Valid values are not touched by fix_invalid.
 	#[test]
 	fn cfg001_fix_invalid_leaves_valid_unchanged() {
-		let mut s = Settings::default();
-		s.max_threads = 10;
+		let mut s = Settings {
+			max_threads: 10,
+			..Settings::default()
+		};
 		let corrected = fix_invalid(&mut s);
 		assert!(corrected.is_empty());
 		assert_eq!(s.max_threads, 10);
@@ -379,10 +386,12 @@ mod tests {
 		let dir = tempfile::tempdir().unwrap();
 		let path = dir.path().join("settings.toml");
 
-		let mut settings = Settings::default();
-		settings.max_threads = 5;
-		settings.max_speed_kbps = 1024;
-		settings.auto_passwords = vec!["pw1".into(), "pw2".into()];
+		let settings = Settings {
+			max_threads: 5,
+			max_speed_kbps: 1024,
+			auto_passwords: vec!["pw1".into(), "pw2".into()],
+			..Settings::default()
+		};
 
 		save(&path, &settings).unwrap();
 		let result = load(&path);
@@ -399,12 +408,16 @@ mod tests {
 		let dir = tempfile::tempdir().unwrap();
 		let path = dir.path().join("settings.toml");
 
-		let mut s1 = Settings::default();
-		s1.max_threads = 3;
+		let s1 = Settings {
+			max_threads: 3,
+			..Settings::default()
+		};
 		save(&path, &s1).unwrap();
 
-		let mut s2 = Settings::default();
-		s2.max_threads = 7;
+		let s2 = Settings {
+			max_threads: 7,
+			..Settings::default()
+		};
 		save(&path, &s2).unwrap();
 
 		let result = load(&path);
@@ -456,8 +469,10 @@ mod tests {
 		let dir = tempfile::tempdir().unwrap();
 		let path = dir.path().join("settings.toml");
 
-		let mut s = Settings::default();
-		s.max_threads = 99;
+		let s = Settings {
+			max_threads: 99,
+			..Settings::default()
+		};
 		// Write directly to bypass validation in save()
 		let toml_str = toml::to_string_pretty(&s).unwrap();
 		std::fs::write(&path, toml_str).unwrap();
@@ -478,8 +493,10 @@ mod tests {
 		let dir = tempfile::tempdir().unwrap();
 		let path = dir.path().join("settings.toml");
 
-		let mut s = Settings::default();
-		s.max_threads = 0;
+		let s = Settings {
+			max_threads: 0,
+			..Settings::default()
+		};
 		let err = save(&path, &s).unwrap_err();
 		assert!(matches!(err, SettingsError::Validation(_)));
 		assert!(err.to_string().contains("max_threads"));
@@ -508,8 +525,10 @@ mod tests {
 		let path = dir.path().join("settings.toml");
 
 		// Save non-default values first
-		let mut s = Settings::default();
-		s.max_threads = 10;
+		let s = Settings {
+			max_threads: 10,
+			..Settings::default()
+		};
 		save(&path, &s).unwrap();
 
 		// Reset
@@ -549,8 +568,10 @@ mod tests {
 		let dir = tempfile::tempdir().unwrap();
 		let path = dir.path().join("settings.toml");
 
-		let mut s = Settings::default();
-		s.exclusion_patterns = vec!["*.nfo".into(), "*.jpg".into(), "*sample*".into()];
+		let s = Settings {
+			exclusion_patterns: vec!["*.nfo".into(), "*.jpg".into(), "*sample*".into()],
+			..Settings::default()
+		};
 
 		save(&path, &s).unwrap();
 		let result = load(&path);
@@ -573,11 +594,13 @@ mod tests {
 	/// CFG-001 | CLI-005: format_settings renders all fields.
 	#[test]
 	fn cfg001_format_settings_shows_all_fields() {
-		let mut s = Settings::default();
-		s.max_threads = 5;
-		s.max_speed_kbps = 512;
-		s.exclusion_patterns = vec!["*.nfo".into()];
-		s.auto_passwords = vec!["secret".into()];
+		let s = Settings {
+			max_threads: 5,
+			max_speed_kbps: 512,
+			exclusion_patterns: vec!["*.nfo".into()],
+			auto_passwords: vec!["secret".into()],
+			..Settings::default()
+		};
 
 		let path = Path::new("/tmp/settings.toml");
 		let output = format_settings(path, &s);
@@ -593,8 +616,10 @@ mod tests {
 	/// CFG-001 | BR-CFG-003: Passwords are not shown in cleartext.
 	#[test]
 	fn cfg001_format_settings_hides_passwords() {
-		let mut s = Settings::default();
-		s.auto_passwords = vec!["secret1".into(), "secret2".into()];
+		let s = Settings {
+			auto_passwords: vec!["secret1".into(), "secret2".into()],
+			..Settings::default()
+		};
 
 		let path = Path::new("/tmp/settings.toml");
 		let output = format_settings(path, &s);
@@ -614,8 +639,10 @@ mod tests {
 		assert!(output.contains("speedreport_template"));
 		assert!(output.contains("(none)"));
 
-		let mut s2 = Settings::default();
-		s2.speedreport_template = "custom template".into();
+		let s2 = Settings {
+			speedreport_template: "custom template".into(),
+			..Settings::default()
+		};
 		let output2 = format_settings(path, &s2);
 		assert!(output2.contains("(custom)"));
 		assert!(!output2.contains("custom template"));
