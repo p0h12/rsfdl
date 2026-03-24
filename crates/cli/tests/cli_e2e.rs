@@ -473,3 +473,26 @@ fn config_show_with_corrupt_file_shows_defaults() {
 		.stdout(predicate::str::contains("max_threads"))
 		.stdout(predicate::str::contains("3"));
 }
+
+/// CLI-005 | config path: prints the default settings path.
+#[test]
+fn config_path_prints_path() {
+	cmd()
+		.args(["config", "path"])
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("rsfdl"))
+		.stdout(predicate::str::contains("settings.toml"));
+}
+
+/// CLI-005 | config --help shows all subcommands.
+#[test]
+fn config_help_shows_subcommands() {
+	cmd()
+		.args(["config", "--help"])
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("show"))
+		.stdout(predicate::str::contains("edit"))
+		.stdout(predicate::str::contains("path"));
+}

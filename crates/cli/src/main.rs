@@ -93,6 +93,8 @@ enum ConfigAction {
 		#[arg(long)]
 		config_file: Option<String>,
 	},
+	/// Print path to settings file
+	Path,
 }
 
 #[tokio::main]
@@ -147,6 +149,9 @@ async fn main() {
 					eprintln!("Error: {}", e);
 					std::process::exit(1);
 				}
+			}
+			ConfigAction::Path => {
+				commands::config::run_path();
 			}
 		},
 	}

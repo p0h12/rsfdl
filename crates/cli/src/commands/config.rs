@@ -11,6 +11,10 @@ pub fn run_show(config_file: Option<&str>) {
 	print!("{}", format_settings(&path, &result.settings));
 }
 
+pub fn run_path() {
+	println!("{}", default_settings_path().display());
+}
+
 pub fn run_edit(config_file: Option<&str>) -> std::io::Result<()> {
 	let path = config_file.map(PathBuf::from).unwrap_or_else(default_settings_path);
 
