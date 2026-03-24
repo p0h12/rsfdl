@@ -1,8 +1,14 @@
+//! UI-006: Drop zone component for empty state.
+
 use dioxus::prelude::*;
 
 use crate::icons;
 use crate::state::AppState;
 
+/// UI-006: Visual drop zone shown when no containers are loaded.
+///
+/// Provides a click target for the file dialog and visual hint for drag-and-drop.
+/// Actual drag-and-drop handling is at the app level (main.rs).
 #[component]
 pub fn DropZone() -> Element {
 	let state = use_context::<AppState>();
@@ -39,7 +45,7 @@ pub fn DropZone() -> Element {
 									p {
 											class: "text-sm mb-5",
 											style: "color: var(--color-text-secondary);",
-											"Klicken um Dateien auszuwaehlen"
+											"Dateien hierher ziehen oder klicken zum Auswählen"
 									}
 
 									// Button
@@ -55,7 +61,7 @@ pub fn DropZone() -> Element {
 													style: "width: 16px; height: 16px;",
 													dangerous_inner_html: icons::FOLDER_OPEN,
 											}
-											"Datei auswaehlen"
+											"Datei auswählen"
 									}
 
 									// Hint

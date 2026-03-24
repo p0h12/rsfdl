@@ -103,13 +103,16 @@ fn ThemeToggle(theme: Theme) -> Element {
 	}
 }
 
+/// BR-UI-017: Check if a filename has the `.sfdl` extension (case-insensitive).
+pub fn is_sfdl_file(name: &str) -> bool {
+	name.contains('.') && name.rsplit('.').next().is_some_and(|ext| ext.eq_ignore_ascii_case("sfdl"))
+}
+
 /// Open one or more SFDL files via native dialog and add them to the container list.
 pub async fn open_sfdl_files_from_dialog(mut state: AppState) {
 	let files = rfd::AsyncFileDialog::new().add_filter("SFDL Files", &["sfdl"]).pick_files().await;
 
 	let Some(files) = files else { return };
-
-	let auto_passwords = state.settings.read().auto_passwords.clone();
 
 	for file in files {
 		let path = file.path().to_string_lossy().to_string();
@@ -121,21 +124,30 @@ pub async fn open_sfdl_files_from_dialog(mut state: AppState) {
 			}
 		};
 
-		match load_sfdl(&data, &auto_passwords) {
-			Ok(loaded) => match loaded.status {
-				DecryptionStatus::NotEncrypted | DecryptionStatus::AutoDecrypted { .. } => {
-					let container_id = state.add_container(path, loaded.container, ContainerPhase::Ready);
-					spawn(async move {
-						resolve_bulk_folders_for(state, container_id).await;
-					});
-				}
-				DecryptionStatus::NeedsPassword => {
-					state.add_container(path, loaded.container, ContainerPhase::NeedsPassword);
-				}
-			},
-			Err(e) => {
-				state.error_message.set(Some(format!("Parse error: {e}")));
+		process_sfdl_content(state, &path, &data);
+	}
+}
+
+/// UI-006: Process SFDL file content and add to container list.
+///
+/// Shared by dialog-based open (UI-001) and drag-and-drop (UI-006).
+pub fn process_sfdl_content(mut state: AppState, file_path: &str, xml_content: &str) {
+	let auto_passwords = state.settings.read().auto_passwords.clone();
+
+	match load_sfdl(xml_content, &auto_passwords) {
+		Ok(loaded) => match loaded.status {
+			DecryptionStatus::NotEncrypted | DecryptionStatus::AutoDecrypted { .. } => {
+				let container_id = state.add_container(file_path.to_string(), loaded.container, ContainerPhase::Ready);
+				spawn(async move {
+					resolve_bulk_folders_for(state, container_id).await;
+				});
 			}
+			DecryptionStatus::NeedsPassword => {
+				state.add_container(file_path.to_string(), loaded.container, ContainerPhase::NeedsPassword);
+			}
+		},
+		Err(e) => {
+			state.error_message.set(Some(format!("Parse error: {e}")));
 		}
 	}
 }
@@ -192,11 +204,7 @@ pub enum DecryptOutcome {
 /// UI-002: Attempt to decrypt a container with the given password (pure logic).
 ///
 /// Returns a DecryptOutcome without touching UI state, for testability.
-pub fn attempt_decrypt(
-	container: &rsfdl_core::sfdl::models::SfdlContainer,
-	password: &str,
-	exclusion_patterns: &[String],
-) -> DecryptOutcome {
+pub fn attempt_decrypt(container: &rsfdl_core::sfdl::models::SfdlContainer, password: &str, exclusion_patterns: &[String]) -> DecryptOutcome {
 	let mut c = container.clone();
 	match rsfdl_core::container::decrypt_with_password(&mut c, password) {
 		Ok(()) => {
@@ -304,5 +312,47 @@ mod tests {
 		// Original container unchanged (it was passed by reference)
 		assert!(c.encrypted);
 		assert_eq!(c.connection.host, "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=");
+	}
+
+	// -------------------------------------------------------
+	// UI-006 | BR-UI-017: SFDL file extension check
+	// -------------------------------------------------------
+
+	/// UI-006 | BR-UI-017: .sfdl extension accepted.
+	#[test]
+	fn ui006_sfdl_extension_accepted() {
+		assert!(is_sfdl_file("test.sfdl"));
+		assert!(is_sfdl_file("My.Release.2026.sfdl"));
+	}
+
+	/// UI-006 | BR-UI-017: Case-insensitive extension check.
+	#[test]
+	fn ui006_sfdl_extension_case_insensitive() {
+		assert!(is_sfdl_file("test.SFDL"));
+		assert!(is_sfdl_file("test.Sfdl"));
+		assert!(is_sfdl_file("test.sFdL"));
+	}
+
+	/// UI-006 | BR-UI-017: Non-sfdl extensions rejected.
+	#[test]
+	fn ui006_non_sfdl_rejected() {
+		assert!(!is_sfdl_file("test.txt"));
+		assert!(!is_sfdl_file("test.xml"));
+		assert!(!is_sfdl_file("test.rar"));
+		assert!(!is_sfdl_file("sfdl")); // no extension
+	}
+
+	/// UI-006 | BR-UI-017: Path with directories works.
+	#[test]
+	fn ui006_sfdl_with_path() {
+		assert!(is_sfdl_file("/home/user/downloads/release.sfdl"));
+		assert!(is_sfdl_file("C:\\Users\\test\\file.sfdl"));
+	}
+
+	/// UI-006 | BR-UI-017: Empty string rejected.
+	#[test]
+	fn ui006_empty_string_rejected() {
+		assert!(!is_sfdl_file(""));
+		assert!(!is_sfdl_file("."));
 	}
 }

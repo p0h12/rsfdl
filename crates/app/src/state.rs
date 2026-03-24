@@ -365,7 +365,11 @@ mod tests {
 	fn test_container_state(description: &str, host: &str, packages: Vec<Package>) -> ContainerState {
 		let container = SfdlContainer {
 			description: description.into(),
-			connection: Connection { host: host.into(), port: 21, ..Connection::default() },
+			connection: Connection {
+				host: host.into(),
+				port: 21,
+				..Connection::default()
+			},
 			packages,
 			..SfdlContainer::default()
 		};
@@ -391,7 +395,11 @@ mod tests {
 			name: "TestPkg".into(),
 			file_list: files
 				.into_iter()
-				.map(|(name, size)| FileItem { file_name: name.into(), file_size: size, ..FileItem::default() })
+				.map(|(name, size)| FileItem {
+					file_name: name.into(),
+					file_size: size,
+					..FileItem::default()
+				})
 				.collect(),
 			..Package::default()
 		}
@@ -476,7 +484,13 @@ mod tests {
 		let pkg = test_package(vec![("a.rar", 1000)]);
 		let mut cs = test_container_state("test", "", vec![pkg]);
 		cs.phase = ContainerPhase::Done;
-		cs.summary = Some(DownloadSummary { total_files: 1, completed: 1, failed: 0, cancelled: 0, skipped: 0 });
+		cs.summary = Some(DownloadSummary {
+			total_files: 1,
+			completed: 1,
+			failed: 0,
+			cancelled: 0,
+			skipped: 0,
+		});
 
 		cs.reset_download();
 
@@ -500,14 +514,22 @@ mod tests {
 	/// UI-001 | GlobalProgressState: percent normal calculation.
 	#[test]
 	fn ui001_progress_percent_normal() {
-		let gp = GlobalProgressState { total_bytes_all: 1000, total_written_all: 500, ..Default::default() };
+		let gp = GlobalProgressState {
+			total_bytes_all: 1000,
+			total_written_all: 500,
+			..Default::default()
+		};
 		assert!((gp.percent() - 50.0).abs() < 0.1);
 	}
 
 	/// UI-001 | GlobalProgressState: percent capped at 100.
 	#[test]
 	fn ui001_progress_percent_capped() {
-		let gp = GlobalProgressState { total_bytes_all: 100, total_written_all: 200, ..Default::default() };
+		let gp = GlobalProgressState {
+			total_bytes_all: 100,
+			total_written_all: 200,
+			..Default::default()
+		};
 		assert_eq!(gp.percent(), 100.0);
 	}
 
@@ -521,7 +543,10 @@ mod tests {
 	/// UI-001 | GlobalProgressState: speed is 0 when no start time.
 	#[test]
 	fn ui001_speed_no_start() {
-		let gp = GlobalProgressState { total_written_all: 1000, ..Default::default() };
+		let gp = GlobalProgressState {
+			total_written_all: 1000,
+			..Default::default()
+		};
 		assert_eq!(gp.speed_bytes_per_sec(), 0.0);
 	}
 }

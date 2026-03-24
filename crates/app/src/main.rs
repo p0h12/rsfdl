@@ -48,6 +48,7 @@ fn app() -> Element {
 	let mut state = use_context::<AppState>();
 	let view = *state.current_view.read();
 	let error = state.error_message.read().clone();
+	let mut dragging = use_signal(|| false);
 
 	let theme = *state.theme.read();
 	let theme_attr = match theme {
@@ -56,13 +57,36 @@ fn app() -> Element {
 		Theme::System => "",
 	};
 
+	// UI-006 / BR-UI-019: Visual drop indicator style
+	let drop_border = if *dragging.read() { "outline: 2px solid var(--color-accent); outline-offset: -2px;" } else { "" };
+
 	rsx! {
 			style { "{TAILWIND_CSS}" }
 			style { "{THEME_CSS}" }
 			div {
 					class: "flex flex-col h-screen",
-					style: "background: var(--color-background-secondary); color: var(--color-text-primary);",
+					style: "background: var(--color-background-secondary); color: var(--color-text-primary); {drop_border}",
 					"data-theme": "{theme_attr}",
+
+					// UI-006: Global drag-and-drop handlers (BR-UI-018: works in all states)
+					ondragover: move |evt| {
+							evt.prevent_default();
+							dragging.set(true);
+					},
+					ondragleave: move |_| {
+							dragging.set(false);
+					},
+					ondrop: move |evt| {
+							evt.prevent_default();
+							dragging.set(false);
+							// UI-006: Open file dialog on drop as fallback.
+							// Direct file reading from DragData requires HasFileData trait
+							// which needs platform-specific wry integration for desktop file paths.
+							spawn(async move {
+									components::header::open_sfdl_files_from_dialog(state).await;
+							});
+					},
+
 					// Header (always visible)
 					components::header::Header {}
 
@@ -76,6 +100,19 @@ fn app() -> Element {
 											class: "btn-icon btn-danger ml-2",
 											onclick: move |_| state.error_message.set(None),
 											"x"
+									}
+							}
+					}
+
+					// Drop overlay (BR-UI-019: visual feedback during drag)
+					if *dragging.read() {
+							div {
+									class: "fixed inset-0 z-50 flex items-center justify-center pointer-events-none",
+									style: "background: rgba(0,0,0,0.15);",
+									div {
+											class: "text-lg font-medium px-6 py-3 rounded-lg",
+											style: "background: var(--color-accent); color: white;",
+											"Datei hier ablegen"
 									}
 							}
 					}
