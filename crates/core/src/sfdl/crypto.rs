@@ -198,10 +198,11 @@ mod tests {
 		B64.encode(&result)
 	}
 
-	// Static test vectors generated with Go reference implementation.
-	// These serve as cross-implementation regression tests.
+	// --- SFDL-002: Decrypt container ---
+
+	/// SFDL-002 | BR-SFDL-003: AES-128-CBC decryption with known test vectors.
 	#[test]
-	fn decrypt_known_values() {
+	fn sfdl002_decrypt_known_values() {
 		let vectors = [
 			("test", "ftp.example.com", "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8="),
 			("test", "username", "M+L1kyRobW53b5zxcNjY3WSmr20xEF588T3CW4p3mdc="),
@@ -216,8 +217,9 @@ mod tests {
 		}
 	}
 
+	/// SFDL-002 | BR-SFDL-003: Encrypt then decrypt preserves plaintext.
 	#[test]
-	fn encrypt_decrypt_round_trip() {
+	fn sfdl002_encrypt_decrypt_round_trip() {
 		let test_cases = [
 			("test", "ftp.example.com"),
 			("test", "username"),
@@ -237,14 +239,16 @@ mod tests {
 		}
 	}
 
+	/// SFDL-002 | BR-SFDL-003: Empty ciphertext returns empty string.
 	#[test]
-	fn decrypt_empty_string() {
+	fn sfdl002_decrypt_empty_string() {
 		let result = decrypt_string("", "test").unwrap();
 		assert_eq!(result, "");
 	}
 
+	/// SFDL-002 | A2: Wrong password produces wrong output or error.
 	#[test]
-	fn decrypt_wrong_password() {
+	fn sfdl002_decrypt_wrong_password() {
 		let ciphertext = "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=";
 		let result = decrypt_string(ciphertext, "wrong_password");
 		// Should either fail or produce garbage (not "ftp.example.com")
@@ -254,21 +258,24 @@ mod tests {
 		}
 	}
 
+	/// SFDL-002 | A2: Invalid Base64 returns error.
 	#[test]
-	fn decrypt_invalid_base64() {
+	fn sfdl002_decrypt_invalid_base64() {
 		let result = decrypt_string("not-valid-base64!!!", "test");
 		assert!(result.is_err());
 	}
 
+	/// SFDL-002 | A2: Too-short ciphertext returns error.
 	#[test]
-	fn decrypt_too_short() {
+	fn sfdl002_decrypt_too_short() {
 		// Valid base64 but too short for AES (< 16 bytes)
 		let result = decrypt_string("AQIDBA==", "test");
 		assert!(result.is_err());
 	}
 
+	/// SFDL-002 | BR-SFDL-004: Correct password validates successfully.
 	#[test]
-	fn validate_password_correct() {
+	fn sfdl002_validate_password_correct() {
 		let container = SfdlContainer {
 			encrypted: true,
 			connection: Connection {
@@ -280,8 +287,9 @@ mod tests {
 		assert!(validate_password(&container, "test"));
 	}
 
+	/// SFDL-002 | BR-SFDL-004: Wrong password fails validation.
 	#[test]
-	fn validate_password_wrong() {
+	fn sfdl002_validate_password_wrong() {
 		let container = SfdlContainer {
 			encrypted: true,
 			connection: Connection {
@@ -293,8 +301,9 @@ mod tests {
 		assert!(!validate_password(&container, "wrong"));
 	}
 
+	/// SFDL-002 | BR-SFDL-004: Unencrypted container always validates.
 	#[test]
-	fn validate_password_unencrypted() {
+	fn sfdl002_validate_password_unencrypted() {
 		let container = SfdlContainer {
 			encrypted: false,
 			..SfdlContainer::default()
@@ -302,8 +311,9 @@ mod tests {
 		assert!(validate_password(&container, "anything"));
 	}
 
+	/// SFDL-002 | Main Success: Auto-password list finds the correct one.
 	#[test]
-	fn try_passwords_finds_correct() {
+	fn sfdl002_try_passwords_finds_correct() {
 		let container = SfdlContainer {
 			encrypted: true,
 			connection: Connection {
@@ -316,8 +326,9 @@ mod tests {
 		assert_eq!(try_passwords(&container, &passwords), Some("test".into()));
 	}
 
+	/// SFDL-002 | A1: No auto-password matches.
 	#[test]
-	fn try_passwords_none_match() {
+	fn sfdl002_try_passwords_none_match() {
 		let container = SfdlContainer {
 			encrypted: true,
 			connection: Connection {
@@ -330,10 +341,11 @@ mod tests {
 		assert_eq!(try_passwords(&container, &passwords), None);
 	}
 
-	// --- AT-34: Encryption round-trip tests ---
+	// --- CR-004: Encrypt container ---
 
+	/// CR-004 | Main Success: Public encrypt/decrypt round-trip.
 	#[test]
-	fn public_encrypt_decrypt_round_trip() {
+	fn cr004_encrypt_decrypt_round_trip() {
 		let cases = [("test", "ftp.example.com"), ("test", "username"), ("S€cr3t!", "Ünïcödé-Téxt"), ("pw", "")];
 		for (password, plaintext) in cases {
 			let encrypted = encrypt_string(plaintext, password);
@@ -346,8 +358,9 @@ mod tests {
 		}
 	}
 
+	/// CR-004 | BR: Random IV produces different ciphertexts.
 	#[test]
-	fn encrypt_string_random_iv_produces_different_ciphertexts() {
+	fn cr004_encrypt_random_iv_different_ciphertexts() {
 		let a = encrypt_string("hello", "test");
 		let b = encrypt_string("hello", "test");
 		assert_ne!(a, b, "Two encryptions should produce different ciphertexts due to random IV");
@@ -356,8 +369,9 @@ mod tests {
 		assert_eq!(decrypt_string(&b, "test").unwrap(), "hello");
 	}
 
+	/// CR-004 | Main Success: Full container encrypt/decrypt round-trip.
 	#[test]
-	fn encrypt_container_round_trip() {
+	fn cr004_encrypt_container_round_trip() {
 		use crate::sfdl::models::{BulkFolder, FileItem, Package};
 
 		let mut container = SfdlContainer {
@@ -415,8 +429,9 @@ mod tests {
 		assert_eq!(container.packages[0].bulk_folder_list[0].bulk_folder_path, orig_bulk_path);
 	}
 
+	/// CR-004 | BR: Already encrypted container is a no-op.
 	#[test]
-	fn encrypt_container_already_encrypted_is_noop() {
+	fn cr004_encrypt_already_encrypted_is_noop() {
 		let mut container = SfdlContainer {
 			encrypted: true,
 			description: "already-encrypted-data".into(),
