@@ -1,4 +1,5 @@
 mod components;
+pub mod icons;
 mod state;
 mod views;
 
