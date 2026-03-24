@@ -27,7 +27,7 @@ pub fn run(args: &SfdlArgs, password_list: &[String], json: bool) {
 	}
 }
 
-fn classify_exit_code(error: &str) -> i32 {
+pub fn classify_exit_code(error: &str) -> i32 {
 	if error.contains("Cannot read file") || error.contains("No such file") {
 		EXIT_FILE_ERROR
 	} else if error.contains("Invalid password") {

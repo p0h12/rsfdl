@@ -185,6 +185,104 @@ fn list_encrypted_v3_with_password() {
 		.stdout(predicate::str::contains("movie.part2.rar"));
 }
 
+/// CLI-002 | BR-CLI-002-002: Summary shows excluded count.
+#[test]
+fn list_shows_excluded_count() {
+	cmd()
+		.args(["list", &fixture("unencrypted_v3.sfdl")])
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("0 excluded"));
+}
+
+/// CLI-002 | A3: --exclude adds patterns, excluded files hidden by default.
+#[test]
+fn list_exclude_hides_files() {
+	cmd()
+		.args(["list", &fixture("unencrypted_v3.sfdl"), "--exclude", "*.part2.*"])
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("movie.part1.rar"))
+		.stdout(predicate::str::contains("1 files"))
+		.stdout(predicate::str::contains("1 excluded"));
+}
+
+/// CLI-002 | BR-CLI-002-001: --show-excluded marks excluded files.
+#[test]
+fn list_show_excluded() {
+	cmd()
+		.args(["list", &fixture("unencrypted_v3.sfdl"), "--exclude", "*.part2.*", "--show-excluded"])
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("movie.part2.rar"))
+		.stdout(predicate::str::contains("[excluded]"));
+}
+
+/// CLI-002 | A3: --no-exclude disables all patterns.
+#[test]
+fn list_no_exclude() {
+	// Even with --exclude, --no-exclude disables everything
+	cmd()
+		.args(["list", &fixture("unencrypted_v3.sfdl"), "--exclude", "*.rar", "--no-exclude"])
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("2 files"))
+		.stdout(predicate::str::contains("0 excluded"));
+}
+
+/// CLI-002 | BR-CLI-001-001: --json produces valid JSON with summary.
+#[test]
+fn list_json_output() {
+	let output = cmd()
+		.args(["list", &fixture("unencrypted_v3.sfdl"), "--json"])
+		.assert()
+		.success()
+		.get_output()
+		.stdout
+		.clone();
+
+	let json: serde_json::Value = serde_json::from_slice(&output).expect("stdout should be valid JSON");
+	assert_eq!(json["packages"][0]["name"], "Package1");
+	assert_eq!(json["packages"][0]["files"][0]["filename"], "movie.part1.rar");
+	assert_eq!(json["summary"]["total_files"], 2);
+	assert_eq!(json["summary"]["excluded_files"], 0);
+}
+
+/// CLI-002 | --json with --exclude shows excluded flag.
+#[test]
+fn list_json_with_exclude() {
+	let output = cmd()
+		.args(["list", &fixture("unencrypted_v3.sfdl"), "--json", "--exclude", "*.part2.*"])
+		.assert()
+		.success()
+		.get_output()
+		.stdout
+		.clone();
+
+	let json: serde_json::Value = serde_json::from_slice(&output).expect("stdout should be valid JSON");
+	assert_eq!(json["summary"]["total_files"], 2);
+	assert_eq!(json["summary"]["selected_files"], 1);
+	assert_eq!(json["summary"]["excluded_files"], 1);
+
+	// Check excluded file has pattern
+	let files = json["packages"][0]["files"].as_array().unwrap();
+	let excluded_file = files.iter().find(|f| f["excluded"] == true).unwrap();
+	assert!(excluded_file["exclude_pattern"].is_string());
+}
+
+/// CLI-002 | list --help shows all new flags.
+#[test]
+fn list_help_shows_flags() {
+	cmd()
+		.args(["list", "--help"])
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("--json"))
+		.stdout(predicate::str::contains("--exclude"))
+		.stdout(predicate::str::contains("--no-exclude"))
+		.stdout(predicate::str::contains("--show-excluded"));
+}
+
 // --- AT-25: CLI download --exclude flag exists ---
 
 #[test]

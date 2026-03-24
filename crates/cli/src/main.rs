@@ -27,6 +27,18 @@ enum Commands {
 		/// Resolve bulk folders via FTP connection
 		#[arg(short, long)]
 		resolve: bool,
+		/// Output as JSON
+		#[arg(long)]
+		json: bool,
+		/// Exclude files matching glob pattern (can be repeated)
+		#[arg(long)]
+		exclude: Vec<String>,
+		/// Disable all exclusion patterns
+		#[arg(long)]
+		no_exclude: bool,
+		/// Show excluded files (marked with [excluded])
+		#[arg(long)]
+		show_excluded: bool,
 	},
 	/// Download files from SFDL container
 	Download {
@@ -79,9 +91,9 @@ async fn main() {
 			let passwords = load_password_file(args.password_file.as_deref());
 			commands::info::run(&args, &passwords, json);
 		}
-		Commands::List { args, resolve } => {
+		Commands::List { args, resolve, json, exclude, no_exclude, show_excluded } => {
 			let passwords = load_password_file(args.password_file.as_deref());
-			commands::list::run(&args, &passwords, resolve).await;
+			commands::list::run(&args, &passwords, resolve, json, &exclude, no_exclude, show_excluded).await;
 		}
 		Commands::Download { args, dest, threads, exclude } => {
 			let passwords = load_password_file(args.password_file.as_deref());
