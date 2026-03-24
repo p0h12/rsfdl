@@ -98,6 +98,7 @@ impl FtpClient {
 
 	/// Download a file with streaming, resume, progress reporting, cancellation, and throttling.
 	/// Returns total bytes written (including resume offset).
+	#[allow(clippy::too_many_arguments)]
 	pub async fn download_file(
 		&mut self,
 		remote_path: &str,
