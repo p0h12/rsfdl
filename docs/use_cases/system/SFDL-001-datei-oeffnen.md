@@ -54,13 +54,13 @@
 
 Numerische ContainerVersion-Werte (Quelle: SFDL.NET Referenzimplementierung):
 
-| ContainerVersion | SFDL Version | Verhalten |
-|------------------|-------------|-----------|
-| 0 | ungueltig | Fehler: „nicht kompatibel" |
-| 1–5 | v1 | Fehler: „nicht mehr unterstuetzt" |
-| 6–9 | v2 (legacy) | Wird intern zu v3 konvertiert |
-| **10** | **v3** | Aktuelles Format, direkt parsen |
-| >10 | ungueltig | Fehler: „nicht kompatibel" |
+| ContainerVersion | SFDL Version | Verhalten                         |
+|------------------|--------------|-----------------------------------|
+| 0                | ungueltig    | Fehler: „nicht kompatibel"        |
+| 1–5              | v1           | Fehler: „nicht mehr unterstuetzt" |
+| 6–9              | v2 (legacy)  | Wird intern zu v3 konvertiert     |
+| **10**           | **v3**       | Aktuelles Format, direkt parsen   |
+| >10              | ungueltig    | Fehler: „nicht kompatibel"        |
 
 - v3 hat Vorrang: Enthaelt eine Datei sowohl v2- als auch v3-Marker, wird v3 verwendet.
 - Die Versionserkennung basiert auf dem XML-Element-Namen (`<ContainerVersion>` vs `<SFDLFileVersion>`) und dem numerischen Wert.

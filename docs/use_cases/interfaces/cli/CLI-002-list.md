@@ -91,19 +91,19 @@ Gruppiert nach Paketen, pro Datei eine Zeile mit Dateiname und Grösse. Bei `--s
 
 JSON-Objekt auf stdout:
 
-| Feld                    | Typ    | Beschreibung                           |
-|-------------------------|--------|----------------------------------------|
-| packages[].name         | string | Paketname                              |
-| packages[].files[]      | array  | Datei-Einträge                         |
-| .files[].filename       | string | Dateiname                              |
-| .files[].size_bytes     | number | Dateigrösse in Bytes                   |
-| .files[].excluded       | boolean| Ob durch Ausschlussmuster ausgeschlossen |
-| .files[].exclude_pattern| string | Das passende Muster (nur wenn excluded)|
-| summary.total_files     | number | Gesamtanzahl Dateien                   |
-| summary.selected_files  | number | Anzahl nicht-ausgeschlossene Dateien   |
-| summary.excluded_files  | number | Anzahl ausgeschlossene Dateien         |
-| summary.total_bytes     | number | Gesamtgrösse in Bytes                  |
-| summary.selected_bytes  | number | Grösse der nicht-ausgeschlossenen Dateien |
+| Feld                     | Typ     | Beschreibung                              |
+|--------------------------|---------|-------------------------------------------|
+| packages[].name          | string  | Paketname                                 |
+| packages[].files[]       | array   | Datei-Einträge                            |
+| .files[].filename        | string  | Dateiname                                 |
+| .files[].size_bytes      | number  | Dateigrösse in Bytes                      |
+| .files[].excluded        | boolean | Ob durch Ausschlussmuster ausgeschlossen  |
+| .files[].exclude_pattern | string  | Das passende Muster (nur wenn excluded)   |
+| summary.total_files      | number  | Gesamtanzahl Dateien                      |
+| summary.selected_files   | number  | Anzahl nicht-ausgeschlossene Dateien      |
+| summary.excluded_files   | number  | Anzahl ausgeschlossene Dateien            |
+| summary.total_bytes      | number  | Gesamtgrösse in Bytes                     |
+| summary.selected_bytes   | number  | Grösse der nicht-ausgeschlossenen Dateien |
 
 ## Exit-Codes
 

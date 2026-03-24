@@ -22,24 +22,24 @@
 
 ## Parameter
 
-| Parameter             | Pflicht | Standard       | Beschreibung                               |
-|-----------------------|---------|----------------|--------------------------------------------|
-| `<datei.sfdl>`        | ja      | —              | Pfad zur SFDL-Datei                        |
-| `--password <pw>`     | nein    | Auto-Liste     | Passwort für verschlüsselte Container      |
-| `--output <dir>`      | nein    | Einstellung    | Zielverzeichnis                            |
-| `--threads <n>`       | nein    | 3              | Max. parallele Downloads                   |
-| `--max-speed <KB/s>`  | nein    | 0 (unbegrenzt) | Bandbreitenbegrenzung                      |
-| `--exclude <pattern>` | nein    | Einstellung    | Zusätzliches Ausschlussmuster (mehrfach)   |
-| `--no-exclude`        | nein    | false          | Alle Ausschlussmuster deaktivieren         |
-| `--retries <n>`       | nein    | 3              | Max. Retry-Versuche                        |
-| `--retry-delay <s>`   | nein    | 10             | Wartezeit zwischen Retries                 |
-| `--strict-disk-check` | nein    | false          | Bei zu wenig Speicherplatz abbrechen       |
-| `--extract`           | nein    | false          | Auto-Extraktion nach Download              |
-| `--delete-archives`   | nein    | false          | Archive nach Extraktion löschen            |
-| `--verify`            | nein    | false          | Hash-Verifikation nach Download            |
-| `--speedreport`       | nein    | false          | Speed-Report auf stdout ausgeben           |
+| Parameter             | Pflicht | Standard       | Beschreibung                                |
+|-----------------------|---------|----------------|---------------------------------------------|
+| `<datei.sfdl>`        | ja      | —              | Pfad zur SFDL-Datei                         |
+| `--password <pw>`     | nein    | Auto-Liste     | Passwort für verschlüsselte Container       |
+| `--output <dir>`      | nein    | Einstellung    | Zielverzeichnis                             |
+| `--threads <n>`       | nein    | 3              | Max. parallele Downloads                    |
+| `--max-speed <KB/s>`  | nein    | 0 (unbegrenzt) | Bandbreitenbegrenzung                       |
+| `--exclude <pattern>` | nein    | Einstellung    | Zusätzliches Ausschlussmuster (mehrfach)    |
+| `--no-exclude`        | nein    | false          | Alle Ausschlussmuster deaktivieren          |
+| `--retries <n>`       | nein    | 3              | Max. Retry-Versuche                         |
+| `--retry-delay <s>`   | nein    | 10             | Wartezeit zwischen Retries                  |
+| `--strict-disk-check` | nein    | false          | Bei zu wenig Speicherplatz abbrechen        |
+| `--extract`           | nein    | false          | Auto-Extraktion nach Download               |
+| `--delete-archives`   | nein    | false          | Archive nach Extraktion löschen             |
+| `--verify`            | nein    | false          | Hash-Verifikation nach Download             |
+| `--speedreport`       | nein    | false          | Speed-Report auf stdout ausgeben            |
 | `--json`              | nein    | false          | Progress und Ergebnis als JSON (-> CLI-004) |
-| `--quiet`             | nein    | false          | Keine Fortschrittsanzeige, nur Ergebnis    |
+| `--quiet`             | nein    | false          | Keine Fortschrittsanzeige, nur Ergebnis     |
 
 ## Main Success Scenario
 

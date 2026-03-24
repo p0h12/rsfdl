@@ -78,26 +78,26 @@
 
 **stdout (Ergebnis-Objekt):**
 
-| Feld             | Typ    | Beschreibung                          |
-|------------------|--------|---------------------------------------|
-| status           | string | "success", "partial", "failed"        |
-| completed        | number | Anzahl erfolgreich heruntergeladener Dateien |
-| failed           | number | Anzahl fehlgeschlagener Dateien       |
-| skipped          | number | Anzahl übersprungener Dateien         |
-| total_bytes      | number | Gesamtgrösse in Bytes                 |
-| duration_seconds | number | Dauer in Sekunden                     |
-| avg_speed_bps    | number | Durchschnittsgeschwindigkeit in Bytes/s |
+| Feld             | Typ    | Beschreibung                                     |
+|------------------|--------|--------------------------------------------------|
+| status           | string | "success", "partial", "failed"                   |
+| completed        | number | Anzahl erfolgreich heruntergeladener Dateien     |
+| failed           | number | Anzahl fehlgeschlagener Dateien                  |
+| skipped          | number | Anzahl übersprungener Dateien                    |
+| total_bytes      | number | Gesamtgrösse in Bytes                            |
+| duration_seconds | number | Dauer in Sekunden                                |
+| avg_speed_bps    | number | Durchschnittsgeschwindigkeit in Bytes/s          |
 | failures[]       | array  | Liste der Fehler (filename, error_type, retries) |
 
 **stderr (Progress-Events als JSON-Lines, ein Objekt pro Zeile):**
 
-| Event-Typ        | Felder                                             |
-|------------------|----------------------------------------------------|
-| task_started     | filename, bytes_total                              |
-| task_progress    | filename, bytes_downloaded, speed_bps              |
-| task_completed   | filename, bytes_total, duration_seconds            |
-| task_failed      | filename, error_type, retry                        |
-| session_completed| status, completed, failed                          |
+| Event-Typ         | Felder                                  |
+|-------------------|-----------------------------------------|
+| task_started      | filename, bytes_total                   |
+| task_progress     | filename, bytes_downloaded, speed_bps   |
+| task_completed    | filename, bytes_total, duration_seconds |
+| task_failed       | filename, error_type, retry             |
+| session_completed | status, completed, failed               |
 
 ### BR-CLI-004-004: Logging
 

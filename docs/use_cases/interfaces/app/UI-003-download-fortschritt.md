@@ -93,6 +93,7 @@
 ### BR-UI-003-002: Sortierung
 
 Datei-Einträge werden nach Status sortiert:
+
 1. Downloading (aktiv)
 2. Pending
 3. Completed
@@ -127,12 +128,12 @@ Datei-Einträge werden nach Status sortiert:
 
 ## Zustandsübergänge
 
-| Event                   | UI-Reaktion                                        |
-|-------------------------|----------------------------------------------------|
-| ProgressEvent::Started  | Neuer Eintrag in der Dateiliste                    |
+| Event                       | UI-Reaktion                                        |
+|-----------------------------|----------------------------------------------------|
+| ProgressEvent::Started      | Neuer Eintrag in der Dateiliste                    |
 | ProgressEvent::BytesWritten | Fortschrittsbalken + Geschwindigkeit aktualisieren |
-| ProgressEvent::Completed | Status → Completed, Icon/Farbe wechseln           |
-| ProgressEvent::Failed   | Status → Failed, Fehlertext anzeigen               |
-| ProgressEvent::Cancelled | Status → Cancelled                                |
-| ProgressEvent::Skipped  | Status → Skipped                                   |
-| ProgressEvent::AllDone  | Phase → Done, Zusammenfassung anzeigen             |
+| ProgressEvent::Completed    | Status → Completed, Icon/Farbe wechseln            |
+| ProgressEvent::Failed       | Status → Failed, Fehlertext anzeigen               |
+| ProgressEvent::Cancelled    | Status → Cancelled                                 |
+| ProgressEvent::Skipped      | Status → Skipped                                   |
+| ProgressEvent::AllDone      | Phase → Done, Zusammenfassung anzeigen             |

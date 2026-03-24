@@ -112,20 +112,20 @@
 
 ### BR-CFG-002: Standardwerte
 
-| Feld                         | Standardwert                                    |
-|------------------------------|-------------------------------------------------|
-| download_directory           | ~/Downloads/rsfdl                               |
-| max_threads                  | 3                                               |
-| max_speed_kbps               | 0                                               |
-| max_retries                  | 3                                               |
-| retry_delay_seconds          | 10                                              |
-| auto_extract                 | false                                           |
-| delete_archives_after_extract| false                                           |
-| strict_disk_check            | false                                           |
-| ftp_timeout_seconds          | 30                                              |
-| exclusion_patterns           | ["*.nfo", "*.jpg", "*.png", "*.txt", "*sample*"]|
-| auto_passwords               | []                                              |
-| speedreport_template         | ""                                              |
+| Feld                          | Standardwert                                     |
+|-------------------------------|--------------------------------------------------|
+| download_directory            | ~/Downloads/rsfdl                                |
+| max_threads                   | 3                                                |
+| max_speed_kbps                | 0                                                |
+| max_retries                   | 3                                                |
+| retry_delay_seconds           | 10                                               |
+| auto_extract                  | false                                            |
+| delete_archives_after_extract | false                                            |
+| strict_disk_check             | false                                            |
+| ftp_timeout_seconds           | 30                                               |
+| exclusion_patterns            | ["*.nfo", "*.jpg", "*.png", "*.txt", "*sample*"] |
+| auto_passwords                | []                                               |
+| speedreport_template          | ""                                               |
 
 ### BR-CFG-003: Validierung
 

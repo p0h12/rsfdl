@@ -99,31 +99,31 @@ Standard-Ausgabe als key-value-Text. Mit `--json` (geplant): JSON-Objekt auf std
 
 Key-value-Paare auf stdout, eines pro Zeile:
 
-| Feld           | Beschreibung                                          |
-|----------------|-------------------------------------------------------|
-| Container      | Beschreibung / Release-Name                           |
-| Uploader       | Uploader-Name                                         |
-| Host           | Hostname:Port (Protokoll)                             |
-| Pakete         | Anzahl Pakete                                         |
-| Dateien        | Anzahl Dateien                                        |
-| Grösse         | Gesamtgrösse (menschenlesbar)                         |
-| Verschlüsselt  | ja/nein, ggf. mit Hinweis auf Auto-Passwort-Entschlüsselung |
+| Feld          | Beschreibung                                                |
+|---------------|-------------------------------------------------------------|
+| Container     | Beschreibung / Release-Name                                 |
+| Uploader      | Uploader-Name                                               |
+| Host          | Hostname:Port (Protokoll)                                   |
+| Pakete        | Anzahl Pakete                                               |
+| Dateien       | Anzahl Dateien                                              |
+| Grösse        | Gesamtgrösse (menschenlesbar)                               |
+| Verschlüsselt | ja/nein, ggf. mit Hinweis auf Auto-Passwort-Entschlüsselung |
 
 ## Ausgabe (JSON)
 
 JSON-Objekt auf stdout mit folgenden Feldern:
 
-| Feld         | Typ     | Beschreibung                   |
-|--------------|---------|--------------------------------|
-| description  | string  | Beschreibung / Release-Name    |
-| uploader     | string  | Uploader-Name                  |
-| host         | string  | FTP-Hostname                   |
-| port         | number  | FTP-Port                       |
-| protocol     | string  | Protokoll (z.B. "FTP")         |
-| encrypted    | boolean | Ob der Container verschlüsselt war |
-| packages     | number  | Anzahl Pakete                  |
-| total_files  | number  | Anzahl Dateien                 |
-| total_bytes  | number  | Gesamtgrösse in Bytes          |
+| Feld        | Typ     | Beschreibung                       |
+|-------------|---------|------------------------------------|
+| description | string  | Beschreibung / Release-Name        |
+| uploader    | string  | Uploader-Name                      |
+| host        | string  | FTP-Hostname                       |
+| port        | number  | FTP-Port                           |
+| protocol    | string  | Protokoll (z.B. "FTP")             |
+| encrypted   | boolean | Ob der Container verschlüsselt war |
+| packages    | number  | Anzahl Pakete                      |
+| total_files | number  | Anzahl Dateien                     |
+| total_bytes | number  | Gesamtgrösse in Bytes              |
 
 ## Exit-Codes
 

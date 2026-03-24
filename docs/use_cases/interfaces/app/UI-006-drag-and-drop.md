@@ -83,9 +83,9 @@
 
 ### BR-UI-006-003: Visuelles Feedback
 
-| Phase      | UI-Feedback                           |
-|------------|---------------------------------------|
-| Drag-Enter | Drop-Indikator sichtbar               |
-| Drag-Over  | Drop-Indikator bleibt aktiv           |
-| Drag-Leave | Drop-Indikator verschwindet           |
-| Drop       | Datei wird verarbeitet                |
+| Phase      | UI-Feedback                 |
+|------------|-----------------------------|
+| Drag-Enter | Drop-Indikator sichtbar     |
+| Drag-Over  | Drop-Indikator bleibt aktiv |
+| Drag-Leave | Drop-Indikator verschwindet |
+| Drop       | Datei wird verarbeitet      |

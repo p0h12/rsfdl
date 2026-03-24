@@ -108,11 +108,11 @@
 
 ## Syntax
 
-| Subcommand     | Optionen                | Beschreibung                    |
-|----------------|-------------------------|---------------------------------|
-| `config show`  | `[--config-file <path>]`| Einstellungen anzeigen          |
-| `config edit`  | `[--config-file <path>]`| Konfigurationsdatei im Editor öffnen |
-| `config path`  | —                       | Pfad zur Konfigurationsdatei ausgeben |
+| Subcommand    | Optionen                 | Beschreibung                          |
+|---------------|--------------------------|---------------------------------------|
+| `config show` | `[--config-file <path>]` | Einstellungen anzeigen                |
+| `config edit` | `[--config-file <path>]` | Konfigurationsdatei im Editor öffnen  |
+| `config path` | —                        | Pfad zur Konfigurationsdatei ausgeben |
 
 ## Exit-Codes
 

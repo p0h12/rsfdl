@@ -18,9 +18,9 @@
 ## Main Success Scenario
 
 1. System zeigt ein farbkodiertes Summary-Banner:
-   - Grün: Alle Dateien erfolgreich.
-   - Gelb: Abbrüche vorhanden.
-   - Rot: Fehler vorhanden.
+    - Grün: Alle Dateien erfolgreich.
+    - Gelb: Abbrüche vorhanden.
+    - Rot: Fehler vorhanden.
 2. System zeigt Statistiken: Total, Completed, Skipped, Failed, Cancelled.
 3. Benutzer sieht die detaillierte Dateiliste im Progress-Panel (-> UI-003) mit Endstatus pro Datei.
 
@@ -59,11 +59,11 @@
 
 ### BR-UI-004-001: Banner-Farbkodierung
 
-| Bedingung | Farbe | CSS-Klasse |
-|-----------|-------|------------|
-| `failed > 0` | Rot | `bg-red-100 text-red-800` |
-| `cancelled > 0` (kein Failure) | Gelb | `bg-yellow-100 text-yellow-800` |
-| Sonst | Grün | `bg-green-100 text-green-800` |
+| Bedingung                      | Farbe | CSS-Klasse                      |
+|--------------------------------|-------|---------------------------------|
+| `failed > 0`                   | Rot   | `bg-red-100 text-red-800`       |
+| `cancelled > 0` (kein Failure) | Gelb  | `bg-yellow-100 text-yellow-800` |
+| Sonst                          | Grün  | `bg-green-100 text-green-800`   |
 
 ### BR-UI-004-002: Statistik-Format
 
