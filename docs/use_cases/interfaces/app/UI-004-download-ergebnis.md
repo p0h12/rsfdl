@@ -7,7 +7,6 @@
 **Primary Actor:** Benutzer
 **Goal:** Zusammenfassung einer abgeschlossenen Download-Session einsehen.
 **Implements:** POST-001, POST-002, POST-003
-**Interface:** GUI (Dioxus Desktop)
 **Status:** Stable
 
 ## Preconditions

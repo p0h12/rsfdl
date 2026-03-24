@@ -7,7 +7,6 @@
 **Primary Actor:** Benutzer
 **Goal:** SFDL-Container oeffnen und selektierte Dateien herunterladen.
 **Implements:** DL-001 bis DL-008, POST-001, POST-002, POST-003
-**Interface:** CLI (headless)
 **Status:** Stable
 
 ## Preconditions

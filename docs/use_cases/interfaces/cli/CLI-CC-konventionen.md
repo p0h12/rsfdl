@@ -2,7 +2,6 @@
 
 **Spec ID:** CLI-CC
 **Gilt fuer:** Alle CLI-Kommandos (CLI-001 bis CLI-006)
-**Interface:** CLI (headless)
 **Status:** Stable
 
 Dieses Dokument ist kein Use Case. Es definiert Regeln die querschnittlich fuer alle CLI-Befehle gelten.

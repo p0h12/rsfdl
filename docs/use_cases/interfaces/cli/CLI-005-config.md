@@ -6,7 +6,6 @@
 **Use Case Name:** CLI config
 **Primary Actor:** Benutzer
 **Goal:** Einstellungen ueber die Kommandozeile anzeigen, bearbeiten oder den Dateipfad ermitteln.
-**Interface:** CLI (headless)
 **Implementiert:** CFG-001
 **Status:** Stable
 

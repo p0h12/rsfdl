@@ -7,7 +7,6 @@
 **Primary Actor:** Benutzer
 **Goal:** Passwort für einen verschlüsselten SFDL-Container eingeben und den Container entschlüsseln.
 **Implements:** SFDL-002
-**Interface:** GUI (Dioxus Desktop)
 **Status:** Stable
 
 ## Preconditions

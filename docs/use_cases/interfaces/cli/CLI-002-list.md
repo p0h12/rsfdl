@@ -7,7 +7,6 @@
 **Primary Actor:** Benutzer
 **Goal:** Alle Dateien eines SFDL-Containers auflisten, inklusive Ausschluss-Markierungen.
 **Implements:** SFDL-001, SFDL-002, SFDL-003, DL-002
-**Interface:** CLI (headless)
 **Status:** Stable
 
 ## Preconditions

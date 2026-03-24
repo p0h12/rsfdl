@@ -7,7 +7,6 @@
 **Primary Actor:** Benutzer
 **Goal:** Eine SFDL-Datei per Drag-and-Drop auf das App-Fenster ziehen, um sie zu öffnen.
 **Implements:** SFDL-001
-**Interface:** GUI (Dioxus Desktop)
 **Requirements:** FR-13
 **Status:** Stable
 
