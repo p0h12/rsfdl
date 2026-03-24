@@ -11,7 +11,7 @@ pub enum ProgressEvent {
 	/// A file download completed successfully.
 	Completed { item_id: Uuid },
 	/// A file was skipped (already fully downloaded).
-	Skipped { item_id: Uuid, file_name: String },
+	Skipped { item_id: Uuid, file_name: String, total_bytes: u64 },
 	/// A file download failed.
 	Failed { item_id: Uuid, error: String },
 	/// DL-007: A file download will be retried after a delay.

@@ -149,31 +149,25 @@ pub async fn run(
 		let multi = MultiProgress::new();
 		let mut bars: HashMap<Uuid, ProgressBar> = HashMap::new();
 
-		let global_bar = multi.add(ProgressBar::new(0));
+		let global_bar = multi.add(ProgressBar::new(total_bytes));
 		global_bar.set_style(
 			ProgressStyle::with_template("{prefix:.bold} [{bar:40.cyan/dim}] {bytes}/{total_bytes} {binary_bytes_per_sec} ETA {eta}")
 				.unwrap()
 				.progress_chars("=>-"),
 		);
-		global_bar.set_prefix("[0/0 files]");
+		let files_total = file_count as u32;
+		global_bar.set_prefix(format!("[0/{} files]", files_total));
 
 		let file_style = ProgressStyle::with_template("  {prefix:.cyan} [{bar:30.green/dim}] {bytes}/{total_bytes} {bytes_per_sec}")
 			.unwrap()
 			.progress_chars("=>-");
 
-		let mut global_total_bytes: u64 = 0;
 		let mut global_written: u64 = 0;
 		let mut files_done: u32 = 0;
-		let mut files_total: u32 = 0;
 
 		while let Some(event) = rx.recv().await {
 			match event {
 				ProgressEvent::Started { item_id, file_name, total_bytes } => {
-					files_total += 1;
-					global_total_bytes += total_bytes;
-					global_bar.set_length(global_total_bytes);
-					global_bar.set_prefix(format!("[{}/{} files]", files_done, files_total));
-
 					let bar = multi.add(ProgressBar::new(total_bytes));
 					bar.set_style(file_style.clone());
 					bar.set_prefix(truncate_name(&file_name, 30));
@@ -195,9 +189,10 @@ pub async fn run(
 					files_done += 1;
 					global_bar.set_prefix(format!("[{}/{} files]", files_done, files_total));
 				}
-				ProgressEvent::Skipped { file_name, .. } => {
-					files_total += 1;
+				ProgressEvent::Skipped { file_name, total_bytes, .. } => {
 					files_done += 1;
+					global_written += total_bytes;
+					global_bar.set_position(global_written);
 					global_bar.set_prefix(format!("[{}/{} files]", files_done, files_total));
 					eprintln!("  [SKIP] {}", file_name);
 				}

@@ -112,14 +112,14 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 						cs.global_progress.files_done += 1;
 					});
 				}
-				ProgressEvent::Skipped { item_id, file_name, .. } => {
+				ProgressEvent::Skipped { item_id, file_name, total_bytes } => {
 					state.with_container_mut(container_id, |cs| {
 						cs.file_states.insert(
 							item_id,
 							FileDownloadState {
 								file_name,
-								total_bytes: 0,
-								bytes_written: 0,
+								total_bytes,
+								bytes_written: total_bytes,
 								status: FileStatus::Skipped,
 								error: None,
 							},

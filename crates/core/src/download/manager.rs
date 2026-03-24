@@ -116,6 +116,7 @@ impl DownloadManager {
 						let _ = progress_tx.send(ProgressEvent::Skipped {
 							item_id: item.id,
 							file_name: item.file_item.file_name.clone(),
+							total_bytes: item.file_item.file_size,
 						});
 						skipped += 1;
 					}
@@ -247,6 +248,7 @@ impl DownloadManager {
 								let _ = tx.send(ProgressEvent::Skipped {
 									item_id: item.id,
 									file_name: item.file_item.file_name.clone(),
+									total_bytes: item.file_item.file_size,
 								});
 								return DownloadStatus::Skipped;
 							}
