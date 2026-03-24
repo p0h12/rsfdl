@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Einen verschlüsselten SFDL-Container entschlüsseln, sodass alle Klartextwerte verfügbar sind.
 **Requirements:** FR-02
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

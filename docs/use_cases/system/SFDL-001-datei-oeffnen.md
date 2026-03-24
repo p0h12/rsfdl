@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Eine `.sfdl`-Datei einlesen, parsen und als aufgelösten Container zurückgeben.
 **Requirements:** FR-01
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

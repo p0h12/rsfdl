@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** SFDL-Container öffnen, Dateiinhalt einsehen, Dateien auswählen und Download starten/abbrechen.
 **Implements:** SFDL-001, SFDL-003, DL-001
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

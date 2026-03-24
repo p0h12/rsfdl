@@ -7,7 +7,7 @@
 **Primary Actor:** System (automatisch nach Download)
 **Goal:** Heruntergeladene Archive automatisch im Zielverzeichnis entpacken.
 **Requirements:** FR-16
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

@@ -7,7 +7,7 @@
 **Primary Actor:** System (automatisch nach SFDL-001)
 **Goal:** Alle Pakete eines Containers in eine vollständige Liste von FileEntries mit Pfaden und Grössen auflösen.
 **Requirements:** FR-03
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

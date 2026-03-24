@@ -7,7 +7,7 @@
 **Primary Actor:** System
 **Goal:** Einen vollständigen Container-Objekt in einen gültigen SFDL v3 XML-String serialisieren.
 **Requirements:** FR-24
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

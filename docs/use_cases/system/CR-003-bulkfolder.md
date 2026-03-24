@@ -7,7 +7,7 @@
 **Primary Actor:** System
 **Goal:** Einen Container mit BulkFolder-Einträgen erstellen, ohne eine FTP-Verbindung herzustellen.
 **Requirements:** FR-22
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

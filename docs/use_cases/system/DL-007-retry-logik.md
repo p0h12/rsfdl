@@ -7,7 +7,7 @@
 **Primary Actor:** System (automatisch bei Fehler)
 **Goal:** Fehlgeschlagene Downloads mit retry-fähigen Fehlern automatisch erneut versuchen.
 **Requirements:** FR-10
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

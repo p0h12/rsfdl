@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer (Konfiguration), System (Durchsetzung)
 **Goal:** Die Download-Geschwindigkeit auf ein konfiguriertes Limit begrenzen.
 **Requirements:** FR-15
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

@@ -8,7 +8,7 @@
 **Goal:** Eine SFDL-Datei per Drag-and-Drop auf das App-Fenster ziehen, um sie zu öffnen.
 **Implements:** SFDL-001
 **Requirements:** FR-13
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

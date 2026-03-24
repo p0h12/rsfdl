@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** App-Einstellungen in einer eigenen View einsehen, bearbeiten und speichern.
 **Implements:** CFG-001
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

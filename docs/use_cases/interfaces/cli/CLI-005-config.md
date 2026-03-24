@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Einstellungen über die Kommandozeile anzeigen, bearbeiten oder den Dateipfad ermitteln.
 **Implementiert:** CFG-001
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

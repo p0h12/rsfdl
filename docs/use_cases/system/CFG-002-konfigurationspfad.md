@@ -6,7 +6,7 @@
 **Use Case Name:** Konfigurationspfad ermitteln
 **Primary Actor:** System (automatisch)
 **Goal:** Den korrekten Pfad zur Konfigurationsdatei bestimmen.
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

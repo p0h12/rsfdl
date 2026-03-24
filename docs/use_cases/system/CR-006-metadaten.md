@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Optionale Metadaten (Beschreibung, Uploader, Max-Threads) in einem Container setzen.
 **Requirements:** FR-25
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

@@ -7,7 +7,7 @@
 **Primary Actor:** System (automatisch)
 **Goal:** FileEntries anhand konfigurierter Glob-Muster als ausgeschlossen markieren.
 **Requirements:** FR-17
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

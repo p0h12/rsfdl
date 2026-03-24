@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Aus FTP-Verbindungsdaten und Pfaden eine gültige `.sfdl`-Datei erstellen.
 **Requirements:** FR-20
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

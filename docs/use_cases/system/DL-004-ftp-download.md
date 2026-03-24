@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Alle selektierten Dateien parallel über FTP herunterladen und im Zielverzeichnis speichern.
 **Requirements:** FR-05, FR-08
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

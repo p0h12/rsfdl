@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Applikations-Einstellungen laden, ändern und zurücksetzen, damit sie über Neustarts hinweg erhalten bleiben.
 **Requirements:** FR-11, C-03
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

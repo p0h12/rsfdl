@@ -7,7 +7,7 @@
 **Primary Actor:** System (automatisch innerhalb DL-004)
 **Goal:** Einen teilweise heruntergeladenen Download ab dem letzten Byte fortsetzen.
 **Requirements:** FR-06
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

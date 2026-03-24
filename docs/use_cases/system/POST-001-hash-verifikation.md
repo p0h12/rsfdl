@@ -7,7 +7,7 @@
 **Primary Actor:** System (automatisch nach Download)
 **Goal:** Integrität heruntergeladener Dateien anhand von Hash-Werten prüfen.
 **Requirements:** FR-09
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

@@ -7,7 +7,7 @@
 **Primary Actor:** System
 **Goal:** Alle Dateien eines FTP-Verzeichnisses rekursiv als FileItems erfassen, um eine FileList für den Container zu erstellen.
 **Requirements:** FR-21
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

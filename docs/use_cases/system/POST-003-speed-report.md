@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Nach Abschluss einer Download-Session einen formatierten BBCode-Report generieren.
 **Requirements:** FR-18
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Zusammenfassung einer abgeschlossenen Download-Session einsehen.
 **Implements:** POST-001, POST-002, POST-003
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

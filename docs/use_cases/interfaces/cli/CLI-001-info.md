@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Metadaten eines SFDL-Containers anzeigen, ohne einen Download zu starten.
 **Implements:** SFDL-001, SFDL-002, SFDL-003
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

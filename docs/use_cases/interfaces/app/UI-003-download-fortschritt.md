@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Echtzeit-Fortschritt einer aktiven Download-Session verfolgen und einzelne/alle Downloads abbrechen.
 **Implements:** DL-004, DL-005, DL-006, DL-007, DL-008
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

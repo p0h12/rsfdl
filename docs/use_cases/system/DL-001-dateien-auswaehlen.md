@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Aus einem geöffneten SFDL-Container die gewünschten Dateien für den Download auswählen.
 **Requirements:** FR-04, FR-17
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

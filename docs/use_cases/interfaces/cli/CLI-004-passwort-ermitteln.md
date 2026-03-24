@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Das Passwort für einen verschlüsselten Container ermitteln und den Container entschlüsseln.
 **Implements:** SFDL-002
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 

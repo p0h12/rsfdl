@@ -7,7 +7,7 @@
 **Primary Actor:** Benutzer
 **Goal:** Einen laufenden Download (einzelne Datei oder alle) sauber abbrechen und teilweise heruntergeladene Dateien erhalten.
 **Requirements:** FR-07
-**Status:** Stable
+**Status:** Tested
 
 ## Preconditions
 
