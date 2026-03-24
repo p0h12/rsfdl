@@ -30,6 +30,13 @@ pub fn extract_zip(zip_file: &Path, dest_dir: &Path, mut on_progress: impl FnMut
 			if let Some(parent) = out_path.parent() {
 				fs::create_dir_all(parent)?;
 			}
+			// BR-POST-004: Do not overwrite existing files
+			if out_path.exists() {
+				tracing::debug!(path = %out_path.display(), "Skipping existing file");
+				let percent = ((i + 1) as f64 / total as f64 * 100.0) as u8;
+				on_progress(percent);
+				continue;
+			}
 			let mut out_file = fs::File::create(&out_path)?;
 			io::copy(&mut entry, &mut out_file)?;
 		}
@@ -169,9 +176,9 @@ mod tests {
 	// BR-004: Overwrite behavior
 	// =================================================================
 
-	/// BR-004: Existing files are overwritten during extraction
+	/// POST-002 | BR-POST-004: Existing files are NOT overwritten during extraction.
 	#[test]
-	fn extract_zip_overwrites_existing_files() {
+	fn post002_extract_zip_skips_existing_files() {
 		let dir = TempDir::new().unwrap();
 		let zip_path = create_test_zip(dir.path(), "overwrite.zip", &[("file.txt", b"New content")]);
 
@@ -182,6 +189,6 @@ mod tests {
 		extract_zip(&zip_path, dest.path(), |_| {}).unwrap();
 
 		let content = fs::read_to_string(dest.path().join("file.txt")).unwrap();
-		assert_eq!(content, "New content");
+		assert_eq!(content, "Old content", "existing file must not be overwritten");
 	}
 }

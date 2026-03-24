@@ -54,6 +54,16 @@ pub async fn extract_archives(directory: &Path, delete_after: bool, progress_tx:
 			archive_name: archive_name.clone(),
 		});
 
+		// A3: Check multi-part completeness before extracting
+		if let Err(msg) = detector::check_multipart_complete(archive) {
+			failed += 1;
+			let _ = progress_tx.send(ProgressEvent::ExtractionFailed {
+				archive_path: archive.main_file.clone(),
+				error: msg,
+			});
+			continue;
+		}
+
 		let dest_dir = archive.main_file.parent().unwrap_or(directory).to_path_buf();
 
 		let archive_path = archive.main_file.clone();
@@ -368,5 +378,90 @@ mod tests {
 		assert_eq!(result.extracted, 2);
 		assert!(dir.path().join("a.txt").exists());
 		assert!(dir.path().join("b.txt").exists());
+	}
+
+	// =================================================================
+	// POST-002: Recursive extraction in subdirectories
+	// =================================================================
+
+	/// POST-002 | Main Success: ZIP in subdirectory is extracted.
+	#[tokio::test]
+	async fn post002_extract_archives_in_subdirectory() {
+		let dir = TempDir::new().unwrap();
+		let sub = dir.path().join("pkg").join("release");
+		std::fs::create_dir_all(&sub).unwrap();
+		create_test_zip(&sub, "files.zip", &[("data.txt", b"Subdirectory content")]);
+
+		let (tx, _rx) = mpsc::unbounded_channel();
+		let result = extract_archives(dir.path(), false, &tx).await;
+
+		assert_eq!(result.total_archives, 1);
+		assert_eq!(result.extracted, 1);
+		assert!(sub.join("data.txt").exists());
+	}
+
+	/// POST-002 | BR-POST-004: Existing files not overwritten during extraction.
+	#[tokio::test]
+	async fn post002_extract_archives_no_overwrite() {
+		let dir = TempDir::new().unwrap();
+		create_test_zip(dir.path(), "files.zip", &[("existing.txt", b"New")]);
+		// Pre-create the file
+		fs::write(dir.path().join("existing.txt"), b"Old").unwrap();
+
+		let (tx, _rx) = mpsc::unbounded_channel();
+		let result = extract_archives(dir.path(), false, &tx).await;
+
+		assert_eq!(result.extracted, 1);
+		let content = fs::read_to_string(dir.path().join("existing.txt")).unwrap();
+		assert_eq!(content, "Old", "existing file must not be overwritten");
+	}
+
+	/// POST-002 | A3: Incomplete multi-part RAR → fails with descriptive error.
+	#[tokio::test]
+	async fn post002_incomplete_multipart_rar_fails() {
+		let dir = TempDir::new().unwrap();
+		// Create part01 and part03 but skip part02
+		fs::write(dir.path().join("movie.part01.rar"), b"fake").unwrap();
+		fs::write(dir.path().join("movie.part03.rar"), b"fake").unwrap();
+
+		let (tx, mut rx) = mpsc::unbounded_channel();
+		let result = extract_archives(dir.path(), false, &tx).await;
+
+		assert_eq!(result.failed, 1);
+
+		let mut events = Vec::new();
+		while let Ok(evt) = rx.try_recv() {
+			events.push(evt);
+		}
+
+		let failed_event = events.iter().find(|e| matches!(e, ProgressEvent::ExtractionFailed { .. }));
+		assert!(failed_event.is_some(), "should emit ExtractionFailed");
+		if let Some(ProgressEvent::ExtractionFailed { error, .. }) = failed_event {
+			assert!(error.contains("unvollständig"), "error should mention incomplete: {error}");
+		}
+	}
+
+	/// POST-002 | A3: Incomplete multi-part → archive files are preserved.
+	#[tokio::test]
+	async fn post002_incomplete_multipart_preserves_files() {
+		let dir = TempDir::new().unwrap();
+		fs::write(dir.path().join("movie.part01.rar"), b"fake").unwrap();
+		fs::write(dir.path().join("movie.part03.rar"), b"fake").unwrap();
+
+		let (tx, _rx) = mpsc::unbounded_channel();
+		extract_archives(dir.path(), true, &tx).await;
+
+		assert!(dir.path().join("movie.part01.rar").exists(), "part01 should be preserved");
+		assert!(dir.path().join("movie.part03.rar").exists(), "part03 should be preserved");
+	}
+
+	/// POST-002 | BR-POST-005: Feature toggle — extraction only runs when called.
+	/// (auto_extract check is in the caller, not in extract_archives itself)
+	#[tokio::test]
+	async fn post002_feature_toggle_empty_dir_noop() {
+		let dir = TempDir::new().unwrap();
+		let (tx, _rx) = mpsc::unbounded_channel();
+		let result = extract_archives(dir.path(), false, &tx).await;
+		assert_eq!(result.total_archives, 0);
 	}
 }

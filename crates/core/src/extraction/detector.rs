@@ -61,6 +61,55 @@ pub fn is_rar_part(file_name: &str) -> bool {
 	RAR_PART_RE.is_match(file_name)
 }
 
+/// A3: Check whether a multi-part RAR archive has all parts present.
+///
+/// For `.partNN.rar` naming: verifies that parts are contiguous from 1 to max.
+/// Returns `Ok(())` if complete, or `Err(message)` describing missing parts.
+pub fn check_multipart_complete(archive: &DetectedArchive) -> Result<(), String> {
+	if archive.archive_type != ArchiveType::Rar {
+		return Ok(());
+	}
+
+	let mut part_numbers: Vec<u32> = Vec::new();
+	let mut is_multipart = false;
+
+	for part in &archive.all_parts {
+		let name = part.file_name().unwrap_or_default().to_string_lossy().to_string();
+		if let Some(caps) = PART_RAR_RE.captures(&name) {
+			is_multipart = true;
+			if let Ok(num) = caps[1].parse::<u32>() {
+				part_numbers.push(num);
+			}
+		}
+	}
+
+	if !is_multipart || part_numbers.is_empty() {
+		return Ok(()); // standalone .rar, no part numbering to check
+	}
+
+	part_numbers.sort_unstable();
+	let max = *part_numbers.last().unwrap();
+
+	let mut missing = Vec::new();
+	for i in 1..=max {
+		if !part_numbers.contains(&i) {
+			missing.push(i);
+		}
+	}
+
+	if missing.is_empty() {
+		Ok(())
+	} else {
+		let archive_name = archive.main_file.file_name().unwrap_or_default().to_string_lossy();
+		Err(format!(
+			"Archiv unvollständig: {} — Teil(e) {} von {} fehlt",
+			archive_name,
+			missing.iter().map(|n| n.to_string()).collect::<Vec<_>>().join(", "),
+			max
+		))
+	}
+}
+
 /// Extract the base name of a RAR archive for grouping parts.
 /// E.g. "movie.part01.rar" → "movie", "movie.rar" → "movie", "movie.r00" → "movie"
 fn rar_base_name(file_name: &str) -> Option<String> {
@@ -121,21 +170,29 @@ pub fn find_related_rar_parts(main_file: &Path, directory: &Path) -> Vec<PathBuf
 	parts
 }
 
-/// Scan a directory (non-recursively) for archives.
+/// Scan a directory recursively for archives.
 /// Groups multi-part RAR files into a single DetectedArchive.
 pub fn detect_archives(directory: &Path) -> Vec<DetectedArchive> {
-	let entries: Vec<_> = std::fs::read_dir(directory)
-		.ok()
-		.into_iter()
-		.flatten()
-		.filter_map(|e| e.ok())
-		.filter(|e| e.file_type().ok().is_some_and(|ft| ft.is_file()))
-		.collect();
-
 	let mut archives = Vec::new();
+	detect_archives_in_dir(directory, &mut archives);
+	archives
+}
+
+/// Scan a single directory level and recurse into subdirectories.
+fn detect_archives_in_dir(directory: &Path, archives: &mut Vec<DetectedArchive>) {
+	let entries: Vec<_> = std::fs::read_dir(directory).ok().into_iter().flatten().filter_map(|e| e.ok()).collect();
+
+	// Recurse into subdirectories
+	for entry in &entries {
+		if entry.file_type().ok().is_some_and(|ft| ft.is_dir()) {
+			detect_archives_in_dir(&entry.path(), archives);
+		}
+	}
+
+	let files: Vec<_> = entries.iter().filter(|e| e.file_type().ok().is_some_and(|ft| ft.is_file())).collect();
 
 	// ZIP files
-	for entry in &entries {
+	for entry in &files {
 		let name = entry.file_name().to_string_lossy().to_string();
 		if name.to_lowercase().ends_with(".zip") {
 			archives.push(DetectedArchive {
@@ -147,7 +204,7 @@ pub fn detect_archives(directory: &Path) -> Vec<DetectedArchive> {
 	}
 
 	// RAR main files (standalone or first part)
-	for entry in &entries {
+	for entry in &files {
 		let name = entry.file_name().to_string_lossy().to_string();
 		if is_main_rar(&name) {
 			let parts = find_related_rar_parts(&entry.path(), directory);
@@ -158,8 +215,6 @@ pub fn detect_archives(directory: &Path) -> Vec<DetectedArchive> {
 			});
 		}
 	}
-
-	archives
 }
 
 #[cfg(test)]
@@ -458,5 +513,91 @@ mod tests {
 
 		let parts = find_related_rar_parts(&dir.path().join("movie.part01.rar"), dir.path());
 		assert_eq!(parts.len(), 2, "other.rar should not be included");
+	}
+
+	// =================================================================
+	// POST-002: Recursive detection
+	// =================================================================
+
+	/// POST-002 | BR-POST-003: Archives in subdirectories are detected.
+	#[test]
+	fn post002_detect_archives_recursive() {
+		let dir = TempDir::new().unwrap();
+		let sub = dir.path().join("pkg").join("sub");
+		fs::create_dir_all(&sub).unwrap();
+		fs::write(sub.join("files.zip"), b"fake").unwrap();
+		fs::write(dir.path().join("top.zip"), b"fake").unwrap();
+
+		let archives = detect_archives(dir.path());
+		assert_eq!(archives.len(), 2);
+	}
+
+	/// POST-002 | BR-POST-003: Multi-part RAR in subdirectory is grouped correctly.
+	#[test]
+	fn post002_detect_archives_recursive_multipart() {
+		let dir = TempDir::new().unwrap();
+		let sub = dir.path().join("release");
+		fs::create_dir_all(&sub).unwrap();
+		fs::write(sub.join("movie.part01.rar"), b"fake").unwrap();
+		fs::write(sub.join("movie.part02.rar"), b"fake").unwrap();
+
+		let archives = detect_archives(dir.path());
+		let rar_archives: Vec<_> = archives.iter().filter(|a| a.archive_type == ArchiveType::Rar).collect();
+		assert_eq!(rar_archives.len(), 1);
+		assert_eq!(rar_archives[0].all_parts.len(), 2);
+	}
+
+	// =================================================================
+	// POST-002 A3: Incomplete multi-part detection
+	// =================================================================
+
+	/// POST-002 | A3: All parts present → Ok.
+	#[test]
+	fn post002_multipart_complete() {
+		let dir = TempDir::new().unwrap();
+		fs::write(dir.path().join("movie.part01.rar"), b"fake").unwrap();
+		fs::write(dir.path().join("movie.part02.rar"), b"fake").unwrap();
+		fs::write(dir.path().join("movie.part03.rar"), b"fake").unwrap();
+
+		let archives = detect_archives(dir.path());
+		let rar = archives.iter().find(|a| a.archive_type == ArchiveType::Rar).unwrap();
+		assert!(check_multipart_complete(rar).is_ok());
+	}
+
+	/// POST-002 | A3: Missing middle part → Err with descriptive message.
+	#[test]
+	fn post002_multipart_missing_part() {
+		let dir = TempDir::new().unwrap();
+		fs::write(dir.path().join("movie.part01.rar"), b"fake").unwrap();
+		// part02 missing
+		fs::write(dir.path().join("movie.part03.rar"), b"fake").unwrap();
+
+		let archives = detect_archives(dir.path());
+		let rar = archives.iter().find(|a| a.archive_type == ArchiveType::Rar).unwrap();
+		let err = check_multipart_complete(rar).unwrap_err();
+		assert!(err.contains("2"), "should mention missing part 2: {err}");
+		assert!(err.contains("unvollständig"), "should mention incomplete: {err}");
+	}
+
+	/// POST-002 | A3: Standalone .rar (no parts) → Ok.
+	#[test]
+	fn post002_standalone_rar_always_complete() {
+		let archive = DetectedArchive {
+			main_file: PathBuf::from("/tmp/movie.rar"),
+			archive_type: ArchiveType::Rar,
+			all_parts: vec![PathBuf::from("/tmp/movie.rar")],
+		};
+		assert!(check_multipart_complete(&archive).is_ok());
+	}
+
+	/// POST-002 | A3: ZIP archive → always Ok (no multi-part check).
+	#[test]
+	fn post002_zip_always_complete() {
+		let archive = DetectedArchive {
+			main_file: PathBuf::from("/tmp/files.zip"),
+			archive_type: ArchiveType::Zip,
+			all_parts: vec![PathBuf::from("/tmp/files.zip")],
+		};
+		assert!(check_multipart_complete(&archive).is_ok());
 	}
 }

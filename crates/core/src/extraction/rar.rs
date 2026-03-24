@@ -21,7 +21,9 @@ pub fn extract_rar(main_file: &Path, dest_dir: &Path, mut on_progress: impl FnMu
 	let mut extracted = 0u32;
 	while let Some(header) = archive.read_header().map_err(|e| map_unrar_error(&e))? {
 		let entry = header.entry();
-		archive = if entry.is_file() {
+		// BR-POST-004: Do not overwrite existing files
+		let out_path = dest_dir.join(&entry.filename);
+		archive = if entry.is_file() && !out_path.exists() {
 			header.extract_with_base(dest_dir).map_err(|e| map_unrar_error(&e))?
 		} else {
 			header.skip().map_err(|e| map_unrar_error(&e))?
