@@ -141,7 +141,7 @@ pub fn ProgressPanel(container_id: ContainerId) -> Element {
 }
 
 /// BR-UI-008: Sort key for file status ordering.
-fn sort_key(status: FileStatus) -> u8 {
+pub fn sort_key(status: FileStatus) -> u8 {
 	match status {
 		FileStatus::Downloading => 0,
 		FileStatus::Pending => 1,
@@ -153,7 +153,7 @@ fn sort_key(status: FileStatus) -> u8 {
 }
 
 /// UI-003: Status text for a file download entry.
-fn status_text(fs: &FileDownloadState) -> String {
+pub fn status_text(fs: &FileDownloadState) -> String {
 	match fs.status {
 		FileStatus::Downloading => format!("{}/{}", format_bytes(fs.bytes_written), format_bytes(fs.total_bytes)),
 		FileStatus::Completed => "completed".to_string(),
@@ -165,7 +165,7 @@ fn status_text(fs: &FileDownloadState) -> String {
 }
 
 /// UI-003: Status color CSS variable for file status.
-fn status_color(status: FileStatus) -> &'static str {
+pub fn status_color(status: FileStatus) -> &'static str {
 	match status {
 		FileStatus::Downloading => "var(--color-accent)",
 		FileStatus::Completed => "var(--color-success)",
