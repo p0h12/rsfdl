@@ -34,11 +34,12 @@ async fn collect_events(mut rx: mpsc::UnboundedReceiver<ProgressEvent>) -> Vec<P
 }
 
 // ---------------------------------------------------------------------------
-// Tests
+// DL-004: FTP-Download durchfuehren
 // ---------------------------------------------------------------------------
 
+/// DL-004 | Main Success: Download a single file via FTP.
 #[tokio::test]
-async fn download_single_file() {
+async fn dl004_download_single_file() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -75,8 +76,9 @@ async fn download_single_file() {
 	assert!(events.iter().any(|e| matches!(e, ProgressEvent::AllDone { completed: 1, .. })));
 }
 
+/// DL-004 | Main Success: Download multiple files in one session.
 #[tokio::test]
-async fn download_multiple_files() {
+async fn dl004_download_multiple_files() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -113,8 +115,9 @@ async fn download_multiple_files() {
 	assert_eq!(fs::read(dest.path().join("TestPkg/data/file3.bin")).unwrap(), vec![0xCC; 256]);
 }
 
+/// DL-004 | BR-DL-011: Local directory structure mirrors remote paths.
 #[tokio::test]
-async fn download_creates_directory_structure() {
+async fn dl004_download_creates_directory_structure() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -137,8 +140,9 @@ async fn download_creates_directory_structure() {
 	assert_eq!(fs::read(&local).unwrap(), b"deep");
 }
 
+/// DL-005 | Main Success: Resume download from partial file.
 #[tokio::test]
-async fn download_resume_partial() {
+async fn dl005_download_resume_partial() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -171,8 +175,9 @@ async fn download_resume_partial() {
 	assert_eq!(&downloaded[..512], &full_content[..512]);
 }
 
+/// DL-005 | A1: Skip already-complete file (local >= remote size).
 #[tokio::test]
-async fn download_skip_complete() {
+async fn dl005_download_skip_complete() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -204,8 +209,9 @@ async fn download_skip_complete() {
 	assert!(events.iter().any(|e| matches!(e, ProgressEvent::Skipped { .. })));
 }
 
+/// DL-004 | A1: Connection refused produces error event.
 #[tokio::test]
-async fn download_connection_refused() {
+async fn dl004_download_connection_refused() {
 	let dest = tempfile::tempdir().unwrap();
 
 	// Use a port that's definitely not running an FTP server
@@ -229,8 +235,9 @@ async fn download_connection_refused() {
 	assert!(events.iter().any(|e| matches!(e, ProgressEvent::Failed { .. })));
 }
 
+/// DL-006 | Variante B: Global cancellation stops all downloads.
 #[tokio::test]
-async fn download_cancellation() {
+async fn dl006_download_cancellation() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -267,8 +274,9 @@ async fn download_cancellation() {
 	assert!(result.cancelled >= 1 || result.completed >= 1, "file should be cancelled or have completed before cancellation");
 }
 
+/// DL-004 | BR-DL-007: Parallel downloads limited by max_threads.
 #[tokio::test]
-async fn download_parallel_threads() {
+async fn dl004_download_parallel_threads() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -303,8 +311,9 @@ async fn download_parallel_threads() {
 	}
 }
 
+/// DL-004 | Edge: Empty file list completes immediately.
 #[tokio::test]
-async fn download_empty_file_list() {
+async fn dl004_download_empty_file_list() {
 	let dest = tempfile::tempdir().unwrap();
 
 	// Port doesn't matter — no FTP connection should be made
@@ -330,8 +339,9 @@ async fn download_empty_file_list() {
 // BulkFolder tests
 // ---------------------------------------------------------------------------
 
+/// SFDL-003 | Main Success: BulkFolder single directory listing + download.
 #[tokio::test]
-async fn download_bulkfolder_single_dir() {
+async fn sfdl003_download_bulkfolder_single_dir() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -363,8 +373,9 @@ async fn download_bulkfolder_single_dir() {
 	assert_eq!(fs::read(base.join("part2.rar")).unwrap(), vec![0xBB; 256]);
 }
 
+/// SFDL-003 | Main Success: BulkFolder recursive directory listing.
 #[tokio::test]
-async fn download_bulkfolder_recursive() {
+async fn sfdl003_download_bulkfolder_recursive() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -395,8 +406,9 @@ async fn download_bulkfolder_recursive() {
 	assert!(dest.path().join("TestPkg/data/season2/ep01.mkv").exists());
 }
 
+/// SFDL-003 | Main Success: BulkFolder with multiple folder entries.
 #[tokio::test]
-async fn download_bulkfolder_multiple_folders() {
+async fn sfdl003_download_bulkfolder_multiple_folders() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
@@ -422,8 +434,9 @@ async fn download_bulkfolder_multiple_folders() {
 	assert_eq!(fs::read(dest.path().join("TestPkg/extras/behind.mkv")).unwrap(), vec![0x20; 150]);
 }
 
+/// SFDL-003 | A2: BulkFolder with empty directory.
 #[tokio::test]
-async fn download_bulkfolder_empty_dir() {
+async fn sfdl003_download_bulkfolder_empty_dir() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 

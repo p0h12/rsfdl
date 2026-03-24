@@ -3,6 +3,7 @@
 **Use Case ID:** DL-003
 **Requirements:** FR-19
 **Primary Actor:** System (automatisch vor Download-Start)
+**Status:** Not Implemented (Error-Typ und Setting-Stub vorhanden, keine Logik)
 **Trigger:** Wird als `<<include>>` von DL-004 aufgerufen, bevor der erste Download-Task startet.
 **Preconditions:** Eine Selektion mit Dateien und Grössen liegt vor. Ein Zielverzeichnis ist konfiguriert.
 **Postconditions (Erfolg):** Genügend Speicherplatz vorhanden, Download kann starten.
