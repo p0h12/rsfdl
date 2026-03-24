@@ -2,14 +2,13 @@ use rsfdl_core::filter::{is_excluded, resolve_patterns};
 use rsfdl_core::format_bytes;
 
 use super::common::{SfdlArgs, load_and_decrypt};
-use super::info::classify_exit_code;
 
 pub async fn run(args: &SfdlArgs, password_list: &[String], resolve: bool, json: bool, cli_exclude: &[String], no_exclude: bool, show_excluded: bool) {
 	let (mut container, settings, _outcome) = match load_and_decrypt(args, password_list) {
 		Ok(result) => result,
 		Err(e) => {
 			eprintln!("Error: {e}");
-			std::process::exit(classify_exit_code(&e));
+			std::process::exit(e.exit_code());
 		}
 	};
 

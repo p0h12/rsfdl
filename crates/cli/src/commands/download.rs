@@ -11,7 +11,6 @@ use rsfdl_core::download::progress::ProgressEvent;
 use rsfdl_core::format_bytes;
 
 use super::common::{SfdlArgs, load_and_decrypt};
-use super::info::classify_exit_code;
 
 /// CLI-003: Exit codes per spec.
 const EXIT_PARTIAL_FAILURE: i32 = 10;
@@ -36,7 +35,7 @@ pub async fn run(
 		Ok(result) => result,
 		Err(e) => {
 			eprintln!("Error: {e}");
-			std::process::exit(classify_exit_code(&e));
+			std::process::exit(e.exit_code());
 		}
 	};
 
