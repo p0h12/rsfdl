@@ -23,7 +23,7 @@
 5. Benutzer veraendert die Selektion nach Bedarf:
     - Einzelne Dateien an-/abwaehlen
     - Ganzes Paket an-/abwaehlen (Toggle aller Dateien des Pakets)
-    - „Alle"- / „Keine"-Buttons
+    - "Alle"- / "Keine"-Buttons
 6. System aktualisiert die Gesamtgroesse und den Selektionszaehler nach jeder Aenderung.
 7. Benutzer bestaetigt die Selektion und startet den Download.
 
@@ -35,8 +35,8 @@
 **Flow:**
 
 1. System zeigt die Dateiliste mit allen Dateien als abgewaehlt an.
-2. Selektionszaehler zeigt „0 von N ausgewaehlt".
-3. „Download starten" ist deaktiviert.
+2. Selektionszaehler zeigt "0 von N ausgewaehlt".
+3. "Download starten" ist deaktiviert.
 4. Benutzer kann manuell Dateien wieder hinzufuegen (Schritt 5).
 
 ### A2: Benutzer waehlt alle ab
@@ -45,7 +45,7 @@
 **Flow:**
 
 1. Selektion hat 0 Dateien, Gesamtgroesse = 0.
-2. „Download starten" ist deaktiviert.
+2. "Download starten" ist deaktiviert.
 3. Benutzer muss mindestens eine Datei auswaehlen, um fortzufahren.
 
 ### A3: CLI-Modus (keine manuelle Selektion)

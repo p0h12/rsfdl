@@ -44,7 +44,7 @@
 1. Archiv ist beschaedigt oder passwortgeschuetzt.
 2. ExtractionTask-Status → `Failed` mit Fehlermeldung.
 3. Archiv-Dateien bleiben erhalten.
-4. System meldet: „Extraktion fehlgeschlagen fuer [Archiv]: [Fehler]."
+4. System meldet: "Extraktion fehlgeschlagen fuer [Archiv]: [Fehler]."
 5. Der Download-Gesamterfolg wird nicht beeinflusst.
 
 ### A3: Multi-Part unvollstaendig
@@ -53,7 +53,7 @@
 **Flow:**
 
 1. Nicht alle Teile eines Multi-Part-RAR sind vorhanden.
-2. System meldet: „Archiv unvollstaendig: Teil X von Y fehlt."
+2. System meldet: "Archiv unvollstaendig: Teil X von Y fehlt."
 3. ExtractionTask-Status → `Failed`.
 
 ## Postconditions

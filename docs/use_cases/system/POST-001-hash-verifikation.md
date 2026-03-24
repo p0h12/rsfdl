@@ -39,7 +39,7 @@
 **Flow:**
 
 1. System markiert die Datei als `Invalid`.
-2. System meldet: „Hash-Mismatch fuer [Dateiname]: erwartet [X], berechnet [Y]."
+2. System meldet: "Hash-Mismatch fuer [Dateiname]: erwartet [X], berechnet [Y]."
 3. **[Option: mark_failed_on_mismatch=true]** Task-Status → `Failed`.
 
 ## Postconditions

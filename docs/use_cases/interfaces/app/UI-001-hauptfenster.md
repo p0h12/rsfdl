@@ -17,7 +17,7 @@
 ## Main Success Scenario
 
 1. System zeigt das Hauptfenster mit Header (App-Name, Buttons: Open, Settings, Theme-Toggle) und der Drop-Zone.
-2. Benutzer klickt „Open" im Header oder „Datei auswaehlen" in der Drop-Zone.
+2. Benutzer klickt "Open" im Header oder "Datei auswaehlen" in der Drop-Zone.
 3. System oeffnet den OS-Dateidialog (Filter: `*.sfdl`, Mehrfachauswahl).
 4. Benutzer wählt eine oder mehrere SFDL-Dateien.
 5. System liest und parst jede Datei (-> SFDL-001) und fügt sie als Card zur Container-Liste hinzu.
@@ -26,7 +26,7 @@
 8. System zeigt pro Container eine Card mit Info-Banner und Dateiliste mit Checkboxen.
 9. System wendet Ausschlussmuster an (-> DL-002) und setzt die initiale Selektion.
 10. Benutzer wählt/deselektiert Dateien über Checkboxen.
-11. Benutzer klickt „Download starten" in einer Container-Card.
+11. Benutzer klickt "Download starten" in einer Container-Card.
 12. System startet den Download (-> DL-004) und zeigt das Progress-Panel (-> UI-003) in der Card.
 13. Nach Abschluss zeigt System die Zusammenfassung (-> UI-004) in der Card.
 
@@ -55,21 +55,21 @@
 **Trigger:** FTP-Verbindung für BulkFolder schlägt fehl (Schritt 7)
 **Flow:**
 
-1. System zeigt Warnung: „Failed to resolve bulk folders: [Fehlerdetail]".
+1. System zeigt Warnung: "Failed to resolve bulk folders: [Fehlerdetail]".
 2. Container wird mit den bereits vorhandenen Dateien angezeigt.
 3. Use Case fährt mit Schritt 8 fort.
 
 ### A4: Keine Dateien ausgewählt
 
-**Trigger:** Benutzer klickt „Start Download" ohne Selektion (Schritt 11)
+**Trigger:** Benutzer klickt "Start Download" ohne Selektion (Schritt 11)
 **Flow:**
 
-1. System zeigt Fehlermeldung: „No files selected".
+1. System zeigt Fehlermeldung: "No files selected".
 2. Use Case verbleibt bei Schritt 10.
 
 ### A5: Download abbrechen
 
-**Trigger:** Benutzer klickt „Cancel" während des Downloads (Schritt 12)
+**Trigger:** Benutzer klickt "Cancel" während des Downloads (Schritt 12)
 **Flow:**
 
 1. System sendet Abbruch-Signal an alle aktiven Downloads (-> DL-006).
@@ -78,7 +78,7 @@
 
 ### A6: Weiteren Container hinzufügen
 
-**Trigger:** Benutzer klickt „Hinzufügen" oder öffnet eine weitere Datei (jederzeit)
+**Trigger:** Benutzer klickt "Hinzufügen" oder öffnet eine weitere Datei (jederzeit)
 **Flow:**
 
 1. System fügt den neuen Container als weitere Card zur Liste hinzu.
@@ -87,7 +87,7 @@
 
 ### A7: Download abgeschlossen — Reset
 
-**Trigger:** Download ist abgeschlossen (Schritt 13), Benutzer klickt „Reset"
+**Trigger:** Download ist abgeschlossen (Schritt 13), Benutzer klickt "Reset"
 **Flow:**
 
 1. System setzt den Download-Zustand zurück (Phase, File States, Summary, Progress).
@@ -115,10 +115,10 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 
 ### BR-UI-002: Button-Zustände (pro Container-Card)
 
-- „Download starten": Aktiv nur wenn Selektion > 0 und Phase = Idle.
-- „Abbrechen": Sichtbar nur während Phase = Downloading.
-- „Reset": Sichtbar nur wenn Phase = Done.
-- „Entfernen" (X): Jederzeit verfügbar, entfernt den Container aus der Liste.
+- "Download starten": Aktiv nur wenn Selektion > 0 und Phase = Idle.
+- "Abbrechen": Sichtbar nur während Phase = Downloading.
+- "Reset": Sichtbar nur wenn Phase = Done.
+- "Entfernen" (X): Jederzeit verfügbar, entfernt den Container aus der Liste.
 
 ### BR-UI-004: Multi-Container und Download-Reihenfolge
 
@@ -128,7 +128,7 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 - Downloads werden von oben nach unten abgearbeitet: Der oberste Container wird zuerst heruntergeladen, dann der nächste, usw.
 - Die verfügbaren Download-Slots (`max_threads`) werden auf den aktuell aktiven Container verteilt.
 - Erst wenn ein Container fertig ist (Done), beginnt der nächste.
-- „Alle entfernen" löscht alle Container aus der Liste.
+- "Alle entfernen" löscht alle Container aus der Liste.
 
 ### BR-UI-003: Selektion
 
@@ -140,23 +140,23 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 ### Zustand: Kein Container geladen
 
 - Header mit App-Name, Buttons (Open, Settings), Theme-Toggle
-- Drop-Zone: „SFDL-Container laden" + „Datei auswaehlen"-Button
+- Drop-Zone: "SFDL-Container laden" + "Datei auswaehlen"-Button
 
 ### Zustand: Container geladen
 
-- Container-Toolbar: Zähler „N Container", Buttons „Hinzufügen" / „Alle entfernen"
+- Container-Toolbar: Zähler "N Container", Buttons "Hinzufügen" / "Alle entfernen"
 - Pro Container eine aufklappbare **Card** mit:
     - Up/Down-Buttons zum Sortieren
     - Container-Name, Badges (Encrypted, V2/V3)
     - Entfernen-Button (X)
     - **Info-Banner**: Server, Beschreibung, Pakete, Dateien
     - **Dateiliste**: Paket-Header mit Checkbox, Dateien mit Checkbox, Dateiname, Grösse
-    - **Download-Aktionen**: Selektionszähler + „Download starten" Button
+    - **Download-Aktionen**: Selektionszähler + "Download starten" Button
 
 ### Zustand: Download läuft
 
 - Progress-Panel (-> UI-003) ersetzt Dateiliste in der Card
-- „Abbrechen"-Button
+- "Abbrechen"-Button
 
 ### Zustand: Download abgeschlossen
 
@@ -166,9 +166,9 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 
 | Aktion                     | Auslöst                  | Use Case         |
 |----------------------------|--------------------------|------------------|
-| „Open File" Button         | OS-Dateidialog           | SFDL-001         |
+| "Open File" Button         | OS-Dateidialog           | SFDL-001         |
 | Datei per Drag-and-Drop    | Container laden          | SFDL-001, UI-006 |
 | Checkbox Datei an/abwählen | Selektion aktualisieren  | DL-001           |
-| „Start Download"           | Download-Session starten | DL-004           |
-| „Cancel"                   | Globaler Abbruch         | DL-006           |
-| „Settings" Button          | Einstellungen öffnen     | UI-005           |
+| "Start Download"           | Download-Session starten | DL-004           |
+| "Cancel"                   | Globaler Abbruch         | DL-006           |
+| "Settings" Button          | Einstellungen öffnen     | UI-005           |

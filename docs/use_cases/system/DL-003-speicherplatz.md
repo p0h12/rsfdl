@@ -30,7 +30,7 @@
 **Trigger:** Verfuegbarer Platz < benoetigter Platz (Schritt 4)
 **Flow:**
 
-1. System meldet: „Nicht genuegend Speicherplatz. Benoetigt: X MB, Verfuegbar: Y MB."
+1. System meldet: "Nicht genuegend Speicherplatz. Benoetigt: X MB, Verfuegbar: Y MB."
 2. Actor kann den Download trotzdem starten (bestaetigen).
 3. Actor kann den Download abbrechen.
 
@@ -49,7 +49,7 @@
 **Flow:**
 
 1. Nicht alle Dateien haben eine bekannte Groesse.
-2. System berechnet mit bekannten Groessen und warnt: „Pruefung basiert auf X von Y Dateien. Tatsaechlicher Bedarf kann hoeher sein."
+2. System berechnet mit bekannten Groessen und warnt: "Pruefung basiert auf X von Y Dateien. Tatsaechlicher Bedarf kann hoeher sein."
 
 ## Postconditions
 

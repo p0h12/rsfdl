@@ -27,7 +27,7 @@
 
 ### A1: Reset nach Ergebnis
 
-**Trigger:** Benutzer klickt „Reset" (nach Schritt 3)
+**Trigger:** Benutzer klickt "Reset" (nach Schritt 3)
 **Flow:**
 
 1. System setzt Download-Zustand zurück (Phase → Idle, File States leer, Summary leer).
@@ -36,7 +36,7 @@
 
 ### A2: Neuen Container öffnen
 
-**Trigger:** Benutzer klickt „Open File" (nach Schritt 3)
+**Trigger:** Benutzer klickt "Open File" (nach Schritt 3)
 **Flow:**
 
 1. System öffnet Dateidialog für neuen Container.
@@ -66,7 +66,7 @@
 
 ### BR-UI-012: Statistik-Format
 
-Anzeige: „Done: {total} total, {completed} completed, {skipped} skipped, {failed} failed, {cancelled} cancelled"
+Anzeige: "Done: {total} total, {completed} completed, {skipped} skipped, {failed} failed, {cancelled} cancelled"
 
 ## Layout
 
@@ -81,8 +81,8 @@ Anzeige: „Done: {total} total, {completed} completed, {skipped} skipped, {fail
 
 ### Aktionen
 
-- „Reset" -> Download-Zustand zurücksetzen, Dateiliste wiederherstellen.
-- „Open File" -> Neuen Container öffnen.
+- "Reset" -> Download-Zustand zurücksetzen, Dateiliste wiederherstellen.
+- "Open File" -> Neuen Container öffnen.
 
 ## Hinweise
 

@@ -21,7 +21,7 @@
 3. System zeigt die aktuellen Einstellungswerte in Card-basierten Sektionen an (gruppiert nach Kategorien, siehe Layout).
 4. Benutzer aendert einen oder mehrere Werte.
 5. System validiert die Eingaben inline (-> BR-UI-013).
-6. Benutzer klickt „Speichern".
+6. Benutzer klickt "Speichern".
 7. System speichert die Einstellungen auf Disk (-> CFG-001 Variante B).
 8. System wechselt zurueck zum Hauptfenster (UI-001).
 
@@ -42,13 +42,13 @@
 **Trigger:** Schreibfehler beim Speichern (Schritt 7)
 **Flow:**
 
-1. System zeigt Fehlermeldung: „Failed to save settings: [Fehlerdetail]".
+1. System zeigt Fehlermeldung: "Failed to save settings: [Fehlerdetail]".
 2. Die Einstellungen im Speicher bleiben aktuell.
 3. Use Case verbleibt in der Einstellungen-View.
 
 ### A3: Abbrechen
 
-**Trigger:** Benutzer klickt „Abbrechen" oder den Zurueck-Pfeil (statt Schritt 6)
+**Trigger:** Benutzer klickt "Abbrechen" oder den Zurueck-Pfeil (statt Schritt 6)
 **Flow:**
 
 1. System wechselt zurueck zum Hauptfenster.
@@ -56,7 +56,7 @@
 
 ### A4: Download-Verzeichnis per Dialog waehlen
 
-**Trigger:** Benutzer klickt „Browse..." neben dem Download-Verzeichnis (Schritt 4)
+**Trigger:** Benutzer klickt "Browse..." neben dem Download-Verzeichnis (Schritt 4)
 **Flow:**
 
 1. System oeffnet den OS-Dateidialog zur Ordnerauswahl.
@@ -69,8 +69,8 @@
 **Trigger:** Benutzer interagiert mit der Tag-Liste fuer Ausschlussmuster (Schritt 4)
 **Flow:**
 
-1. Hinzufuegen: Benutzer tippt ein Muster ins Eingabefeld und drueckt Enter oder klickt „+".
-2. Entfernen: Benutzer klickt das „x" an einem bestehenden Tag.
+1. Hinzufuegen: Benutzer tippt ein Muster ins Eingabefeld und drueckt Enter oder klickt "+".
+2. Entfernen: Benutzer klickt das "x" an einem bestehenden Tag.
 3. Use Case faehrt mit Schritt 5 fort.
 
 ### A6: Auto-Passwort hinzufuegen/entfernen
@@ -78,8 +78,8 @@
 **Trigger:** Benutzer interagiert mit der Tag-Liste fuer Passwoerter (Schritt 4)
 **Flow:**
 
-1. Hinzufuegen: Benutzer tippt ein Passwort ins Eingabefeld (verdeckt) und drueckt Enter oder klickt „+".
-2. Entfernen: Benutzer klickt das „x" an einem bestehenden Tag.
+1. Hinzufuegen: Benutzer tippt ein Passwort ins Eingabefeld (verdeckt) und drueckt Enter oder klickt "+".
+2. Entfernen: Benutzer klickt das "x" an einem bestehenden Tag.
 3. Gespeicherte Passwoerter werden verdeckt als Bullet-Zeichen angezeigt.
 4. Use Case faehrt mit Schritt 5 fort.
 
@@ -120,7 +120,7 @@ Eingabefelder begrenzen Werte gemaess BR-CFG-002:
 ### BR-UI-016: Ausschlussmuster
 
 - Muster werden als Tags angezeigt (ein Tag pro Muster).
-- Eingabefeld + „+"-Button zum Hinzufuegen neuer Muster.
+- Eingabefeld + "+"-Button zum Hinzufuegen neuer Muster.
 - Jedes Tag hat einen Entfernen-Button.
 
 ## Layout
@@ -129,7 +129,7 @@ Die Einstellungen-View besteht aus einem Zurueck-Pfeil + Titel-Header und mehrer
 
 ### Allgemein
 
-- Download-Verzeichnis: Textfeld (readonly) + „Browse..."-Button
+- Download-Verzeichnis: Textfeld (readonly) + "Browse..."-Button
 - Max. parallele Downloads: Numerisches Eingabefeld (1-20)
 - Max. Geschwindigkeit: Numerisches Eingabefeld (KB/s), 0 = unbegrenzt
 
@@ -147,14 +147,14 @@ Die Einstellungen-View besteht aus einem Zurueck-Pfeil + Titel-Header und mehrer
 ### Ausschlussmuster
 
 - Tag-Liste der aktuellen Muster mit Entfernen-Button pro Tag
-- Eingabefeld + „+"-Button fuer neue Muster
+- Eingabefeld + "+"-Button fuer neue Muster
 
 ### Auto-Passwoerter
 
 - Tag-Liste gespeicherter Passwoerter (verdeckt als Bullet-Zeichen)
-- Eingabefeld (`type="password"`) + „+"-Button
+- Eingabefeld (`type="password"`) + "+"-Button
 
 ### Aktionen (Footer)
 
-- „Abbrechen" -> Zurueck zum Hauptfenster ohne Speichern
-- „Speichern" -> CFG-001 Variante B, dann zurueck zum Hauptfenster
+- "Abbrechen" -> Zurueck zum Hauptfenster ohne Speichern
+- "Speichern" -> CFG-001 Variante B, dann zurueck zum Hauptfenster

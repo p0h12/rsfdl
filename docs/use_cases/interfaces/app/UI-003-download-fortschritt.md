@@ -27,16 +27,16 @@
 
 ### A1: Einzelne Datei abbrechen
 
-**Trigger:** Benutzer klickt „X" bei einer aktiven Datei (Schritt 3)
+**Trigger:** Benutzer klickt "X" bei einer aktiven Datei (Schritt 3)
 **Flow:**
 
 1. System sendet Abbruch-Signal für diese Datei (-> DL-006 Variante A).
-2. Datei-Status wechselt auf „Cancelled".
+2. Datei-Status wechselt auf "Cancelled".
 3. Verbleibende Downloads laufen weiter.
 
 ### A2: Alle Downloads abbrechen
 
-**Trigger:** Benutzer klickt „Cancel" im Hauptfenster (Schritt 4)
+**Trigger:** Benutzer klickt "Cancel" im Hauptfenster (Schritt 4)
 **Flow:**
 
 1. System sendet globales Abbruch-Signal über den CancellationToken (-> DL-006 Variante B).
@@ -49,7 +49,7 @@
 **Trigger:** Eine Datei schlägt nach Retries fehl (Schritt 4)
 **Flow:**
 
-1. Datei-Status wechselt auf „Failed" mit roter Markierung.
+1. Datei-Status wechselt auf "Failed" mit roter Markierung.
 2. Fehlertext wird angezeigt.
 3. Verbleibende Downloads laufen weiter.
 
@@ -66,7 +66,7 @@
 **Trigger:** Datei existiert bereits vollständig auf Disk (Schritt 4)
 **Flow:**
 
-1. Datei-Status ist sofort „Skipped".
+1. Datei-Status ist sofort "Skipped".
 2. Zähler `files_done` wird inkrementiert.
 
 ## Postconditions
@@ -116,14 +116,14 @@ Datei-Einträge werden nach Status sortiert:
 ### Globaler Fortschritt
 
 - Fortschrittsbalken: geschriebene Bytes / total Bytes
-- Text: „X/Y files" + „Z MB / W MB" + Geschwindigkeit + ETA
+- Text: "X/Y files" + "Z MB / W MB" + Geschwindigkeit + ETA
 
 ### Pro-Datei-Fortschritt
 
 - Dateiname (abgeschnitten bei Overflow)
-- Status-Text (Bytes bei Downloading, „completed"/„failed"/etc. sonst)
+- Status-Text (Bytes bei Downloading, "completed"/"failed"/etc. sonst)
 - Fortschrittsbalken (nur bei Downloading)
-- „X"-Button zum Abbrechen (nur bei Downloading)
+- "X"-Button zum Abbrechen (nur bei Downloading)
 
 ## Zustandsübergänge
 

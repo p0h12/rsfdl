@@ -44,7 +44,7 @@
 
 1. `retry_count >= max_retries`.
 2. Task bleibt permanent `Failed`.
-3. System meldet: „Download fehlgeschlagen nach X Versuchen: [letzter Fehler]."
+3. System meldet: "Download fehlgeschlagen nach X Versuchen: [letzter Fehler]."
 4. Use Case endet.
 
 ## Postconditions

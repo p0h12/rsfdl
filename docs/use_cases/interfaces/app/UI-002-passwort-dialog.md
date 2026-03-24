@@ -13,13 +13,13 @@
 
 - Ein verschlüsselter SFDL-Container wurde geöffnet (SFDL-001).
 - Kein Auto-Passwort hat gepasst.
-- Die Container-Card zeigt den Zustand „NeedsPassword".
+- Die Container-Card zeigt den Zustand "NeedsPassword".
 
 ## Main Success Scenario
 
-1. System zeigt in der Container-Card eine Inline-Passwort-Sektion mit Schluessel-Icon, Titel „Passwort erforderlich" und Hinweis.
+1. System zeigt in der Container-Card eine Inline-Passwort-Sektion mit Schluessel-Icon, Titel "Passwort erforderlich" und Hinweis.
 2. Benutzer gibt das Passwort in das Eingabefeld ein.
-3. Benutzer klickt „Entschluesseln" oder drueckt Enter.
+3. Benutzer klickt "Entschluesseln" oder drueckt Enter.
 4. System versucht den Container zu entschluesseln (-> SFDL-002).
 5. Entschluesselung erfolgreich: Passwort-Sektion wird durch die Dateiliste ersetzt.
 6. System loest BulkFolders auf, falls vorhanden (-> SFDL-003).
@@ -32,7 +32,7 @@
 **Trigger:** Entschluesselung schlaegt fehl mit `InvalidPassword` (Schritt 4)
 **Flow:**
 
-1. System zeigt roten Hinweis unter dem Eingabefeld: „Invalid password".
+1. System zeigt roten Hinweis unter dem Eingabefeld: "Invalid password".
 2. Passwort-Sektion bleibt sichtbar.
 3. Use Case faehrt mit Schritt 2 fort.
 
@@ -41,7 +41,7 @@
 **Trigger:** Entschluesselung schlaegt aus anderem Grund fehl (Schritt 4)
 **Flow:**
 
-1. System zeigt Fehlermeldung: „Decryption failed: [Fehlerdetail]".
+1. System zeigt Fehlermeldung: "Decryption failed: [Fehlerdetail]".
 2. Passwort-Sektion bleibt sichtbar.
 3. Use Case faehrt mit Schritt 2 fort.
 
@@ -59,14 +59,14 @@
 **Flow:**
 
 1. Die Passwort-Eingabe wird komplett uebersprungen.
-2. Container wird direkt mit Phase „Ready" geladen (-> UI-001 Schritt 7).
+2. Container wird direkt mit Phase "Ready" geladen (-> UI-001 Schritt 7).
 
 ## Postconditions
 
 ### Success Postconditions
 
 - Container ist entschluesselt und zeigt die Dateiliste.
-- Container-Phase ist „Ready".
+- Container-Phase ist "Ready".
 - BulkFolders werden aufgeloest (falls vorhanden).
 
 ### Failure Postconditions
@@ -80,7 +80,7 @@
 
 - Eingabefeld ist verdeckt (`type="password"`).
 - Sichtbarkeits-Toggle (Auge-Icon) erlaubt das Passwort anzuzeigen.
-- Enter-Taste loest „Entschluesseln" aus.
+- Enter-Taste loest "Entschluesseln" aus.
 
 ### BR-UI-006: Inline-Darstellung
 
@@ -91,8 +91,8 @@
 ## Layout
 
 - Inline-Sektion in der Container-Card (kein modaler Dialog)
-- Schluessel-Icon + Titel „Passwort erforderlich"
-- Hinweis: „Dieser Container ist verschluesselt. Bitte Passwort eingeben."
+- Schluessel-Icon + Titel "Passwort erforderlich"
+- Hinweis: "Dieser Container ist verschluesselt. Bitte Passwort eingeben."
 - Passwort-Eingabefeld mit Sichtbarkeits-Toggle (Auge-Icon)
-- Button „Entschluesseln"
+- Button "Entschluesseln"
 - Fehleranzeige (rot, unter dem Eingabefeld, nur bei Fehler)

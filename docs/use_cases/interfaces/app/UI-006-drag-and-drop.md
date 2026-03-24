@@ -17,7 +17,7 @@
 ## Main Success Scenario
 
 1. Benutzer zieht eine `.sfdl`-Datei auf das App-Fenster.
-2. System zeigt visuellen Drop-Indikator (Rand leuchtet, Overlay „Datei hier ablegen").
+2. System zeigt visuellen Drop-Indikator (Rand leuchtet, Overlay "Datei hier ablegen").
 3. Benutzer lässt die Datei los (Drop).
 4. System prüft die Dateiendung.
 5. System öffnet die SFDL-Datei (-> SFDL-001, wie UI-001 Schritt 5ff).
@@ -30,7 +30,7 @@
 **Trigger:** Die gedropte Datei hat nicht die Endung `.sfdl` (Schritt 4)
 **Flow:**
 
-1. System zeigt Fehlermeldung: „Nur .sfdl-Dateien werden unterstützt."
+1. System zeigt Fehlermeldung: "Nur .sfdl-Dateien werden unterstützt."
 2. Kein Container wird geladen.
 
 ### A2: Mehrere Dateien

@@ -126,7 +126,7 @@
 
 - Retry-faehig: `ServerFull (421)`, `AuthError (530/430)`, `ConnectionError (425/426)`, `Timeout`
 - Permanent: `ServerDown (434)`, `FileNotFound (450-452/501/550)`, `IOError`
-- Detaillierter Fehlerstatus pro Task (nicht nur „Fehlgeschlagen").
+- Detaillierter Fehlerstatus pro Task (nicht nur "Fehlgeschlagen").
 
 ### BR-DL-011: Verzeichnisstruktur
 

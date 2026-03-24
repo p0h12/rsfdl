@@ -37,7 +37,7 @@
 **Flow:**
 
 1. System erkennt, dass die Datei kein valides XML enthaelt.
-2. System meldet: „Datei ist keine gueltige SFDL-Datei."
+2. System meldet: "Datei ist keine gueltige SFDL-Datei."
 3. Use Case endet.
 
 ### A2: Unbekannte SFDL-Version
@@ -46,7 +46,7 @@
 **Flow:**
 
 1. System findet weder v2- noch v3-Marker.
-2. System meldet: „Unbekanntes SFDL-Format."
+2. System meldet: "Unbekanntes SFDL-Format."
 3. Use Case endet.
 
 ### A3: Pflichtfelder fehlen
@@ -55,7 +55,7 @@
 **Flow:**
 
 1. System erkennt fehlende Pflichtfelder (z.B. kein Host, keine Pakete).
-2. System meldet: „SFDL-Datei unvollstaendig: [fehlende Felder]."
+2. System meldet: "SFDL-Datei unvollstaendig: [fehlende Felder]."
 3. Use Case endet.
 
 ### A4: Datei nicht lesbar
@@ -64,7 +64,7 @@
 **Flow:**
 
 1. System kann die Datei nicht lesen (Berechtigung, nicht vorhanden).
-2. System meldet: „Datei konnte nicht geoeffnet werden: [OS-Fehler]."
+2. System meldet: "Datei konnte nicht geoeffnet werden: [OS-Fehler]."
 3. Use Case endet.
 
 ## Postconditions
@@ -86,11 +86,11 @@ Numerische ContainerVersion-Werte (Quelle: SFDL.NET Referenzimplementierung):
 
 | ContainerVersion | SFDL Version | Verhalten                         |
 |------------------|--------------|-----------------------------------|
-| 0                | ungueltig    | Fehler: „nicht kompatibel"        |
-| 1–5              | v1           | Fehler: „nicht mehr unterstuetzt" |
+| 0                | ungueltig    | Fehler: "nicht kompatibel"        |
+| 1–5              | v1           | Fehler: "nicht mehr unterstuetzt" |
 | 6–9              | v2 (legacy)  | Wird intern zu v3 konvertiert     |
 | **10**           | **v3**       | Aktuelles Format, direkt parsen   |
-| >10              | ungueltig    | Fehler: „nicht kompatibel"        |
+| >10              | ungueltig    | Fehler: "nicht kompatibel"        |
 
 - v3 hat Vorrang: Enthaelt eine Datei sowohl v2- als auch v3-Marker, wird v3 verwendet.
 - Die Versionserkennung basiert auf dem XML-Element-Namen (`<ContainerVersion>` vs `<SFDLFileVersion>`) und dem numerischen Wert.
