@@ -25,7 +25,7 @@
     - Max. Threads
 3. System lädt das Template aus den Einstellungen (`speedreport_template`) (→ BR-POST-006).
 4. System ersetzt die Template-Variablen durch die berechneten Werte.
-5. System schreibt den Report als `speedreport.txt` ins Download-Verzeichnis.
+5. System schreibt den Report als `speedreport.txt` in den Paket-Unterordner im Download-Verzeichnis.
 
 ## Alternative Flows
 
@@ -47,7 +47,7 @@
 
 ### Success Postconditions
 
-- `speedreport.txt` liegt im Download-Verzeichnis.
+- `speedreport.txt` liegt im Paket-Unterordner (z.B. `download_dir/Container.Name/speedreport.txt`).
 
 ### Failure Postconditions
 
@@ -92,5 +92,5 @@ Das Standard-Template wird als Default in `settings.speedreport_template` gesetz
 
 ## Output
 
-- `speedreport.txt` im Download-Verzeichnis
+- `speedreport.txt` im Paket-Unterordner
 - `report: String` — gerenderter Report-Text (API)
