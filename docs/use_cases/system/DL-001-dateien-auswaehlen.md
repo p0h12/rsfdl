@@ -1,54 +1,93 @@
-# DL-001: Dateien zum Download auswählen
+# Use Case: Dateien zum Download auswaehlen
+
+## Overview
 
 **Use Case ID:** DL-001
-**Requirements:** FR-04, FR-17
+**Use Case Name:** Dateien zum Download auswaehlen
 **Primary Actor:** Benutzer
-**Preconditions:** Ein aufgelöster Container mit FileEntries liegt vor (SFDL-003 abgeschlossen).
-**Postconditions (Erfolg):** Eine Selektion mit ausgewählten Dateien und berechneter Gesamtgrösse liegt vor.
-**Postconditions (Fehlschlag):** —
+**Goal:** Aus einem geoeffneten SFDL-Container die gewuenschten Dateien fuer den Download auswaehlen.
+**Requirements:** FR-04, FR-17
+**Status:** Stable
 
----
+## Preconditions
+
+- Ein aufgeloester Container mit FileEntries liegt vor (SFDL-003 abgeschlossen).
+- Ausschlussmuster sind in den Einstellungen konfiguriert (CFG-001).
 
 ## Main Success Scenario
 
-1. System erstellt eine initiale Selektion: Alle FileEntries sind ausgewählt.
-2. → **include** DL-002 (Ausschlussmuster anwenden): Dateien, die auf ein Muster passen, werden als `excluded=true` markiert und aus der Selektion entfernt.
-3. System berechnet die Gesamtgrösse der aktiven Selektion.
-4. System gibt die Selektion zurück.
-5. Actor kann die Selektion verändern:
-    - Einzelne Dateien an-/abwählen
-    - Ganzes Paket an-/abwählen (Toggle aller Dateien des Pakets)
-6. System aktualisiert die Gesamtgrösse nach jeder Änderung.
-7. Actor bestätigt die Selektion.
+1. System erstellt eine initiale Selektion: Alle FileEntries sind ausgewaehlt.
+2. System wendet Ausschlussmuster an (-> include DL-002): Dateien, die auf ein Muster passen, werden aus der Selektion entfernt.
+3. System berechnet die Gesamtgroesse der aktiven Selektion.
+4. System zeigt die Selektion an (Dateiliste mit Checkboxen, Gesamtgroesse).
+5. Benutzer veraendert die Selektion nach Bedarf:
+    - Einzelne Dateien an-/abwaehlen
+    - Ganzes Paket an-/abwaehlen (Toggle aller Dateien des Pakets)
+    - „Alle"- / „Keine"-Buttons
+6. System aktualisiert die Gesamtgroesse und den Selektionszaehler nach jeder Aenderung.
+7. Benutzer bestaetigt die Selektion und startet den Download.
 
-## Alternative Paths
+## Alternative Flows
 
-**2a. Alle Dateien ausgeschlossen:**
-2a.1. Nach Anwendung der Ausschlussmuster sind 0 Dateien in der Selektion.
-2a.2. System meldet: „Alle Dateien wurden durch Ausschlussmuster gefiltert."
-2a.3. Actor kann manuell Dateien wieder hinzufügen (Schritt 5).
+### A1: Alle Dateien durch Muster ausgeschlossen
 
-**5a. Actor wählt alle ab:**
-5a.1. Actor entfernt alle Dateien aus der Selektion.
-5a.2. Selektion hat 0 Dateien, Gesamtgrösse = 0.
-5a.3. Download kann nicht gestartet werden, bis mindestens eine Datei ausgewählt ist.
+**Trigger:** Nach Anwendung der Ausschlussmuster sind 0 Dateien in der Selektion (Schritt 2)
+**Flow:**
+
+1. System zeigt die Dateiliste mit allen Dateien als abgewaehlt an.
+2. Selektionszaehler zeigt „0 von N ausgewaehlt".
+3. „Download starten" ist deaktiviert.
+4. Benutzer kann manuell Dateien wieder hinzufuegen (Schritt 5).
+
+### A2: Benutzer waehlt alle ab
+
+**Trigger:** Benutzer entfernt alle Dateien aus der Selektion (Schritt 5)
+**Flow:**
+
+1. Selektion hat 0 Dateien, Gesamtgroesse = 0.
+2. „Download starten" ist deaktiviert.
+3. Benutzer muss mindestens eine Datei auswaehlen, um fortzufahren.
+
+### A3: CLI-Modus (keine manuelle Selektion)
+
+**Trigger:** Download wird ueber die CLI gestartet (Schritt 5 entfaellt)
+**Flow:**
+
+1. System verwendet die initiale Selektion (nach Ausschlussmuster) ohne manuelle Aenderung.
+2. Use Case faehrt mit Schritt 7 fort.
+
+## Postconditions
+
+### Success Postconditions
+
+- Eine Selektion mit mindestens einer ausgewaehlten Datei liegt vor.
+- Die Gesamtgroesse der selektierten Dateien ist berechnet.
+- Der Download kann gestartet werden (-> DL-004).
+
+### Failure Postconditions
+
+- Keine Dateien ausgewaehlt: Download kann nicht gestartet werden.
+- Benutzer kann die Selektion jederzeit aendern.
 
 ## Business Rules
 
-**BR-DL-001: Standard-Selektion**
+### BR-DL-001: Standard-Selektion
 
-- Initial sind alle Dateien ausgewählt (nach Anwendung der Ausschlussmuster).
-- Manuell ausgeschlossene Dateien werden auch durch Paket-Toggle nicht wieder aktiviert, wenn sie auf ein Ausschlussmuster passen.
+- Initial sind alle Dateien ausgewaehlt, abzueglich der durch Ausschlussmuster gefilterten.
+- Die initiale Selektion wird als flache Boolean-Liste berechnet, aligniert mit der Dateiliste ueber alle Pakete.
 
-**BR-DL-002: Grössen-Berechnung**
+### BR-DL-002: Groessen-Berechnung
 
-- Nur Dateien mit bekannter Grösse fliessen in die Berechnung ein.
-- Dateien ohne Grösse werden separat gezählt: „X Dateien, Y MB + Z Dateien mit unbekannter Grösse."
+- Nur Dateien mit bekannter Groesse (file_size > 0) fliessen in die Berechnung ein.
+- BulkFolder-Dateien haben nach Aufloesung (SFDL-003) eine bekannte Groesse.
 
 ## Input
 
-- `container`: Aufgelöster Container mit FileEntries
+- Aufgeloester Container mit FileEntries (ueber alle Pakete)
+- Konfigurierte Ausschlussmuster (aus Einstellungen)
 
 ## Output
 
-- `Selection` mit `selected_files[]`, `total_bytes`, `total_files`
+- Selektion: Boolean-Liste pro Datei (ausgewaehlt / nicht ausgewaehlt)
+- Gesamtgroesse der selektierten Dateien in Bytes
+- Anzahl selektierter Dateien
