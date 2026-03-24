@@ -18,8 +18,9 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], resolve: bool) {
 
 		if has_bulk {
 			eprintln!("Resolving bulk folders via FTP...");
-			if let Err(e) = rsfdl_core::container::resolve_bulk_folders(&mut container, settings.ftp_timeout_seconds).await {
-				eprintln!("Warning: Failed to resolve bulk folders: {}", e);
+			let warnings = rsfdl_core::container::resolve_bulk_folders(&mut container, settings.ftp_timeout_seconds).await;
+			for w in &warnings {
+				eprintln!("Warning: {}", w);
 			}
 		}
 	}
