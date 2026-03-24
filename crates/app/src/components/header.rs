@@ -175,9 +175,45 @@ pub async fn resolve_bulk_folders_for(mut state: AppState, container_id: u32) {
 	});
 }
 
-/// Decrypt a container with the given password and update its state.
+/// UI-002: Result of a password decrypt attempt.
+#[derive(Debug)]
+pub enum DecryptOutcome {
+	/// Main Success: container decrypted, selection computed.
+	Success {
+		container: rsfdl_core::sfdl::models::SfdlContainer,
+		selection: FileSelection,
+	},
+	/// A1: Invalid password.
+	InvalidPassword,
+	/// A2: Other decryption error.
+	OtherError(String),
+}
+
+/// UI-002: Attempt to decrypt a container with the given password (pure logic).
+///
+/// Returns a DecryptOutcome without touching UI state, for testability.
+pub fn attempt_decrypt(
+	container: &rsfdl_core::sfdl::models::SfdlContainer,
+	password: &str,
+	exclusion_patterns: &[String],
+) -> DecryptOutcome {
+	let mut c = container.clone();
+	match rsfdl_core::container::decrypt_with_password(&mut c, password) {
+		Ok(()) => {
+			let selection = FileSelection::new(&c, exclusion_patterns);
+			DecryptOutcome::Success { container: c, selection }
+		}
+		Err(rsfdl_core::error::AppError::InvalidPassword) => DecryptOutcome::InvalidPassword,
+		Err(e) => DecryptOutcome::OtherError(format!("Decryption failed: {e}")),
+	}
+}
+
+/// UI-002: Decrypt a container with the given password and update app state.
+///
+/// Delegates to [`attempt_decrypt`] for the core logic, then applies the
+/// outcome to the Dioxus state. On success, triggers BulkFolder resolution.
 pub fn try_decrypt_container(mut state: AppState, container_id: u32, password: &str) {
-	let mut container = {
+	let container = {
 		let list = state.containers.read();
 		let Some(cs) = list.iter().find(|c| c.id == container_id) else {
 			return;
@@ -185,12 +221,11 @@ pub fn try_decrypt_container(mut state: AppState, container_id: u32, password: &
 		cs.container.clone()
 	};
 
-	match rsfdl_core::container::decrypt_with_password(&mut container, password) {
-		Ok(()) => {
-			let patterns = state.settings.read().exclusion_patterns.clone();
-			let selection = FileSelection::new(&container, &patterns);
+	let patterns = state.settings.read().exclusion_patterns.clone();
+	match attempt_decrypt(&container, password, &patterns) {
+		DecryptOutcome::Success { container: decrypted, selection } => {
 			state.with_container_mut(container_id, |cs| {
-				cs.container = container;
+				cs.container = decrypted;
 				cs.selection = selection;
 				cs.phase = ContainerPhase::Ready;
 				cs.password_error = None;
@@ -199,15 +234,75 @@ pub fn try_decrypt_container(mut state: AppState, container_id: u32, password: &
 				resolve_bulk_folders_for(state, container_id).await;
 			});
 		}
-		Err(rsfdl_core::error::AppError::InvalidPassword) => {
+		DecryptOutcome::InvalidPassword => {
 			state.with_container_mut(container_id, |cs| {
 				cs.password_error = Some("Invalid password".to_string());
 			});
 		}
-		Err(e) => {
+		DecryptOutcome::OtherError(msg) => {
 			state.with_container_mut(container_id, |cs| {
-				cs.password_error = Some(format!("Decryption failed: {e}"));
+				cs.password_error = Some(msg);
 			});
 		}
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use rsfdl_core::sfdl::models::{Connection, SfdlContainer};
+
+	fn encrypted_container() -> SfdlContainer {
+		SfdlContainer {
+			encrypted: true,
+			connection: Connection {
+				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
+				..Connection::default()
+			},
+			..SfdlContainer::default()
+		}
+	}
+
+	/// UI-002 | Main Success: Correct password decrypts container.
+	#[test]
+	fn ui002_correct_password_decrypts() {
+		let c = encrypted_container();
+		let result = attempt_decrypt(&c, "test", &[]);
+		assert!(matches!(result, DecryptOutcome::Success { .. }));
+		if let DecryptOutcome::Success { container, .. } = result {
+			assert!(!container.encrypted);
+			assert_eq!(container.connection.host, "ftp.example.com");
+		}
+	}
+
+	/// UI-002 | A1: Wrong password returns InvalidPassword.
+	#[test]
+	fn ui002_wrong_password() {
+		let c = encrypted_container();
+		let result = attempt_decrypt(&c, "wrong", &[]);
+		assert!(matches!(result, DecryptOutcome::InvalidPassword));
+	}
+
+	/// UI-002 | Main Success: Decryption computes file selection.
+	#[test]
+	fn ui002_decrypt_computes_selection() {
+		let c = encrypted_container();
+		let result = attempt_decrypt(&c, "test", &[]);
+		if let DecryptOutcome::Success { selection, .. } = result {
+			// Default container has no files, so selection is empty
+			assert_eq!(selection.total_count(), 0);
+		} else {
+			panic!("expected Success");
+		}
+	}
+
+	/// UI-002 | A1: Wrong password preserves original container state.
+	#[test]
+	fn ui002_wrong_password_preserves_container() {
+		let c = encrypted_container();
+		let _ = attempt_decrypt(&c, "wrong", &[]);
+		// Original container unchanged (it was passed by reference)
+		assert!(c.encrypted);
+		assert_eq!(c.connection.host, "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=");
 	}
 }

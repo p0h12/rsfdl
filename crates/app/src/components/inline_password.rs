@@ -43,7 +43,7 @@ pub fn InlinePassword(container_id: ContainerId) -> Element {
 							p {
 									class: "text-[13px] mb-4",
 									style: "color: var(--color-text-secondary);",
-									"Dieser Container ist verschluesselt. Bitte Passwort eingeben."
+									"Dieser Container ist verschlüsselt. Bitte Passwort eingeben."
 							}
 
 							// Input + button row
@@ -86,7 +86,7 @@ pub fn InlinePassword(container_id: ContainerId) -> Element {
 													style: "width: 14px; height: 14px;",
 													dangerous_inner_html: icons::UNLOCK,
 											}
-											"Entschluesseln"
+											"Entschlüsseln"
 									}
 							}
 
