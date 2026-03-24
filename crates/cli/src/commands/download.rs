@@ -333,7 +333,13 @@ fn write_speedreport(
 	};
 
 	let report = rsfdl_core::speedreport::generate(&stats, &settings.speedreport_template);
-	let report_path = settings.download_directory.join("speedreport.txt");
+	let report_dir = if container_name.is_empty() {
+		settings.download_directory.clone()
+	} else {
+		settings.download_directory.join(container_name)
+	};
+	let _ = std::fs::create_dir_all(&report_dir);
+	let report_path = report_dir.join("speedreport.txt");
 
 	match std::fs::write(&report_path, &report) {
 		Ok(()) => eprintln!("Speed report: {}", report_path.display()),
