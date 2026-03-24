@@ -21,14 +21,14 @@
 
 ## Parameter
 
-| Parameter             | Pflicht | Beschreibung                                        |
-|-----------------------|---------|-----------------------------------------------------|
-| `<datei.sfdl>`        | ja      | Pfad zur SFDL-Datei                                 |
-| `--password <pw>`     | nein    | Passwort für verschlüsselte Container               |
-| `--json`              | nein    | Ausgabe als JSON                                    |
-| `--exclude <pattern>` | nein    | Zusätzliches Ausschlussmuster (mehrfach verwendbar) |
-| `--no-exclude`        | nein    | Alle Ausschlussmuster deaktivieren                  |
-| `--show-excluded`     | nein    | Ausgeschlossene Dateien mit anzeigen (markiert)     |
+| Parameter             | Pflicht | Standard          | Beschreibung                                        |
+|-----------------------|---------|-------------------|-----------------------------------------------------|
+| `<datei.sfdl>`        | ja      | —                 | Pfad zur SFDL-Datei                                 |
+| `--password <pw>`     | nein    | Einstellung (CFG) | Passwort fuer verschluesselte Container              |
+| `--json`              | nein    | false             | Ausgabe als JSON                                    |
+| `--exclude <pattern>` | nein    | Einstellung (CFG) | Zusaetzliches Ausschlussmuster (mehrfach verwendbar) |
+| `--no-exclude`        | nein    | false             | Alle Ausschlussmuster deaktivieren                  |
+| `--show-excluded`     | nein    | false             | Ausgeschlossene Dateien mit anzeigen (markiert)     |
 
 ## Main Success Scenario
 
@@ -82,6 +82,8 @@
 ### BR-CLI-002-002: Zusammenfassung
 
 Die letzte Zeile zeigt: „N Dateien (X GB), M ausgeschlossen".
+
+Weitere Regeln: -> CLI-004 (Cross-Cutting): Kanaltrennung (BR-CLI-004-001), Parameter-Prioritaet (BR-CLI-004-006), Exit-Codes (BR-CLI-004-007).
 
 ## Ausgabe (Standard)
 

@@ -21,11 +21,11 @@
 
 ## Parameter
 
-| Parameter         | Pflicht | Beschreibung                                 |
-|-------------------|---------|----------------------------------------------|
-| `<datei.sfdl>`    | ja      | Pfad zur SFDL-Datei                          |
-| `--password <pw>` | nein    | Passwort für verschlüsselte Container        |
-| `--json`          | nein    | Ausgabe als JSON statt menschenlesbarem Text |
+| Parameter         | Pflicht | Standard          | Beschreibung                                 |
+|-------------------|---------|-------------------|----------------------------------------------|
+| `<datei.sfdl>`    | ja      | —                 | Pfad zur SFDL-Datei                          |
+| `--password <pw>` | nein    | Einstellung (CFG) | Passwort fuer verschluesselte Container      |
+| `--json`          | nein    | false             | Ausgabe als JSON statt menschenlesbarem Text |
 
 ## Main Success Scenario
 
@@ -94,6 +94,8 @@
 ### BR-CLI-001-001: Ausgabeformat
 
 Standard-Ausgabe als key-value-Text. Mit `--json`: JSON-Objekt auf stdout.
+
+Weitere Regeln: -> CLI-004 (Cross-Cutting): Kanaltrennung (BR-CLI-004-001), Parameter-Prioritaet (BR-CLI-004-006), Exit-Codes (BR-CLI-004-007).
 
 ## Ausgabe (Standard)
 

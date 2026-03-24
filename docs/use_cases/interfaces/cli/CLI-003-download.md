@@ -99,7 +99,7 @@
 **Trigger:** Benutzer gibt `--threads`, `--retries`, etc. an (Schritt 1)
 **Flow:**
 
-1. CLI-Parameter ueberschreiben die konfigurierten Werte fuer diese Ausfuehrung (-> BR-CLI-003-003).
+1. CLI-Parameter ueberschreiben die konfigurierten Werte fuer diese Ausfuehrung (-> CLI-004, BR-CLI-004-006).
 2. Werte werden nicht in die Datei zurueckgeschrieben.
 
 ## Postconditions
@@ -129,12 +129,7 @@
 - SIGINT zweimal (< 2s): Sofortiger Abbruch.
 - SIGTERM: Wie einmaliges SIGINT.
 
-### BR-CLI-003-003: CLI-Parameter-Prioritaet
-
-- Prioritaet: CLI-Parameter > Konfigurationsdatei > Standardwerte (CFG-001 BR-CFG-002).
-- Alle Parameter mit Standard "Einstellung (CFG)" lesen ihren Defaultwert aus der Konfigurationsdatei.
-- CLI-Parameter ueberschreiben diese Werte nur fuer die aktuelle Ausfuehrung.
-- Ueberschriebene Werte werden nicht in die Konfigurationsdatei zurueckgeschrieben.
+Weitere Regeln: -> CLI-004 (Cross-Cutting): Parameter-Prioritaet (BR-CLI-004-006), Exit-Codes (BR-CLI-004-007), Quiet-Modus (BR-CLI-004-008).
 
 ## Fortschrittsanzeige (stderr)
 
