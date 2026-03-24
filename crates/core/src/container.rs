@@ -13,6 +13,7 @@ pub struct LoadedContainer {
 }
 
 /// How decryption was resolved during loading.
+#[derive(Debug)]
 pub enum DecryptionStatus {
 	/// Container was not encrypted.
 	NotEncrypted,
