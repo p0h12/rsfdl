@@ -21,25 +21,25 @@
 
 ## Parameter
 
-| Parameter         | Pflicht | Standard          | Beschreibung                                 |
-|-------------------|---------|-------------------|----------------------------------------------|
-| `<datei.sfdl>`    | ja      | —                 | Pfad zur SFDL-Datei                          |
-| `--password <pw>` | nein    | Einstellung (CFG) | Passwort fuer verschluesselte Container      |
-| `--json`          | nein    | false             | Ausgabe als JSON statt menschenlesbarem Text |
+| Parameter         | Pflicht | Standard | Beschreibung                                 |
+|-------------------|---------|----------|----------------------------------------------|
+| `<datei.sfdl>`    | ja      | —        | Pfad zur SFDL-Datei                          |
+| `--password <pw>` | nein    | CFG      | Passwort fuer verschluesselte Container      |
+| `--json`          | nein    | false    | Ausgabe als JSON statt menschenlesbarem Text |
 
 ## Main Success Scenario
 
 1. Benutzer ruft `rsfdl info <datei.sfdl>` auf.
-2. System öffnet und parst die SFDL-Datei (-> SFDL-001).
-3. Falls verschlüsselt und `--password` angegeben: System entschlüsselt mit dem Passwort (-> SFDL-002).
-4. Falls verschlüsselt und kein `--password`: Auto-Passwort-Liste wird probiert (-> SFDL-002).
+2. System oeffnet und parst die SFDL-Datei (-> SFDL-001).
+3. Falls verschluesselt und `--password` angegeben: System entschluesselt mit dem Passwort (-> SFDL-002).
+4. Falls verschluesselt und kein `--password`: Auto-Passwort-Liste wird probiert (-> SFDL-002).
 5. System gibt Container-Metadaten auf stdout aus.
 
 ## Alternative Flows
 
 ### A1: Passwort erforderlich (nicht-interaktiv)
 
-**Trigger:** Container ist verschlüsselt, kein Passwort passt, kein interaktives Terminal (Schritt 4)
+**Trigger:** Container ist verschluesselt, kein Passwort passt, kein interaktives Terminal (Schritt 4)
 **Flow:**
 
 1. System gibt Fehlermeldung auf stderr aus.
@@ -61,7 +61,7 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 1.
 
-### A4: Ungültiges SFDL-Format
+### A4: Ungueltiges SFDL-Format
 
 **Trigger:** Datei kann nicht geparst werden (Schritt 2)
 **Flow:**
@@ -71,13 +71,13 @@
 
 ### A5: Interaktiver Passwort-Prompt
 
-**Trigger:** Container ist verschlüsselt, kein Passwort passt, stderr ist ein Terminal (Schritt 4)
+**Trigger:** Container ist verschluesselt, kein Passwort passt, stderr ist ein Terminal (Schritt 4)
 **Flow:**
 
 1. System zeigt Passwort-Prompt auf stdin.
 2. Benutzer gibt Passwort ein.
-3. System entschlüsselt den Container.
-4. Use Case fährt mit Schritt 5 fort.
+3. System entschluesselt den Container.
+4. Use Case faehrt mit Schritt 5 fort.
 
 ## Postconditions
 
@@ -95,7 +95,7 @@
 
 Standard-Ausgabe als key-value-Text. Mit `--json`: JSON-Objekt auf stdout.
 
-Weitere Regeln: -> CLI-004 (Cross-Cutting): Kanaltrennung (BR-CLI-004-001), Parameter-Prioritaet (BR-CLI-004-006), Exit-Codes (BR-CLI-004-007).
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-CC-001), Parameter-Prioritaet (BR-CLI-CC-006), Exit-Codes (BR-CLI-CC-007).
 
 ## Ausgabe (Standard)
 
@@ -108,8 +108,8 @@ Key-value-Paare auf stdout, eines pro Zeile:
 | Host          | Hostname:Port (Protokoll)                                   |
 | Pakete        | Anzahl Pakete                                               |
 | Dateien       | Anzahl Dateien                                              |
-| Grösse        | Gesamtgrösse (menschenlesbar)                               |
-| Verschlüsselt | ja/nein, ggf. mit Hinweis auf Auto-Passwort-Entschlüsselung |
+| Groesse       | Gesamtgroesse (menschenlesbar)                              |
+| Verschluesselt | ja/nein, ggf. mit Hinweis auf Auto-Passwort-Entschluesselung |
 
 ## Ausgabe (JSON)
 
@@ -122,10 +122,10 @@ JSON-Objekt auf stdout mit folgenden Feldern:
 | host        | string  | FTP-Hostname                       |
 | port        | number  | FTP-Port                           |
 | protocol    | string  | Protokoll (z.B. "FTP")             |
-| encrypted   | boolean | Ob der Container verschlüsselt war |
+| encrypted   | boolean | Ob der Container verschluesselt war |
 | packages    | number  | Anzahl Pakete                      |
 | total_files | number  | Anzahl Dateien                     |
-| total_bytes | number  | Gesamtgrösse in Bytes              |
+| total_bytes | number  | Gesamtgroesse in Bytes             |
 
 ## Exit-Codes
 
@@ -133,6 +133,6 @@ JSON-Objekt auf stdout mit folgenden Feldern:
 |------|------------------------------------------|
 | 0    | Erfolg                                   |
 | 1    | Datei nicht gefunden / nicht lesbar      |
-| 2    | Ungültiges SFDL-Format                   |
+| 2    | Ungueltiges SFDL-Format                  |
 | 3    | Passwort erforderlich (nicht-interaktiv) |
 | 4    | Falsches Passwort                        |

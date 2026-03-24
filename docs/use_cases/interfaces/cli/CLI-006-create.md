@@ -23,14 +23,14 @@
 
 | Parameter              | Pflicht | Beschreibung                                   |
 |------------------------|---------|------------------------------------------------|
-| `<output.sfdl>`        | ja      | Ziel-Dateipfad für die erstellte SFDL-Datei    |
+| `<output.sfdl>`        | ja      | Ziel-Dateipfad fuer die erstellte SFDL-Datei   |
 | `--host <host>`        | ja      | FTP-Hostname                                   |
 | `--port <port>`        | nein    | FTP-Port (Standard: 21)                        |
 | `--user <user>`        | ja      | FTP-Benutzername                               |
 | `--pass <pass>`        | ja      | FTP-Passwort                                   |
 | `--path <pfad>`        | ja      | Pfad auf dem FTP-Server (mehrfach angebbar)    |
 | `--bulk`               | nein    | BulkFolder-Modus (kein FTP-Listing, nur Pfade) |
-| `--encrypt <passwort>` | nein    | Container mit Passwort verschlüsseln           |
+| `--encrypt <passwort>` | nein    | Container mit Passwort verschluesseln          |
 | `--description <text>` | nein    | Beschreibung / Release-Name                    |
 | `--uploader <name>`    | nein    | Uploader-Name (Standard: "rsfdl")              |
 | `--threads <n>`        | nein    | Max-Download-Threads (Standard: 3)             |
@@ -54,15 +54,15 @@
 **Flow:**
 
 1. System speichert nur die Pfade im BulkFolder-Modus (-> CR-003), ohne FTP-Verbindung.
-2. Use Case fährt mit Schritt 5 fort.
+2. Use Case faehrt mit Schritt 5 fort.
 
-### A2: Verschlüsselung
+### A2: Verschluesselung
 
 **Trigger:** `--encrypt <passwort>` angegeben (nach Schritt 5)
 **Flow:**
 
-1. System verschlüsselt den Container mit dem angegebenen Passwort (-> CR-004).
-2. Use Case fährt mit Schritt 6 fort.
+1. System verschluesselt den Container mit dem angegebenen Passwort (-> CR-004).
+2. Use Case faehrt mit Schritt 6 fort.
 
 ### A3: FTP-Verbindung fehlgeschlagen
 
@@ -109,7 +109,7 @@
 
 ## Ausgabe
 
-Fortschrittsmeldungen auf stderr (Verbindungsaufbau, Verzeichnis-Listing). Abschlussmeldung auf stdout mit Dateiname, Gesamtgrösse und Dateianzahl.
+Fortschrittsmeldungen auf stderr (Verbindungsaufbau, Verzeichnis-Listing). Abschlussmeldung auf stdout mit Dateiname, Gesamtgroesse und Dateianzahl.
 
 ## Exit-Codes
 

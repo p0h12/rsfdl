@@ -5,7 +5,7 @@
 **Use Case ID:** CLI-005
 **Use Case Name:** CLI config
 **Primary Actor:** Benutzer
-**Goal:** Einstellungen über die Kommandozeile anzeigen, bearbeiten oder den Dateipfad ermitteln.
+**Goal:** Einstellungen ueber die Kommandozeile anzeigen, bearbeiten oder den Dateipfad ermitteln.
 **Interface:** CLI (headless)
 **Implementiert:** CFG-001
 **Status:** Stable
@@ -20,10 +20,10 @@
 
 1. Benutzer ruft `rsfdl config show` auf.
 2. System ermittelt den Konfigurationspfad (-> BR-CLI-005-001).
-3. System lädt die Einstellungen (-> CFG-001, Variante A).
+3. System laedt die Einstellungen (-> CFG-001, Variante A).
 4. System gibt Warnings (korrupte Datei, korrigierte Werte) auf stderr aus.
 5. System gibt die Einstellungen im key=value-Format auf stdout aus.
-6. Passwörter werden maskiert angezeigt (nur Anzahl).
+6. Passwoerter werden maskiert angezeigt (nur Anzahl).
 
 ### `rsfdl config edit`
 
@@ -31,7 +31,7 @@
 2. System ermittelt den Konfigurationspfad (-> BR-CLI-005-001).
 3. System erstellt die Konfigurationsdatei mit Standardwerten, falls nicht vorhanden (-> CFG-001, A1).
 4. System ermittelt den Editor (-> BR-CLI-005-002).
-5. System öffnet die Datei im Editor.
+5. System oeffnet die Datei im Editor.
 6. Benutzer bearbeitet die Datei und schliesst den Editor.
 7. System validiert die bearbeitete Datei (-> CFG-001, Variante A).
 8. System gibt Warnings auf stderr aus.
@@ -44,15 +44,15 @@
 
 ## Alternative Flows
 
-### A1: --config-file überschreibt Standardpfad
+### A1: --config-file ueberschreibt Standardpfad
 
 **Trigger:** Benutzer gibt `--config-file <path>` an
 **Flow:**
 
 1. System verwendet den angegebenen Pfad statt des Standardpfads.
-2. Use Case fährt normal fort.
+2. Use Case faehrt normal fort.
 
-### A2: Editor-Prozess schlägt fehl
+### A2: Editor-Prozess schlaegt fehl
 
 **Trigger:** Editor beendet sich mit Exit-Code != 0 (config edit, Schritt 6)
 **Flow:**
@@ -60,7 +60,7 @@
 1. System meldet: "Editor '{name}' exited with {code}."
 2. Use Case endet mit Exit-Code 1.
 
-### A3: Datei nach Bearbeitung ungültig
+### A3: Datei nach Bearbeitung ungueltig
 
 **Trigger:** Validierung nach Editor-Schliessung findet Fehler (config edit, Schritt 7)
 **Flow:**
@@ -86,7 +86,7 @@
 
 ### Failure Postconditions
 
-- Fehlermeldung auf stderr. Konfigurationsdatei bleibt unverändert.
+- Fehlermeldung auf stderr. Konfigurationsdatei bleibt unveraendert.
 
 ## Business Rules
 
@@ -103,7 +103,7 @@
 ### BR-CLI-005-003: Ausgabeformat
 
 - `config show` gibt key=value-Format auf stdout aus.
-- Passwörter werden maskiert: nur `(N entries)` angezeigt (-> CFG-001, BR-CFG-005).
+- Passwoerter werden maskiert: nur `(N entries)` angezeigt (-> CFG-001, BR-CFG-005).
 - Warnings und Fehler gehen auf stderr.
 
 ## Syntax
@@ -111,7 +111,7 @@
 | Subcommand    | Optionen                 | Beschreibung                          |
 |---------------|--------------------------|---------------------------------------|
 | `config show` | `[--config-file <path>]` | Einstellungen anzeigen                |
-| `config edit` | `[--config-file <path>]` | Konfigurationsdatei im Editor öffnen  |
+| `config edit` | `[--config-file <path>]` | Konfigurationsdatei im Editor oeffnen |
 | `config path` | —                        | Pfad zur Konfigurationsdatei ausgeben |
 
 ## Exit-Codes

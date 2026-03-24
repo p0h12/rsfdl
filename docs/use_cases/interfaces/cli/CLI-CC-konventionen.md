@@ -1,15 +1,15 @@
 # CLI-Konventionen (Cross-Cutting)
 
-**Spec ID:** CLI-004
-**Gilt fuer:** Alle CLI-Kommandos (CLI-001, CLI-002, CLI-003, CLI-005, CLI-006)
+**Spec ID:** CLI-CC
+**Gilt fuer:** Alle CLI-Kommandos (CLI-001 bis CLI-006)
 **Interface:** CLI (headless)
 **Status:** Stable
 
-Dieses Dokument definiert Regeln die querschnittlich fuer alle CLI-Befehle gelten.
+Dieses Dokument ist kein Use Case. Es definiert Regeln die querschnittlich fuer alle CLI-Befehle gelten.
 
 ---
 
-## BR-CLI-004-001: Kanaltrennung
+## BR-CLI-CC-001: Kanaltrennung
 
 | Kanal    | Inhalt                                                     |
 |----------|------------------------------------------------------------|
@@ -18,13 +18,13 @@ Dieses Dokument definiert Regeln die querschnittlich fuer alle CLI-Befehle gelte
 
 Diese Trennung ermoeglicht: `rsfdl list file.sfdl > filelist.txt` ohne Fortschritts-Rauschen.
 
-## BR-CLI-004-002: Fortschrittsanzeige
+## BR-CLI-CC-002: Fortschrittsanzeige
 
 - Terminal: `\r` fuer In-Place-Updates mit Progress-Bars.
 - Nicht-Terminal (Pipe/Redirect): Eine Zeile pro Datei-Abschluss.
 - Debouncing: Max. 10 Updates/Sekunde.
 
-## BR-CLI-004-003: JSON-Format
+## BR-CLI-CC-003: JSON-Format
 
 Alle Kommandos mit `--json` Flag geben maschinenlesbares JSON aus.
 
@@ -51,26 +51,26 @@ Alle Kommandos mit `--json` Flag geben maschinenlesbares JSON aus.
 | task_failed       | filename, error_type, retry             |
 | session_completed | status, completed, failed               |
 
-## BR-CLI-004-004: Logging
+## BR-CLI-CC-004: Logging
 
 - Gesteuert ueber `RSFDL_LOG` Umgebungsvariable oder `--log-level`.
 - Werte: `error`, `warn`, `info`, `debug`, `trace`. Standard: `warn`.
 - Log-Ausgabe auf stderr, prefixed mit Timestamp und Level.
 
-## BR-CLI-004-005: Farben
+## BR-CLI-CC-005: Farben
 
 - Farben nur wenn stderr ein Terminal ist.
 - `NO_COLOR` Umgebungsvariable deaktiviert Farben (gemaess no-color.org).
 - Rot: Fehler. Gelb: Warnungen. Gruen: Erfolg. Blau: Info/Fortschritt.
 
-## BR-CLI-004-006: Parameter-Prioritaet
+## BR-CLI-CC-006: Parameter-Prioritaet
 
 - Prioritaet: **CLI-Parameter > Konfigurationsdatei > Standardwerte**.
-- Alle Parameter mit Standard "Einstellung (CFG)" lesen ihren Defaultwert aus der Konfigurationsdatei (-> CFG-001).
+- Alle Parameter mit Standard "CFG" lesen ihren Defaultwert aus der Konfigurationsdatei (-> CFG-001).
 - CLI-Parameter ueberschreiben diese Werte nur fuer die aktuelle Ausfuehrung.
 - Ueberschriebene Werte werden nicht in die Konfigurationsdatei zurueckgeschrieben.
 
-## BR-CLI-004-007: Exit-Code-Schema
+## BR-CLI-CC-007: Exit-Code-Schema
 
 Gemeinsame Exit-Codes fuer alle CLI-Befehle:
 
@@ -92,7 +92,7 @@ Zusaetzliche Exit-Codes fuer `download` (CLI-003):
 | 11   | Alle Downloads fehlgeschlagen            |
 | 12   | Abbruch durch Signal (SIGINT/SIGTERM)    |
 
-## BR-CLI-004-008: Quiet-Modus
+## BR-CLI-CC-008: Quiet-Modus
 
 - `--quiet`: Keine Fortschrittsanzeige auf stderr. Nur Fehler und Warnungen.
 - stdout: Nur Ergebnis-Zusammenfassung.
