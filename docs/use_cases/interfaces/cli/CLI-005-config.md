@@ -92,7 +92,7 @@
 
 ### BR-CLI-005-001: Pfadermittlung
 
-- `--config-file <path>` überschreibt den Standardpfad (-> CFG-001, BR-CFG-004).
+- `--config-file <path>` ueberschreibt den Standardpfad (-> CFG-001, BR-CFG-001).
 - Ohne `--config-file`: Plattform-spezifischer Standardpfad (-> CFG-001, BR-CFG-001).
 
 ### BR-CLI-005-002: Editor-Ermittlung

@@ -136,13 +136,7 @@
 - `download_directory`: Pfad muss existieren oder erstellbar sein
 - `exclusion_patterns`: Jedes Muster muss gültiger Glob-Syntax entsprechen
 
-### BR-CFG-004: CLI-Überschreibung
-
-- CLI-Parameter überschreiben gespeicherte Werte für die aktuelle Ausführung.
-- CLI-Parameter werden nicht in die Datei zurückgeschrieben.
-- Priorität: CLI-Parameter > Konfigurationsdatei > Standardwerte
-
-### BR-CFG-005: Passwort-Speicherung
+### BR-CFG-004: Passwort-Speicherung
 
 - Passwoerter in der `auto_passwords` Liste werden aktuell im Klartext in der TOML-Datei gespeichert.
 - Geplant: OS-spezifischer Keyring oder AES mit maschinengebundenem Schluessel (NFR-06).

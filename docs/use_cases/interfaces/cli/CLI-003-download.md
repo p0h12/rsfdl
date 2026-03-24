@@ -22,24 +22,24 @@
 
 ## Parameter
 
-| Parameter             | Pflicht | Standard       | Beschreibung                                |
-|-----------------------|---------|----------------|---------------------------------------------|
-| `<datei.sfdl>`        | ja      | —              | Pfad zur SFDL-Datei                         |
-| `--password <pw>`     | nein    | Auto-Liste     | Passwort für verschlüsselte Container       |
-| `--output <dir>`      | nein    | Einstellung    | Zielverzeichnis                             |
-| `--threads <n>`       | nein    | 3              | Max. parallele Downloads                    |
-| `--max-speed <KB/s>`  | nein    | 0 (unbegrenzt) | Bandbreitenbegrenzung                       |
-| `--exclude <pattern>` | nein    | Einstellung    | Zusätzliches Ausschlussmuster (mehrfach)    |
-| `--no-exclude`        | nein    | false          | Alle Ausschlussmuster deaktivieren          |
-| `--retries <n>`       | nein    | 3              | Max. Retry-Versuche                         |
-| `--retry-delay <s>`   | nein    | 10             | Wartezeit zwischen Retries                  |
-| `--strict-disk-check` | nein    | false          | Bei zu wenig Speicherplatz abbrechen        |
-| `--extract`           | nein    | false          | Auto-Extraktion nach Download               |
-| `--delete-archives`   | nein    | false          | Archive nach Extraktion löschen             |
-| `--verify`            | nein    | false          | Hash-Verifikation nach Download             |
-| `--speedreport`       | nein    | false          | Speed-Report auf stdout ausgeben            |
-| `--json`              | nein    | false          | Progress und Ergebnis als JSON (-> CLI-004) |
-| `--quiet`             | nein    | false          | Keine Fortschrittsanzeige, nur Ergebnis     |
+| Parameter             | Pflicht | Standard          | Beschreibung                                |
+|-----------------------|---------|-------------------|---------------------------------------------|
+| `<datei.sfdl>`        | ja      | —                 | Pfad zur SFDL-Datei                         |
+| `--password <pw>`     | nein    | Einstellung (CFG) | Passwort fuer verschluesselte Container     |
+| `--output <dir>`      | nein    | Einstellung (CFG) | Zielverzeichnis                             |
+| `--threads <n>`       | nein    | Einstellung (CFG) | Max. parallele Downloads                    |
+| `--max-speed <KB/s>`  | nein    | Einstellung (CFG) | Bandbreitenbegrenzung (0 = unbegrenzt)      |
+| `--exclude <pattern>` | nein    | Einstellung (CFG) | Zusaetzliches Ausschlussmuster (mehrfach)   |
+| `--no-exclude`        | nein    | false             | Alle Ausschlussmuster deaktivieren          |
+| `--retries <n>`       | nein    | Einstellung (CFG) | Max. Retry-Versuche                         |
+| `--retry-delay <s>`   | nein    | Einstellung (CFG) | Wartezeit zwischen Retries                  |
+| `--strict-disk-check` | nein    | Einstellung (CFG) | Bei zu wenig Speicherplatz abbrechen        |
+| `--extract`           | nein    | Einstellung (CFG) | Auto-Extraktion nach Download               |
+| `--delete-archives`   | nein    | Einstellung (CFG) | Archive nach Extraktion loeschen            |
+| `--verify`            | nein    | false             | Hash-Verifikation nach Download (geplant)   |
+| `--speedreport`       | nein    | false             | Speed-Report auf stdout (geplant)           |
+| `--json`              | nein    | false             | JSON-Ausgabe (geplant, -> CLI-004)          |
+| `--quiet`             | nein    | false             | Keine Fortschrittsanzeige, nur Ergebnis     |
 
 ## Main Success Scenario
 
@@ -99,8 +99,8 @@
 **Trigger:** Benutzer gibt `--threads`, `--retries`, etc. an (Schritt 1)
 **Flow:**
 
-1. CLI-Parameter überschreiben die konfigurierten Werte für diese Ausführung (-> CFG-001, BR-CFG-004).
-2. Werte werden nicht in die Datei zurückgeschrieben.
+1. CLI-Parameter ueberschreiben die konfigurierten Werte fuer diese Ausfuehrung (-> BR-CLI-003-003).
+2. Werte werden nicht in die Datei zurueckgeschrieben.
 
 ## Postconditions
 
@@ -128,6 +128,13 @@
 - SIGINT einmal: Graceful Shutdown.
 - SIGINT zweimal (< 2s): Sofortiger Abbruch.
 - SIGTERM: Wie einmaliges SIGINT.
+
+### BR-CLI-003-003: CLI-Parameter-Prioritaet
+
+- Prioritaet: CLI-Parameter > Konfigurationsdatei > Standardwerte (CFG-001 BR-CFG-002).
+- Alle Parameter mit Standard "Einstellung (CFG)" lesen ihren Defaultwert aus der Konfigurationsdatei.
+- CLI-Parameter ueberschreiben diese Werte nur fuer die aktuelle Ausfuehrung.
+- Ueberschriebene Werte werden nicht in die Konfigurationsdatei zurueckgeschrieben.
 
 ## Fortschrittsanzeige (stderr)
 
