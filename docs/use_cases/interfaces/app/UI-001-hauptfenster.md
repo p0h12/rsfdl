@@ -17,9 +17,9 @@
 
 ## Main Success Scenario
 
-1. System zeigt das Hauptfenster mit Header (App-Name, Buttons: Open File, Create, Settings) und der Drop-Zone.
-2. Benutzer klickt „Open File" oder zieht eine Datei per Drag-and-Drop (-> UI-006).
-3. System öffnet den OS-Dateidialog (Filter: `*.sfdl`) bzw. übernimmt die gedropte Datei.
+1. System zeigt das Hauptfenster mit Header (App-Name, Buttons: Open, Settings, Theme-Toggle) und der Drop-Zone.
+2. Benutzer klickt „Open" im Header oder „Datei auswaehlen" in der Drop-Zone.
+3. System oeffnet den OS-Dateidialog (Filter: `*.sfdl`, Mehrfachauswahl).
 4. Benutzer wählt eine oder mehrere SFDL-Dateien.
 5. System liest und parst jede Datei (-> SFDL-001) und fügt sie als Card zur Container-Liste hinzu.
 6. System prüft pro Container ob Auto-Passwörter greifen. Bei unverschlüsseltem oder auto-entschlüsseltem Container: weiter.
