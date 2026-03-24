@@ -1,18 +1,21 @@
 use std::path::PathBuf;
 
-use rsfdl_core::settings::{AppSettings, default_settings_path, format_settings, load_settings, save_settings};
+use rsfdl_core::settings::{self, Settings, default_settings_path, format_settings};
 
 pub fn run_show(config_file: Option<&str>) {
 	let path = config_file.map(PathBuf::from).unwrap_or_else(default_settings_path);
-	let settings = load_settings(&path);
-	print!("{}", format_settings(&path, &settings));
+	let result = settings::load(&path);
+	for w in &result.warnings {
+		eprintln!("Warning: {w}");
+	}
+	print!("{}", format_settings(&path, &result.settings));
 }
 
 pub fn run_edit(config_file: Option<&str>) -> std::io::Result<()> {
 	let path = config_file.map(PathBuf::from).unwrap_or_else(default_settings_path);
 
 	if !path.exists() {
-		save_settings(&path, &AppSettings::default())?;
+		settings::save(&path, &Settings::default()).map_err(|e| std::io::Error::other(e.to_string()))?;
 	}
 
 	let editor = std::env::var("EDITOR").unwrap_or_else(|_| if cfg!(windows) { "notepad".into() } else { "vi".into() });
@@ -21,6 +24,12 @@ pub fn run_edit(config_file: Option<&str>) -> std::io::Result<()> {
 
 	if !status.success() {
 		return Err(std::io::Error::other(format!("Editor '{}' exited with {}", editor, status)));
+	}
+
+	// Validate after editing
+	let result = settings::load(&path);
+	for w in &result.warnings {
+		eprintln!("Warning: {w}");
 	}
 
 	Ok(())

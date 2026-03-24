@@ -21,16 +21,16 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], dest: Option<&str>, 
 		}
 	};
 
-	// Apply CLI overrides to settings
+	// Apply CLI overrides to settings (BR-CFG-004)
 	if let Some(d) = dest {
 		settings.download_directory = PathBuf::from(d);
 	} else {
 		settings.download_directory = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
 	}
-	settings.max_download_threads = threads;
+	settings.max_threads = threads;
 
 	// UC-DL-001 + UC-DL-002: Apply file exclusion patterns
-	let mut all_patterns = settings.file_exclusion_patterns.clone();
+	let mut all_patterns = settings.exclusion_patterns.clone();
 	all_patterns.extend_from_slice(cli_exclude);
 
 	let selection = rsfdl_core::container::compute_file_selection(&container, &all_patterns);
@@ -187,10 +187,10 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], dest: Option<&str>, 
 	};
 
 	// UC-POST-002: Auto-extraction
-	if settings.auto_extract_archives {
+	if settings.auto_extract {
 		let (ext_tx, mut ext_rx) = mpsc::unbounded_channel::<ProgressEvent>();
 		let ext_dir = settings.download_directory.clone();
-		let delete_after = settings.delete_archives_after_extraction;
+		let delete_after = settings.delete_archives_after_extract;
 
 		let ext_handle = tokio::spawn(async move { rsfdl_core::extraction::extract_archives(&ext_dir, delete_after, &ext_tx).await });
 

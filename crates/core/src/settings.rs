@@ -1,345 +1,598 @@
-use serde::{Deserialize, Serialize};
+//! CFG-001: Settings management.
+//!
+//! Load, save, validate, and reset application settings in TOML format.
+//! The config file path is always provided by the calling layer (CLI, GUI, Mobile).
+
 use std::fmt::Write;
 use std::path::{Path, PathBuf};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct AppSettings {
+use serde::{Deserialize, Serialize};
+
+use crate::error::SettingsError;
+
+/// Application settings per BR-CFG-002.
+///
+/// All fields have `#[serde(default)]` so that missing keys in the TOML file
+/// are filled with defaults instead of triggering a parse error.
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[serde(default)]
+pub struct Settings {
 	pub download_directory: PathBuf,
-	pub max_download_threads: u32,
-	/// Not yet used by the download manager — retry logic is planned but unimplemented.
+	pub max_threads: u32,
+	pub max_speed_kbps: u32,
 	pub max_retries: u32,
-	/// Not yet used by the download manager — retry logic is planned but unimplemented.
-	pub retry_wait_seconds: u32,
-	pub auto_password_list: Vec<String>,
-	pub resume_downloads: bool,
-	pub create_package_subfolder: bool,
+	pub retry_delay_seconds: u32,
+	pub auto_extract: bool,
+	pub delete_archives_after_extract: bool,
+	pub strict_disk_check: bool,
 	pub ftp_timeout_seconds: u32,
-	/// Glob patterns for files to exclude from download (UC-15).
-	/// Case-insensitive matching on file_name only. Empty = no exclusions.
-	#[serde(default)]
-	pub file_exclusion_patterns: Vec<String>,
-	/// Automatically extract archives after download completes (UC-14).
-	/// Default: false (disabled).
-	#[serde(default)]
-	pub auto_extract_archives: bool,
-	/// Delete archive files after successful extraction (UC-14).
-	/// Default: false (archives are kept).
-	#[serde(default)]
-	pub delete_archives_after_extraction: bool,
+	pub exclusion_patterns: Vec<String>,
+	pub auto_passwords: Vec<String>,
+	pub speedreport_template: String,
 }
 
-impl Default for AppSettings {
+impl Default for Settings {
 	fn default() -> Self {
 		Self {
-			download_directory: dirs::download_dir().unwrap_or_else(|| PathBuf::from(".")),
-			max_download_threads: 3,
+			download_directory: dirs::download_dir().unwrap_or_else(|| PathBuf::from(".")).join("rsfdl"),
+			max_threads: 3,
+			max_speed_kbps: 0,
 			max_retries: 3,
-			retry_wait_seconds: 10,
-			auto_password_list: Vec::new(),
-			resume_downloads: true,
-			create_package_subfolder: true,
+			retry_delay_seconds: 10,
+			auto_extract: false,
+			delete_archives_after_extract: false,
+			strict_disk_check: false,
 			ftp_timeout_seconds: 30,
-			file_exclusion_patterns: vec!["*.scr".into(), "*.lnk".into(), "*.nfo".into()],
-			auto_extract_archives: false,
-			delete_archives_after_extraction: false,
+			exclusion_patterns: vec!["*.nfo".into(), "*.jpg".into(), "*.png".into(), "*.txt".into(), "*sample*".into()],
+			auto_passwords: Vec::new(),
+			speedreport_template: String::new(),
 		}
 	}
 }
 
-/// Get the default settings file path.
-/// - macOS: ~/Library/Application Support/rsfdl/settings.json
-/// - Linux: ~/.config/rsfdl/settings.json
-/// - Windows: C:\Users\<user>\AppData\Roaming\rsfdl\settings.json
-pub fn default_settings_path() -> PathBuf {
-	let config_dir = dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("rsfdl");
-	config_dir.join("settings.json")
+/// Validate settings per BR-CFG-003.
+/// Returns a list of (field_name, reason) pairs for all invalid values.
+pub fn validate(settings: &Settings) -> Vec<(String, String)> {
+	let mut errors = Vec::new();
+
+	if settings.max_threads < 1 || settings.max_threads > 20 {
+		errors.push(("max_threads".into(), format!("must be 1–20, got {}", settings.max_threads)));
+	}
+
+	if settings.max_retries > 50 {
+		errors.push(("max_retries".into(), format!("must be 0–50, got {}", settings.max_retries)));
+	}
+
+	if settings.retry_delay_seconds < 1 || settings.retry_delay_seconds > 3600 {
+		errors.push(("retry_delay_seconds".into(), format!("must be 1–3600, got {}", settings.retry_delay_seconds)));
+	}
+
+	for (i, pattern) in settings.exclusion_patterns.iter().enumerate() {
+		if pattern.is_empty() {
+			errors.push((format!("exclusion_patterns[{}]", i), "pattern must not be empty".into()));
+		}
+	}
+
+	errors
 }
 
-/// Load settings from a JSON file. Returns defaults if the file doesn't exist or is invalid.
-pub fn load_settings(path: &Path) -> AppSettings {
-	match std::fs::read_to_string(path) {
-		Ok(content) => serde_json::from_str(&content).unwrap_or_else(|e| {
-			tracing::warn!("Failed to parse settings file: {e}");
-			AppSettings::default()
-		}),
-		Err(_) => AppSettings::default(),
+/// Fix invalid values by replacing them with defaults (A3 flow).
+/// Returns the list of fields that were corrected.
+pub fn fix_invalid(settings: &mut Settings) -> Vec<String> {
+	let errors = validate(settings);
+	if errors.is_empty() {
+		return Vec::new();
 	}
+
+	let defaults = Settings::default();
+	let mut corrected = Vec::new();
+
+	for (field, _) in &errors {
+		match field.as_str() {
+			"max_threads" => settings.max_threads = defaults.max_threads,
+			"max_retries" => settings.max_retries = defaults.max_retries,
+			"retry_delay_seconds" => settings.retry_delay_seconds = defaults.retry_delay_seconds,
+			_ => continue,
+		}
+		corrected.push(field.clone());
+	}
+
+	settings.exclusion_patterns.retain(|p| !p.is_empty());
+
+	corrected
+}
+
+/// Get the default settings file path (BR-CFG-001).
+/// - macOS: ~/Library/Application Support/rsfdl/settings.toml
+/// - Linux: ~/.config/rsfdl/settings.toml
+/// - Windows: %APPDATA%\rsfdl\settings.toml
+pub fn default_settings_path() -> PathBuf {
+	let config_dir = dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("rsfdl");
+	config_dir.join("settings.toml")
+}
+
+/// Load result returned by [`load`].
+pub struct LoadResult {
+	pub settings: Settings,
+	pub warnings: Vec<String>,
+}
+
+/// CFG-001 Variante A: Load settings from a TOML file.
+///
+/// - File missing → create with defaults (A1).
+/// - File corrupt → rename to `.bak`, use defaults (A2).
+/// - Invalid values → fix silently, report corrected fields (A3).
+pub fn load(path: &Path) -> LoadResult {
+	let mut warnings = Vec::new();
+
+	let content = match std::fs::read_to_string(path) {
+		Ok(c) => c,
+		Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
+			// A1: File not found → defaults
+			let settings = Settings::default();
+			if let Err(e) = save(path, &settings) {
+				warnings.push(format!("Could not write default settings: {e}"));
+			}
+			return LoadResult { settings, warnings };
+		}
+		Err(e) => {
+			warnings.push(format!("Cannot read config file: {e}"));
+			return LoadResult {
+				settings: Settings::default(),
+				warnings,
+			};
+		}
+	};
+
+	let mut settings: Settings = match toml::from_str(&content) {
+		Ok(s) => s,
+		Err(e) => {
+			// A2: Corrupt TOML → .bak + defaults
+			warnings.push(format!("Konfigurationsdatei beschädigt. Standardwerte werden verwendet. ({e})"));
+			let bak = path.with_extension("toml.bak");
+			if let Err(rename_err) = std::fs::rename(path, &bak) {
+				warnings.push(format!("Could not rename corrupt file to .bak: {rename_err}"));
+			}
+			return LoadResult {
+				settings: Settings::default(),
+				warnings,
+			};
+		}
+	};
+
+	// A3: Fix invalid values
+	let corrected = fix_invalid(&mut settings);
+	if !corrected.is_empty() {
+		warnings.push(format!("Ungültige Werte korrigiert: {}", corrected.join(", ")));
+	}
+
+	LoadResult { settings, warnings }
+}
+
+/// CFG-001 Variante B: Save settings to a TOML file.
+///
+/// Validates before saving. Returns error on validation failure (A4)
+/// or IO failure (A5).
+pub fn save(path: &Path, settings: &Settings) -> Result<(), SettingsError> {
+	let errors = validate(settings);
+	if !errors.is_empty() {
+		let msg = errors.iter().map(|(field, reason)| format!("{field}: {reason}")).collect::<Vec<_>>().join("; ");
+		return Err(SettingsError::Validation(msg));
+	}
+
+	if let Some(parent) = path.parent() {
+		std::fs::create_dir_all(parent)?;
+	}
+
+	let toml_str = toml::to_string_pretty(settings).map_err(|e| SettingsError::TomlSerialize(e.to_string()))?;
+	std::fs::write(path, toml_str)?;
+	Ok(())
+}
+
+/// CFG-001 Variante C: Reset to defaults and write to disk.
+pub fn reset(path: &Path) -> Result<Settings, SettingsError> {
+	let settings = Settings::default();
+	save(path, &settings)?;
+	Ok(settings)
 }
 
 /// Format settings as human-readable key=value output for `config show`.
 /// Passwords are masked — only the count is shown.
-pub fn format_settings(path: &Path, settings: &AppSettings) -> String {
+pub fn format_settings(path: &Path, settings: &Settings) -> String {
 	let mut out = String::new();
 	writeln!(out, "Settings file: {}", path.display()).unwrap();
 	writeln!(out).unwrap();
-	writeln!(out, "download_directory       = {}", settings.download_directory.display()).unwrap();
-	writeln!(out, "max_download_threads     = {}", settings.max_download_threads).unwrap();
-	writeln!(out, "max_retries              = {}", settings.max_retries).unwrap();
-	writeln!(out, "retry_wait_seconds       = {}", settings.retry_wait_seconds).unwrap();
-	writeln!(out, "ftp_timeout_seconds      = {}", settings.ftp_timeout_seconds).unwrap();
-	writeln!(out, "resume_downloads         = {}", settings.resume_downloads).unwrap();
-	writeln!(out, "create_package_subfolder = {}", settings.create_package_subfolder).unwrap();
-	writeln!(out, "auto_extract_archives    = {}", settings.auto_extract_archives).unwrap();
-	writeln!(out, "delete_archives_after_extraction = {}", settings.delete_archives_after_extraction).unwrap();
-	if settings.file_exclusion_patterns.is_empty() {
-		writeln!(out, "file_exclusion_patterns  = (none)").unwrap();
+	writeln!(out, "download_directory            = {}", settings.download_directory.display()).unwrap();
+	writeln!(out, "max_threads                  = {}", settings.max_threads).unwrap();
+	writeln!(out, "max_speed_kbps               = {}", settings.max_speed_kbps).unwrap();
+	writeln!(out, "max_retries                  = {}", settings.max_retries).unwrap();
+	writeln!(out, "retry_delay_seconds          = {}", settings.retry_delay_seconds).unwrap();
+	writeln!(out, "ftp_timeout_seconds          = {}", settings.ftp_timeout_seconds).unwrap();
+	writeln!(out, "auto_extract                 = {}", settings.auto_extract).unwrap();
+	writeln!(out, "delete_archives_after_extract = {}", settings.delete_archives_after_extract).unwrap();
+	writeln!(out, "strict_disk_check            = {}", settings.strict_disk_check).unwrap();
+	if settings.exclusion_patterns.is_empty() {
+		writeln!(out, "exclusion_patterns           = (none)").unwrap();
 	} else {
-		writeln!(out, "file_exclusion_patterns  = {}", settings.file_exclusion_patterns.join(", ")).unwrap();
+		writeln!(out, "exclusion_patterns           = {}", settings.exclusion_patterns.join(", ")).unwrap();
 	}
-	writeln!(out, "auto_password_list       = ({} entries)", settings.auto_password_list.len()).unwrap();
+	writeln!(out, "auto_passwords               = ({} entries)", settings.auto_passwords.len()).unwrap();
 	out
-}
-
-/// Save settings to a JSON file. Creates parent directories if needed.
-pub fn save_settings(path: &Path, settings: &AppSettings) -> std::io::Result<()> {
-	if let Some(parent) = path.parent() {
-		std::fs::create_dir_all(parent)?;
-	}
-	let json = serde_json::to_string_pretty(settings).map_err(std::io::Error::other)?;
-	std::fs::write(path, json)
 }
 
 #[cfg(test)]
 mod tests {
 	use super::*;
 
+	// -------------------------------------------------------
+	// CFG-001 / BR-CFG-002: Default values
+	// -------------------------------------------------------
+
+	/// CFG-001 | BR-CFG-002: All default values match the specification.
 	#[test]
-	fn save_and_load_round_trip() {
+	fn cfg001_defaults_match_spec() {
+		let s = Settings::default();
+		assert_eq!(s.max_threads, 3);
+		assert_eq!(s.max_speed_kbps, 0);
+		assert_eq!(s.max_retries, 3);
+		assert_eq!(s.retry_delay_seconds, 10);
+		assert!(!s.auto_extract);
+		assert!(!s.delete_archives_after_extract);
+		assert!(!s.strict_disk_check);
+		assert_eq!(s.exclusion_patterns, vec!["*.nfo", "*.jpg", "*.png", "*.txt", "*sample*"]);
+		assert!(s.auto_passwords.is_empty());
+		assert!(s.speedreport_template.is_empty());
+	}
+
+	// -------------------------------------------------------
+	// CFG-001 / BR-CFG-003: Validation
+	// -------------------------------------------------------
+
+	/// CFG-001 | BR-CFG-003: Default values pass validation.
+	#[test]
+	fn cfg001_validate_accepts_defaults() {
+		let s = Settings::default();
+		assert!(validate(&s).is_empty());
+	}
+
+	/// CFG-001 | BR-CFG-003: max_threads must be 1–20.
+	#[test]
+	fn cfg001_validate_max_threads_bounds() {
+		let mut s = Settings::default();
+
+		s.max_threads = 0;
+		assert!(!validate(&s).is_empty());
+
+		s.max_threads = 21;
+		assert!(!validate(&s).is_empty());
+
+		s.max_threads = 1;
+		assert!(validate(&s).is_empty());
+
+		s.max_threads = 20;
+		assert!(validate(&s).is_empty());
+	}
+
+	/// CFG-001 | BR-CFG-003: max_retries must be 0–50.
+	#[test]
+	fn cfg001_validate_max_retries_bounds() {
+		let mut s = Settings::default();
+
+		s.max_retries = 51;
+		assert!(!validate(&s).is_empty());
+
+		s.max_retries = 0;
+		assert!(validate(&s).is_empty());
+
+		s.max_retries = 50;
+		assert!(validate(&s).is_empty());
+	}
+
+	/// CFG-001 | BR-CFG-003: retry_delay_seconds must be 1–3600.
+	#[test]
+	fn cfg001_validate_retry_delay_bounds() {
+		let mut s = Settings::default();
+
+		s.retry_delay_seconds = 0;
+		assert!(!validate(&s).is_empty());
+
+		s.retry_delay_seconds = 3601;
+		assert!(!validate(&s).is_empty());
+
+		s.retry_delay_seconds = 1;
+		assert!(validate(&s).is_empty());
+
+		s.retry_delay_seconds = 3600;
+		assert!(validate(&s).is_empty());
+	}
+
+	/// CFG-001 | BR-CFG-003: exclusion_patterns must be valid glob syntax (non-empty).
+	#[test]
+	fn cfg001_validate_empty_exclusion_pattern() {
+		let mut s = Settings::default();
+		s.exclusion_patterns.push(String::new());
+		let errors = validate(&s);
+		assert!(errors.iter().any(|(f, _)| f.contains("exclusion_patterns")));
+	}
+
+	// -------------------------------------------------------
+	// CFG-001 A3: fix_invalid — auto-correct out-of-range values
+	// -------------------------------------------------------
+
+	/// CFG-001 | A3: Out-of-range values are replaced with defaults.
+	#[test]
+	fn cfg001_fix_invalid_corrects_out_of_range() {
+		let mut s = Settings::default();
+		s.max_threads = 100;
+		s.max_retries = 999;
+		s.retry_delay_seconds = 0;
+		s.exclusion_patterns.push(String::new());
+
+		let corrected = fix_invalid(&mut s);
+
+		assert!(corrected.contains(&"max_threads".to_string()));
+		assert!(corrected.contains(&"max_retries".to_string()));
+		assert!(corrected.contains(&"retry_delay_seconds".to_string()));
+		assert_eq!(s.max_threads, 3);
+		assert_eq!(s.max_retries, 3);
+		assert_eq!(s.retry_delay_seconds, 10);
+		assert!(!s.exclusion_patterns.iter().any(|p| p.is_empty()));
+	}
+
+	/// CFG-001 | A3: Valid values are not touched by fix_invalid.
+	#[test]
+	fn cfg001_fix_invalid_leaves_valid_unchanged() {
+		let mut s = Settings::default();
+		s.max_threads = 10;
+		let corrected = fix_invalid(&mut s);
+		assert!(corrected.is_empty());
+		assert_eq!(s.max_threads, 10);
+	}
+
+	// -------------------------------------------------------
+	// CFG-001 Variante A+B: TOML round-trip (save + load)
+	// -------------------------------------------------------
+
+	/// CFG-001 | Variante A+B: Save then load preserves all values.
+	#[test]
+	fn cfg001_save_and_load_round_trip() {
 		let dir = tempfile::tempdir().unwrap();
-		let path = dir.path().join("settings.json");
+		let path = dir.path().join("settings.toml");
 
-		let settings = AppSettings {
-			max_download_threads: 5,
-			resume_downloads: false,
-			auto_password_list: vec!["pw1".into(), "pw2".into()],
-			ftp_timeout_seconds: 60,
-			..Default::default()
-		};
+		let mut settings = Settings::default();
+		settings.max_threads = 5;
+		settings.max_speed_kbps = 1024;
+		settings.auto_passwords = vec!["pw1".into(), "pw2".into()];
 
-		save_settings(&path, &settings).unwrap();
-		let loaded = load_settings(&path);
+		save(&path, &settings).unwrap();
+		let result = load(&path);
 
-		assert_eq!(loaded.max_download_threads, 5);
-		assert!(!loaded.resume_downloads);
-		assert_eq!(loaded.auto_password_list, vec!["pw1", "pw2"]);
-		assert_eq!(loaded.ftp_timeout_seconds, 60);
+		assert!(result.warnings.is_empty());
+		assert_eq!(result.settings.max_threads, 5);
+		assert_eq!(result.settings.max_speed_kbps, 1024);
+		assert_eq!(result.settings.auto_passwords, vec!["pw1", "pw2"]);
 	}
 
+	/// CFG-001 | Variante B: Save overwrites previous file contents.
 	#[test]
-	fn load_returns_defaults_for_missing_file() {
-		let path = Path::new("/tmp/rsfdl_nonexistent_test/settings.json");
-		let loaded = load_settings(path);
-		let defaults = AppSettings::default();
-		assert_eq!(loaded.max_download_threads, defaults.max_download_threads);
-		assert_eq!(loaded.resume_downloads, defaults.resume_downloads);
-	}
-
-	#[test]
-	fn save_overwrites_existing() {
+	fn cfg001_save_overwrites_existing() {
 		let dir = tempfile::tempdir().unwrap();
-		let path = dir.path().join("settings.json");
+		let path = dir.path().join("settings.toml");
 
-		let s1 = AppSettings {
-			max_download_threads: 3,
-			..Default::default()
-		};
-		save_settings(&path, &s1).unwrap();
+		let mut s1 = Settings::default();
+		s1.max_threads = 3;
+		save(&path, &s1).unwrap();
 
-		let s2 = AppSettings {
-			max_download_threads: 7,
-			..Default::default()
-		};
-		save_settings(&path, &s2).unwrap();
+		let mut s2 = Settings::default();
+		s2.max_threads = 7;
+		save(&path, &s2).unwrap();
 
-		let loaded = load_settings(&path);
-		assert_eq!(loaded.max_download_threads, 7);
+		let result = load(&path);
+		assert_eq!(result.settings.max_threads, 7);
 	}
 
-	/// Covers AT-24 / UC-15: file_exclusion_patterns round-trip
+	// -------------------------------------------------------
+	// CFG-001 A1: File not found → defaults + create
+	// -------------------------------------------------------
+
+	/// CFG-001 | A1: Missing file → returns defaults and creates file on disk.
 	#[test]
-	fn save_and_load_exclusion_patterns() {
+	fn cfg001_load_missing_file_returns_defaults_and_creates() {
 		let dir = tempfile::tempdir().unwrap();
-		let path = dir.path().join("settings.json");
+		let path = dir.path().join("settings.toml");
 
-		let settings = AppSettings {
-			file_exclusion_patterns: vec!["*.nfo".into(), "*.jpg".into(), "*sample*".into()],
-			..Default::default()
-		};
+		assert!(!path.exists());
+		let result = load(&path);
 
-		save_settings(&path, &settings).unwrap();
-		let loaded = load_settings(&path);
-
-		assert_eq!(loaded.file_exclusion_patterns, vec!["*.nfo", "*.jpg", "*sample*"]);
+		assert_eq!(result.settings, Settings::default());
+		assert!(path.exists(), "should create default settings file");
 	}
 
-	/// Covers UC-15: Existing settings without file_exclusion_patterns
-	/// field should load with empty default (backward compatibility).
+	// -------------------------------------------------------
+	// CFG-001 A2: Corrupt TOML → .bak + defaults
+	// -------------------------------------------------------
+
+	/// CFG-001 | A2: Corrupt file → renamed to .bak, returns defaults with warning.
 	#[test]
-	fn load_settings_without_exclusion_patterns_defaults_to_empty() {
+	fn cfg001_load_corrupt_toml_renames_to_bak() {
 		let dir = tempfile::tempdir().unwrap();
-		let path = dir.path().join("settings.json");
+		let path = dir.path().join("settings.toml");
+		std::fs::write(&path, "not valid toml {{{").unwrap();
 
-		// Write JSON without the new field (simulates old settings file)
-		let json = r#"{
-            "download_directory": "/tmp",
-            "max_download_threads": 3,
-            "max_retries": 3,
-            "retry_wait_seconds": 10,
-            "auto_password_list": [],
-            "resume_downloads": true,
-            "create_package_subfolder": true,
-            "ftp_timeout_seconds": 30
-        }"#;
-		std::fs::write(&path, json).unwrap();
+		let result = load(&path);
 
-		let loaded = load_settings(&path);
-		assert!(loaded.file_exclusion_patterns.is_empty());
+		assert_eq!(result.settings, Settings::default());
+		assert!(result.warnings.iter().any(|w| w.contains("beschädigt")), "should warn about corrupt file");
+		assert!(dir.path().join("settings.toml.bak").exists(), "corrupt file should be renamed to .bak");
 	}
 
+	// -------------------------------------------------------
+	// CFG-001 A3: Invalid values get fixed silently
+	// -------------------------------------------------------
+
+	/// CFG-001 | A3: Load with out-of-range values → auto-corrected with warning.
 	#[test]
-	fn load_returns_defaults_for_invalid_json() {
+	fn cfg001_load_fixes_invalid_values() {
 		let dir = tempfile::tempdir().unwrap();
-		let path = dir.path().join("settings.json");
-		std::fs::write(&path, "not valid json {{{").unwrap();
+		let path = dir.path().join("settings.toml");
 
-		let loaded = load_settings(&path);
-		let defaults = AppSettings::default();
-		assert_eq!(loaded.max_download_threads, defaults.max_download_threads);
+		let mut s = Settings::default();
+		s.max_threads = 99;
+		// Write directly to bypass validation in save()
+		let toml_str = toml::to_string_pretty(&s).unwrap();
+		std::fs::write(&path, toml_str).unwrap();
+
+		let result = load(&path);
+
+		assert_eq!(result.settings.max_threads, 3); // fixed to default
+		assert!(result.warnings.iter().any(|w| w.contains("max_threads")));
 	}
 
-	/// BR-007: auto_extract_archives defaults to false
-	#[test]
-	fn default_auto_extract_is_false() {
-		let defaults = AppSettings::default();
-		assert!(!defaults.auto_extract_archives);
-	}
+	// -------------------------------------------------------
+	// CFG-001 A4: Save rejects invalid settings
+	// -------------------------------------------------------
 
-	/// BR-007: delete_archives_after_extraction defaults to false
+	/// CFG-001 | A4: Save with invalid values → returns SettingsError::Validation.
 	#[test]
-	fn default_delete_archives_is_false() {
-		let defaults = AppSettings::default();
-		assert!(!defaults.delete_archives_after_extraction);
-	}
-
-	/// UC-14: Extraction settings round-trip through JSON
-	#[test]
-	fn save_and_load_extraction_settings() {
+	fn cfg001_save_rejects_invalid_settings() {
 		let dir = tempfile::tempdir().unwrap();
-		let path = dir.path().join("settings.json");
+		let path = dir.path().join("settings.toml");
 
-		let settings = AppSettings {
-			auto_extract_archives: true,
-			delete_archives_after_extraction: true,
-			..Default::default()
-		};
-
-		save_settings(&path, &settings).unwrap();
-		let loaded = load_settings(&path);
-
-		assert!(loaded.auto_extract_archives);
-		assert!(loaded.delete_archives_after_extraction);
+		let mut s = Settings::default();
+		s.max_threads = 0;
+		let err = save(&path, &s).unwrap_err();
+		assert!(matches!(err, SettingsError::Validation(_)));
+		assert!(err.to_string().contains("max_threads"));
 	}
 
-	// --- UC-09: format_settings ---
+	// -------------------------------------------------------
+	// CFG-001 A5: Write error
+	// -------------------------------------------------------
 
-	/// AT-39 / BR-003: format_settings includes file path
+	/// CFG-001 | A5: Save to unwritable path → returns SettingsError::Io.
 	#[test]
-	fn format_settings_includes_path() {
-		let settings = AppSettings::default();
-		let path = Path::new("/home/user/.config/rsfdl/settings.json");
-		let output = format_settings(path, &settings);
-		assert!(output.contains("Settings file: /home/user/.config/rsfdl/settings.json"));
+	fn cfg001_save_returns_io_error_for_bad_path() {
+		let s = Settings::default();
+		let err = save(Path::new("/proc/nonexistent/settings.toml"), &s).unwrap_err();
+		assert!(matches!(err, SettingsError::Io(_)));
 	}
 
-	/// AT-39 / BR-003: format_settings shows all fields
-	#[test]
-	fn format_settings_shows_all_fields() {
-		let settings = AppSettings {
-			max_download_threads: 5,
-			max_retries: 2,
-			retry_wait_seconds: 15,
-			ftp_timeout_seconds: 60,
-			resume_downloads: false,
-			create_package_subfolder: false,
-			auto_extract_archives: true,
-			delete_archives_after_extraction: true,
-			file_exclusion_patterns: vec!["*.nfo".into(), "*.jpg".into()],
-			auto_password_list: vec!["pw1".into(), "pw2".into(), "pw3".into()],
-			..Default::default()
-		};
-		let path = Path::new("/tmp/settings.json");
-		let output = format_settings(path, &settings);
+	// -------------------------------------------------------
+	// CFG-001 Variante C: Reset
+	// -------------------------------------------------------
 
-		assert!(output.contains("max_download_threads"));
+	/// CFG-001 | Variante C: Reset overwrites file with defaults.
+	#[test]
+	fn cfg001_reset_writes_defaults_to_disk() {
+		let dir = tempfile::tempdir().unwrap();
+		let path = dir.path().join("settings.toml");
+
+		// Save non-default values first
+		let mut s = Settings::default();
+		s.max_threads = 10;
+		save(&path, &s).unwrap();
+
+		// Reset
+		let reset_settings = reset(&path).unwrap();
+		assert_eq!(reset_settings, Settings::default());
+
+		// Verify file on disk has defaults
+		let result = load(&path);
+		assert_eq!(result.settings, Settings::default());
+	}
+
+	// -------------------------------------------------------
+	// C-03: TOML file format
+	// -------------------------------------------------------
+
+	/// CFG-001 | C-03: Saved file is valid TOML with expected key-value pairs.
+	#[test]
+	fn cfg001_saved_file_is_valid_toml() {
+		let dir = tempfile::tempdir().unwrap();
+		let path = dir.path().join("settings.toml");
+
+		save(&path, &Settings::default()).unwrap();
+		let content = std::fs::read_to_string(&path).unwrap();
+
+		assert!(content.contains("max_threads = 3"));
+		assert!(content.contains("max_speed_kbps = 0"));
+		assert!(content.contains("auto_extract = false"));
+	}
+
+	// -------------------------------------------------------
+	// CFG-001 Variante A+B: Exclusion patterns round-trip
+	// -------------------------------------------------------
+
+	/// CFG-001 | BR-CFG-003: Exclusion patterns survive TOML round-trip.
+	#[test]
+	fn cfg001_exclusion_patterns_round_trip() {
+		let dir = tempfile::tempdir().unwrap();
+		let path = dir.path().join("settings.toml");
+
+		let mut s = Settings::default();
+		s.exclusion_patterns = vec!["*.nfo".into(), "*.jpg".into(), "*sample*".into()];
+
+		save(&path, &s).unwrap();
+		let result = load(&path);
+		assert_eq!(result.settings.exclusion_patterns, vec!["*.nfo", "*.jpg", "*sample*"]);
+	}
+
+	// -------------------------------------------------------
+	// CLI-005: format_settings for `config show`
+	// -------------------------------------------------------
+
+	/// CFG-001 | CLI-005: format_settings includes the file path.
+	#[test]
+	fn cfg001_format_settings_includes_path() {
+		let s = Settings::default();
+		let path = Path::new("/home/user/.config/rsfdl/settings.toml");
+		let output = format_settings(path, &s);
+		assert!(output.contains("/home/user/.config/rsfdl/settings.toml"));
+	}
+
+	/// CFG-001 | CLI-005: format_settings renders all fields.
+	#[test]
+	fn cfg001_format_settings_shows_all_fields() {
+		let mut s = Settings::default();
+		s.max_threads = 5;
+		s.max_speed_kbps = 512;
+		s.exclusion_patterns = vec!["*.nfo".into()];
+		s.auto_passwords = vec!["secret".into()];
+
+		let path = Path::new("/tmp/settings.toml");
+		let output = format_settings(path, &s);
+
+		assert!(output.contains("max_threads"));
 		assert!(output.contains("5"));
-		assert!(output.contains("max_retries"));
-		assert!(output.contains("2"));
-		assert!(output.contains("retry_wait_seconds"));
-		assert!(output.contains("15"));
-		assert!(output.contains("ftp_timeout_seconds"));
-		assert!(output.contains("60"));
-		assert!(output.contains("resume_downloads"));
-		assert!(output.contains("false"));
-		assert!(output.contains("create_package_subfolder"));
-		assert!(output.contains("auto_extract_archives"));
-		assert!(output.contains("true"));
-		assert!(output.contains("delete_archives_after_extraction"));
-		assert!(output.contains("file_exclusion_patterns"));
+		assert!(output.contains("max_speed_kbps"));
+		assert!(output.contains("512"));
+		assert!(output.contains("exclusion_patterns"));
 		assert!(output.contains("*.nfo"));
-		assert!(output.contains("*.jpg"));
 	}
 
-	/// AT-39 / BR-003: Passwords are not shown in cleartext
+	/// CFG-001 | BR-CFG-005: Passwords are not shown in cleartext.
 	#[test]
-	fn format_settings_hides_passwords() {
-		let settings = AppSettings {
-			auto_password_list: vec!["secret1".into(), "secret2".into()],
-			..Default::default()
-		};
-		let path = Path::new("/tmp/settings.json");
-		let output = format_settings(path, &settings);
+	fn cfg001_format_settings_hides_passwords() {
+		let mut s = Settings::default();
+		s.auto_passwords = vec!["secret1".into(), "secret2".into()];
+
+		let path = Path::new("/tmp/settings.toml");
+		let output = format_settings(path, &s);
 
 		assert!(!output.contains("secret1"));
 		assert!(!output.contains("secret2"));
-		assert!(output.contains("2"));
+		assert!(output.contains("2 entries"));
 	}
 
-	/// AT-40: format_settings with defaults shows default values
+	// -------------------------------------------------------
+	// CFG-001 BR-CFG-001: Default settings path
+	// -------------------------------------------------------
+
+	/// CFG-001 | BR-CFG-001: Default path uses platform config dir with .toml extension.
 	#[test]
-	fn format_settings_with_defaults() {
-		let settings = AppSettings::default();
-		let path = Path::new("/tmp/settings.json");
-		let output = format_settings(path, &settings);
-
-		assert!(output.contains("max_download_threads"));
-		assert!(output.contains("3"));
-		assert!(output.contains("resume_downloads"));
-		assert!(output.contains("true"));
-		assert!(output.contains("auto_extract_archives"));
-		assert!(output.contains("false"));
-	}
-
-	/// UC-14: Old settings file without extraction fields → defaults to false
-	#[test]
-	fn load_settings_without_extraction_fields_defaults_to_false() {
-		let dir = tempfile::tempdir().unwrap();
-		let path = dir.path().join("settings.json");
-
-		// JSON without UC-14 fields (simulates pre-UC-14 settings file)
-		let json = r#"{
-            "download_directory": "/tmp",
-            "max_download_threads": 3,
-            "max_retries": 3,
-            "retry_wait_seconds": 10,
-            "auto_password_list": [],
-            "resume_downloads": true,
-            "create_package_subfolder": true,
-            "ftp_timeout_seconds": 30
-        }"#;
-		std::fs::write(&path, json).unwrap();
-
-		let loaded = load_settings(&path);
-		assert!(!loaded.auto_extract_archives);
-		assert!(!loaded.delete_archives_after_extraction);
+	fn cfg001_default_path_ends_with_toml() {
+		let path = default_settings_path();
+		assert_eq!(path.extension().unwrap(), "toml");
+		assert!(path.to_string_lossy().contains("rsfdl"));
 	}
 }

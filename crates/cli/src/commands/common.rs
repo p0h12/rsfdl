@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use clap::Args;
 use rsfdl_core::container::{DecryptionStatus, LoadedContainer, load_sfdl};
 use rsfdl_core::error::AppError;
-use rsfdl_core::settings::AppSettings;
+use rsfdl_core::settings::{self, Settings};
 use rsfdl_core::sfdl::models::SfdlContainer;
 
 /// Shared CLI arguments for SFDL file operations.
@@ -27,15 +27,19 @@ pub use rsfdl_core::container::DecryptionStatus as DecryptOutcome;
 
 /// Load, parse, and optionally decrypt an SFDL container.
 /// Returns the container, loaded settings, and how decryption happened.
-pub fn load_and_decrypt(args: &SfdlArgs, password_list: &[String]) -> Result<(SfdlContainer, AppSettings, DecryptOutcome), String> {
+pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(SfdlContainer, Settings, DecryptOutcome), String> {
 	let xml = std::fs::read_to_string(&args.file).map_err(|e| format!("Cannot read file '{}': {}", args.file, e))?;
 
-	let settings_path = args.config_file.as_deref().map(PathBuf::from).unwrap_or_else(rsfdl_core::settings::default_settings_path);
-	let settings = rsfdl_core::settings::load_settings(&settings_path);
+	let settings_path = args.config_file.as_deref().map(PathBuf::from).unwrap_or_else(settings::default_settings_path);
+	let result = settings::load(&settings_path);
+	for w in &result.warnings {
+		eprintln!("Warning: {w}");
+	}
+	let settings = result.settings;
 
-	// Merge password lists: CLI --password-file first, then settings auto_password_list
-	let mut all_passwords = password_list.to_vec();
-	for pw in &settings.auto_password_list {
+	// Merge password lists: CLI --password-file first, then settings auto_passwords
+	let mut all_passwords = auto_passwords.to_vec();
+	for pw in &settings.auto_passwords {
 		if !all_passwords.contains(pw) {
 			all_passwords.push(pw.clone());
 		}
@@ -67,7 +71,9 @@ pub fn load_and_decrypt(args: &SfdlArgs, password_list: &[String]) -> Result<(Sf
 }
 
 pub fn load_password_file(path: Option<&str>) -> Vec<String> {
-	let Some(path) = path else { return Vec::new() };
+	let Some(path) = path else {
+		return Vec::new();
+	};
 	match std::fs::read_to_string(path) {
 		Ok(content) => content.lines().map(|l| l.trim().to_string()).filter(|l| !l.is_empty()).collect(),
 		Err(e) => {

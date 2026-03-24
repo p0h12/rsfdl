@@ -10,13 +10,13 @@ use tokio::sync::mpsc;
 use common::{FtpTestServer, create_ftp_file, generate_bulkfolder_sfdl_xml, generate_empty_sfdl_xml, generate_sfdl_xml, parse_sfdl_from_xml};
 use rsfdl_core::download::manager::DownloadManager;
 use rsfdl_core::download::progress::ProgressEvent;
-use rsfdl_core::settings::AppSettings;
+use rsfdl_core::settings::Settings;
 
-/// Build AppSettings pointing to `dest_dir` with given thread count.
-fn test_settings(dest_dir: &Path, threads: u32) -> AppSettings {
-	let mut s = AppSettings::default();
+/// Build Settings pointing to `dest_dir` with given thread count.
+fn test_settings(dest_dir: &Path, threads: u32) -> Settings {
+	let mut s = Settings::default();
 	s.download_directory = dest_dir.to_path_buf();
-	s.max_download_threads = threads;
+	s.max_threads = threads;
 	s
 }
 

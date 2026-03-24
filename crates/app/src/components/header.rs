@@ -56,7 +56,7 @@ async fn open_sfdl_file(mut state: AppState) {
 		}
 	};
 
-	let auto_passwords = state.settings.read().auto_password_list.clone();
+	let auto_passwords = state.settings.read().auto_passwords.clone();
 
 	match load_sfdl(&data, &auto_passwords) {
 		Ok(loaded) => match loaded.status {
@@ -78,7 +78,7 @@ async fn open_sfdl_file(mut state: AppState) {
 
 /// Finish loading a (decrypted) container: set state and trigger BulkFolder resolution.
 pub fn finish_container_load(state: &mut AppState, container: rsfdl_core::sfdl::models::SfdlContainer, path: String) {
-	let patterns = state.settings.read().file_exclusion_patterns.clone();
+	let patterns = state.settings.read().exclusion_patterns.clone();
 	let selection = compute_file_selection(&container, &patterns);
 
 	state.container.set(Some(container));
@@ -111,7 +111,7 @@ async fn resolve_bulk_folders_async(state: &mut AppState) {
 
 	match resolve_bulk_folders(&mut container, timeout).await {
 		Ok(()) => {
-			let patterns = state.settings.read().file_exclusion_patterns.clone();
+			let patterns = state.settings.read().exclusion_patterns.clone();
 			let selection = compute_file_selection(&container, &patterns);
 			state.container.set(Some(container));
 			state.selected_files.set(selection);

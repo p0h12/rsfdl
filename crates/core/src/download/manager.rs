@@ -11,7 +11,7 @@ use crate::download::progress::ProgressEvent;
 use crate::error::DownloadError;
 use crate::ftp::client::FtpClient;
 use crate::ftp::listing::resolve_all_bulk_folders;
-use crate::settings::AppSettings;
+use crate::settings::Settings;
 use crate::sfdl::models::SfdlContainer;
 
 /// Result summary after all downloads complete.
@@ -37,7 +37,7 @@ pub struct DownloadManager {
 impl DownloadManager {
 	/// Creates a new DownloadManager.
 	/// Returns (manager, global_cancel_token, per_file_cancel_sender).
-	pub fn new(container: SfdlContainer, settings: &AppSettings) -> (Self, CancellationToken, mpsc::UnboundedSender<Uuid>) {
+	pub fn new(container: SfdlContainer, settings: &Settings) -> (Self, CancellationToken, mpsc::UnboundedSender<Uuid>) {
 		let cancel_token = CancellationToken::new();
 		let token_clone = cancel_token.clone();
 		let (cancel_tx, cancel_rx) = mpsc::unbounded_channel();
@@ -45,9 +45,9 @@ impl DownloadManager {
 			Self {
 				container,
 				dest_dir: settings.download_directory.clone(),
-				max_threads: settings.max_download_threads,
-				resume_downloads: settings.resume_downloads,
-				create_package_subfolder: settings.create_package_subfolder,
+				max_threads: settings.max_threads,
+				resume_downloads: true,
+				create_package_subfolder: true,
 				ftp_timeout_seconds: settings.ftp_timeout_seconds,
 				cancel_token,
 				cancel_rx,

@@ -7,14 +7,15 @@ pub fn SettingsView() -> Element {
 	let mut state = use_context::<AppState>();
 	let settings = state.settings.read();
 	let download_dir = settings.download_directory.display().to_string();
-	let max_threads = settings.max_download_threads;
+	let max_threads = settings.max_threads;
+	let max_speed = settings.max_speed_kbps;
 	let max_retries = settings.max_retries;
-	let retry_wait = settings.retry_wait_seconds;
-	let ftp_timeout = settings.ftp_timeout_seconds;
-	let resume = settings.resume_downloads;
-	let pkg_subfolder = settings.create_package_subfolder;
-	let passwords = settings.auto_password_list.join("\n");
-	let exclusion_patterns = settings.file_exclusion_patterns.join("\n");
+	let retry_delay = settings.retry_delay_seconds;
+	let auto_extract = settings.auto_extract;
+	let delete_after_extract = settings.delete_archives_after_extract;
+	let strict_disk = settings.strict_disk_check;
+	let passwords = settings.auto_passwords.join("\n");
+	let exclusion_patterns = settings.exclusion_patterns.join("\n");
 
 	rsx! {
 			div { class: "flex flex-col flex-1 overflow-hidden",
@@ -28,6 +29,13 @@ pub fn SettingsView() -> Element {
 													save_settings_to_file(state);
 											},
 											"Save"
+									}
+									button {
+											class: "px-3 py-1.5 bg-red-100 hover:bg-red-200 text-red-700 rounded text-sm",
+											onclick: move |_| {
+													reset_settings(state);
+											},
+											"Reset"
 									}
 									button {
 											class: "px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm",
@@ -71,17 +79,35 @@ pub fn SettingsView() -> Element {
 									// Max threads
 									div {
 											label { class: "block text-sm font-medium text-gray-700 mb-1",
-													"Max Download Threads"
+													"Max Download Threads (1-20)"
 											}
 											input {
 													class: "w-24 px-3 py-2 border rounded text-sm",
 													r#type: "number",
 													min: "1",
-													max: "10",
+													max: "20",
 													value: "{max_threads}",
 													onchange: move |e| {
 															if let Ok(n) = e.value().parse::<u32>() {
-																	state.settings.write().max_download_threads = n.clamp(1, 10);
+																	state.settings.write().max_threads = n.clamp(1, 20);
+															}
+													},
+											}
+									}
+
+									// Max speed
+									div {
+											label { class: "block text-sm font-medium text-gray-700 mb-1",
+													"Max Speed (KB/s, 0 = unlimited)"
+											}
+											input {
+													class: "w-24 px-3 py-2 border rounded text-sm",
+													r#type: "number",
+													min: "0",
+													value: "{max_speed}",
+													onchange: move |e| {
+															if let Ok(n) = e.value().parse::<u32>() {
+																	state.settings.write().max_speed_kbps = n;
 															}
 													},
 											}
@@ -90,55 +116,36 @@ pub fn SettingsView() -> Element {
 									// Max retries
 									div {
 											label { class: "block text-sm font-medium text-gray-700 mb-1",
-													"Max Retries"
+													"Max Retries (0-50)"
 											}
 											input {
 													class: "w-24 px-3 py-2 border rounded text-sm",
 													r#type: "number",
 													min: "0",
-													max: "10",
+													max: "50",
 													value: "{max_retries}",
 													onchange: move |e| {
 															if let Ok(n) = e.value().parse::<u32>() {
-																	state.settings.write().max_retries = n.clamp(0, 10);
+																	state.settings.write().max_retries = n.clamp(0, 50);
 															}
 													},
 											}
 									}
 
-									// Retry wait
+									// Retry delay
 									div {
 											label { class: "block text-sm font-medium text-gray-700 mb-1",
-													"Retry Wait (seconds)"
+													"Retry Delay (seconds, 1-3600)"
 											}
 											input {
 													class: "w-24 px-3 py-2 border rounded text-sm",
 													r#type: "number",
 													min: "1",
-													max: "120",
-													value: "{retry_wait}",
+													max: "3600",
+													value: "{retry_delay}",
 													onchange: move |e| {
 															if let Ok(n) = e.value().parse::<u32>() {
-																	state.settings.write().retry_wait_seconds = n.clamp(1, 120);
-															}
-													},
-											}
-									}
-
-									// FTP timeout
-									div {
-											label { class: "block text-sm font-medium text-gray-700 mb-1",
-													"FTP Timeout (seconds)"
-											}
-											input {
-													class: "w-24 px-3 py-2 border rounded text-sm",
-													r#type: "number",
-													min: "5",
-													max: "300",
-													value: "{ftp_timeout}",
-													onchange: move |e| {
-															if let Ok(n) = e.value().parse::<u32>() {
-																	state.settings.write().ftp_timeout_seconds = n.clamp(5, 300);
+																	state.settings.write().retry_delay_seconds = n.clamp(1, 3600);
 															}
 													},
 											}
@@ -147,64 +154,60 @@ pub fn SettingsView() -> Element {
 
 							// Toggle settings
 							div { class: "space-y-3",
-									// Resume downloads
+									// Auto extract
 									label { class: "flex items-center gap-3 cursor-pointer",
 											input {
 													r#type: "checkbox",
 													class: "w-4 h-4",
-													checked: resume,
+													checked: auto_extract,
 													onchange: move |_| {
 															let mut s = state.settings.write();
-															s.resume_downloads = !s.resume_downloads;
+															s.auto_extract = !s.auto_extract;
 													},
 											}
 											div {
-													span { class: "block text-sm font-medium text-gray-700", "Resume Downloads" }
-													span { class: "block text-xs text-gray-500", "Skip files that are already fully downloaded" }
+													span { class: "block text-sm font-medium text-gray-700", "Auto Extract Archives" }
+													span { class: "block text-xs text-gray-500", "Automatically extract archives after download" }
 											}
 									}
 
-									// Create package subfolder
+									// Delete after extract
 									label { class: "flex items-center gap-3 cursor-pointer",
 											input {
 													r#type: "checkbox",
 													class: "w-4 h-4",
-													checked: pkg_subfolder,
+													checked: delete_after_extract,
+													disabled: !auto_extract,
 													onchange: move |_| {
 															let mut s = state.settings.write();
-															s.create_package_subfolder = !s.create_package_subfolder;
+															s.delete_archives_after_extract = !s.delete_archives_after_extract;
 													},
 											}
 											div {
-													span { class: "block text-sm font-medium text-gray-700", "Create Package Subfolder" }
-													span { class: "block text-xs text-gray-500", "Create a subfolder per package in the download directory" }
+													span { class: "block text-sm font-medium text-gray-700", "Delete Archives After Extraction" }
+													span { class: "block text-xs text-gray-500", "Remove archive files after successful extraction" }
+											}
+									}
+
+									// Strict disk check
+									label { class: "flex items-center gap-3 cursor-pointer",
+											input {
+													r#type: "checkbox",
+													class: "w-4 h-4",
+													checked: strict_disk,
+													onchange: move |_| {
+															let mut s = state.settings.write();
+															s.strict_disk_check = !s.strict_disk_check;
+													},
+											}
+											div {
+													span { class: "block text-sm font-medium text-gray-700", "Strict Disk Check" }
+													span { class: "block text-xs text-gray-500", "Abort download if insufficient disk space" }
 											}
 									}
 							}
 
-							// Auto-password list
-							div {
-											label { class: "block text-sm font-medium text-gray-700 mb-1",
-													"Auto Password List"
-											}
-											p { class: "text-xs text-gray-500 mb-2",
-													"One password per line. Tried automatically when opening encrypted containers."
-											}
-											textarea {
-													class: "w-full px-3 py-2 border rounded text-sm font-mono h-24 resize-y",
-													value: "{passwords}",
-													onchange: move |e| {
-															let list: Vec<String> = e.value()
-																	.lines()
-																	.map(|l| l.trim().to_string())
-																	.filter(|l| !l.is_empty())
-																	.collect();
-															state.settings.write().auto_password_list = list;
-													},
-											}
-							}
-
-							// File exclusion patterns
+							// Exclusion patterns
 							div {
 									label { class: "block text-sm font-medium text-gray-700 mb-1",
 											"File Exclusion Patterns"
@@ -222,10 +225,33 @@ pub fn SettingsView() -> Element {
 															.map(|l| l.trim().to_string())
 															.filter(|l| !l.is_empty())
 															.collect();
-													state.settings.write().file_exclusion_patterns = list;
+													state.settings.write().exclusion_patterns = list;
 											},
 									}
 							}
+
+							// Password list
+							div {
+									label { class: "block text-sm font-medium text-gray-700 mb-1",
+											"Auto Password List"
+									}
+									p { class: "text-xs text-gray-500 mb-2",
+											"One password per line. Tried automatically when opening encrypted containers."
+									}
+									textarea {
+											class: "w-full px-3 py-2 border rounded text-sm font-mono h-24 resize-y",
+											value: "{passwords}",
+											onchange: move |e| {
+													let list: Vec<String> = e.value()
+															.lines()
+															.map(|l| l.trim().to_string())
+															.filter(|l| !l.is_empty())
+															.collect();
+													state.settings.write().auto_passwords = list;
+											},
+									}
+							}
+
 					}
 			}
 	}
@@ -235,7 +261,19 @@ fn save_settings_to_file(mut state: AppState) {
 	let settings = state.settings.read().clone();
 	let path = rsfdl_core::settings::default_settings_path();
 
-	if let Err(e) = rsfdl_core::settings::save_settings(&path, &settings) {
+	if let Err(e) = rsfdl_core::settings::save(&path, &settings) {
 		state.error_message.set(Some(format!("Failed to save settings: {e}")));
+	}
+}
+
+fn reset_settings(mut state: AppState) {
+	let path = rsfdl_core::settings::default_settings_path();
+	match rsfdl_core::settings::reset(&path) {
+		Ok(defaults) => {
+			state.settings.set(defaults);
+		}
+		Err(e) => {
+			state.error_message.set(Some(format!("Failed to reset settings: {e}")));
+		}
 	}
 }

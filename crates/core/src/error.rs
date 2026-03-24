@@ -158,6 +158,18 @@ mod tests {
 }
 
 #[derive(Debug, Error)]
+pub enum SettingsError {
+	#[error("IO error: {0}")]
+	Io(#[from] std::io::Error),
+
+	#[error("TOML serialize error: {0}")]
+	TomlSerialize(String),
+
+	#[error("Validation failed: {0}")]
+	Validation(String),
+}
+
+#[derive(Debug, Error)]
 pub enum AppError {
 	#[error("Parse error: {0}")]
 	Parse(#[from] SfdlError),
