@@ -144,8 +144,9 @@
 
 ### BR-CFG-005: Passwort-Speicherung
 
-- Passwörter in der `password_list` werden verschlüsselt gespeichert (NFR-06).
-- Verschlüsselung: OS-spezifischer Keyring oder AES mit maschinengebundenem Schlüssel.
+- Passwoerter in der `auto_passwords` Liste werden aktuell im Klartext in der TOML-Datei gespeichert.
+- Geplant: OS-spezifischer Keyring oder AES mit maschinengebundenem Schluessel (NFR-06).
+- Die GUI zeigt Passwoerter verdeckt an (Bullet-Zeichen), CLI maskiert sie in der `config show` Ausgabe.
 
 ## Input
 

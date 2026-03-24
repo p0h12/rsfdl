@@ -76,16 +76,15 @@
 
 **BR-DL-008: Streaming**
 
-- Daten werden blockweise gelesen und geschrieben (Buffer: 64 KB).
+- Daten werden blockweise gelesen und geschrieben (Buffer: 32 KB).
 - Es werden nie ganze Dateien im RAM gehalten (NFR-04).
 - Lokale Dateien werden im Append-Modus geöffnet (für Resume-Kompatibilität).
 
-**BR-DL-009: FTPS/TLS**
+**BR-DL-009: FTPS/TLS (geplant)**
 
-- Explicit FTPS: `AUTH TLS` nach Verbindungsaufbau, dann `PBSZ 0` + `PROT P`.
-- Implicit FTPS: TLS-Verbindung direkt auf Port 990 (oder konfiguriertem Port).
-- TLS 1.2 und 1.3 werden unterstützt. Ältere Versionen werden abgelehnt.
-- Die SSL-Einstellung aus dem SFDL-Container hat Vorrang vor den App-Einstellungen.
+- Aktuell: Nur unverschluesseltes FTP unterstuetzt.
+- Geplant: Explicit FTPS (`AUTH TLS`, `PBSZ 0`, `PROT P`) und Implicit FTPS (Port 990).
+- Die SSL-Einstellung aus dem SFDL-Container soll Vorrang vor den App-Einstellungen haben.
 
 **BR-DL-010: Fehlerklassifikation**
 

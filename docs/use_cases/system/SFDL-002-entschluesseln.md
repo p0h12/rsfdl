@@ -45,13 +45,14 @@
 
 ## Business Rules
 
-**BR-SFDL-003: AES-Schlüsselableitung**
+**BR-SFDL-003: AES-Verschluesselung**
 
 - Algorithmus: AES-128-CBC
-- Schlüssel: MD5-Hash des Passworts (16 Bytes)
-- IV: MD5-Hash des Passworts (identisch mit Schlüssel)
+- Schluessel: MD5-Hash des Passworts (16 Bytes)
+- IV: Zufaellig generiert (16 Bytes), dem Ciphertext vorangestellt
 - Padding: PKCS7
-- Encoding der verschlüsselten Felder: Base64
+- Encoding: Base64(IV || Ciphertext)
+- Bei der Entschluesselung werden die ersten 16 Bytes als IV extrahiert, der Rest als Ciphertext
 
 **BR-SFDL-004: Passwort-Validierung**
 

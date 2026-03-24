@@ -125,7 +125,7 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 
 - Mehrere Container können gleichzeitig geladen sein.
 - Container werden als Cards in einer sortierbaren Liste dargestellt.
-- Drag-Handle erlaubt die Reihenfolge der Cards per Drag-and-Drop zu ändern.
+- Up/Down-Buttons im Card-Header erlauben die Reihenfolge der Cards zu aendern.
 - Downloads werden von oben nach unten abgearbeitet: Der oberste Container wird zuerst heruntergeladen, dann der nächste, usw.
 - Die verfügbaren Download-Slots (`max_threads`) werden auf den aktuell aktiven Container verteilt.
 - Erst wenn ein Container fertig ist (Done), beginnt der nächste.
@@ -140,14 +140,14 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 
 ### Zustand: Kein Container geladen
 
-- Header mit App-Name und Buttons (Open File, Create, Settings)
-- Drop-Zone: „SFDL-Container laden" + „Datei auswählen"-Button
+- Header mit App-Name, Buttons (Open, Settings), Theme-Toggle
+- Drop-Zone: „SFDL-Container laden" + „Datei auswaehlen"-Button
 
 ### Zustand: Container geladen
 
 - Container-Toolbar: Zähler „N Container", Buttons „Hinzufügen" / „Alle entfernen"
 - Pro Container eine aufklappbare **Card** mit:
-    - Drag-Handle zum Sortieren per Drag-and-Drop
+    - Up/Down-Buttons zum Sortieren
     - Container-Name, Badges (Encrypted, V2/V3)
     - Entfernen-Button (X)
     - **Info-Banner**: Server, Beschreibung, Pakete, Dateien
