@@ -62,6 +62,17 @@ pub async fn run(
 		settings.strict_disk_check = true;
 	}
 
+	// SFDL-003: Resolve BulkFolders before download
+	if rsfdl_core::container::has_unresolved_bulk_folders(&container) {
+		if !quiet {
+			eprintln!("Resolving bulk folders via FTP...");
+		}
+		let warnings = rsfdl_core::container::resolve_bulk_folders(&mut container, settings.ftp_timeout_seconds).await;
+		for w in &warnings {
+			eprintln!("Warning: {}", w);
+		}
+	}
+
 	// DL-002: Resolve exclusion patterns (settings + CLI)
 	let patterns = rsfdl_core::filter::resolve_patterns(&settings.exclusion_patterns, cli_exclude, no_exclude);
 
@@ -75,16 +86,12 @@ pub async fn run(
 
 	// Count files
 	let file_count: usize = container.packages.iter().map(|p| p.file_list.len()).sum();
-	let bulk_count: usize = container.packages.iter().map(|p| p.bulk_folder_list.len()).sum();
 	let total_bytes: u64 = container.packages.iter().flat_map(|p| p.file_list.iter()).map(|f| f.file_size).sum();
 
 	if !quiet {
 		eprintln!("Connecting to {}:{}...", container.connection.host, container.connection.port);
 		if file_count > 0 {
 			eprintln!("Downloading {} files ({}) to {}", file_count, format_bytes(total_bytes), settings.download_directory.display());
-		}
-		if bulk_count > 0 {
-			eprintln!("Resolving {} bulk folder(s) via FTP...", bulk_count);
 		}
 	}
 
