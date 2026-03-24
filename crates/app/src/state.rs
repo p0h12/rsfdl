@@ -7,8 +7,12 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
-use rsfdl_core::settings::AppSettings;
+use rsfdl_core::settings::Settings;
 use rsfdl_core::sfdl::models::SfdlContainer;
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AppView {
@@ -18,9 +22,24 @@ pub enum AppView {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum DownloadPhase {
-	Idle,
+pub enum Theme {
+	Light,
+	Dark,
+	System,
+}
+
+/// Per-container lifecycle phase.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ContainerPhase {
+	/// Encrypted, waiting for password input.
+	NeedsPassword,
+	/// Resolving BulkFolders via FTP.
+	ResolvingBulk,
+	/// Decrypted/unencrypted, showing file tree, ready to download.
+	Ready,
+	/// Download in progress.
 	Downloading,
+	/// Download finished (success, partial, or cancelled).
 	Done,
 }
 
@@ -34,6 +53,10 @@ pub enum FileStatus {
 	Cancelled,
 	Skipped,
 }
+
+// ---------------------------------------------------------------------------
+// Per-file download state
+// ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone)]
 pub struct FileDownloadState {
@@ -91,106 +114,247 @@ impl GlobalProgressState {
 	}
 }
 
-/// Central app state provided via use_context_provider at root.
-/// All fields are Signal handles (Clone + Copy).
-#[derive(Clone, Copy)]
-pub struct AppState {
-	pub current_view: Signal<AppView>,
-	pub container: Signal<Option<SfdlContainer>>,
-	pub container_path: Signal<Option<String>>,
-	pub needs_password: Signal<bool>,
-	pub password_error: Signal<Option<String>>,
-	pub selected_files: Signal<Vec<bool>>,
-	pub download_phase: Signal<DownloadPhase>,
-	pub file_states: Signal<HashMap<Uuid, FileDownloadState>>,
-	pub cancel_token: Signal<Option<CancellationToken>>,
-	pub file_cancel_tx: Signal<Option<Arc<mpsc::UnboundedSender<Uuid>>>>,
-	pub summary: Signal<Option<DownloadSummary>>,
-	pub settings: Signal<AppSettings>,
-	pub error_message: Signal<Option<String>>,
-	pub global_progress: Signal<GlobalProgressState>,
-	pub resolving_bulk_folders: Signal<bool>,
+// ---------------------------------------------------------------------------
+// Per-container state
+// ---------------------------------------------------------------------------
+
+pub type ContainerId = u32;
+
+#[derive(Debug, Clone)]
+pub struct ContainerState {
+	pub id: ContainerId,
+	pub file_path: String,
+	pub container: SfdlContainer,
+	pub phase: ContainerPhase,
+	pub expanded: bool,
+
+	// Password state (when phase == NeedsPassword)
+	pub password_error: Option<String>,
+
+	// File selection (when phase >= Ready)
+	pub selected_files: Vec<bool>,
+
+	// Download state (when phase == Downloading or Done)
+	pub file_states: HashMap<Uuid, FileDownloadState>,
+	pub cancel_token: Option<CancellationToken>,
+	pub file_cancel_tx: Option<Arc<mpsc::UnboundedSender<Uuid>>>,
+	pub global_progress: GlobalProgressState,
+	pub summary: Option<DownloadSummary>,
 }
 
-impl AppState {
-	pub fn new() -> Self {
-		// Load settings from DB, fall back to defaults
-		let settings = Self::load_settings_from_file();
-
-		Self {
-			current_view: Signal::new(AppView::Main),
-			container: Signal::new(None),
-			container_path: Signal::new(None),
-			needs_password: Signal::new(false),
-			password_error: Signal::new(None),
-			selected_files: Signal::new(Vec::new()),
-			download_phase: Signal::new(DownloadPhase::Idle),
-			file_states: Signal::new(HashMap::new()),
-			cancel_token: Signal::new(None),
-			file_cancel_tx: Signal::new(None),
-			summary: Signal::new(None),
-			settings: Signal::new(settings),
-			error_message: Signal::new(None),
-			global_progress: Signal::new(GlobalProgressState::default()),
-			resolving_bulk_folders: Signal::new(false),
-		}
-	}
-
-	fn load_settings_from_file() -> AppSettings {
-		let path = rsfdl_core::settings::default_settings_path();
-		rsfdl_core::settings::load_settings(&path)
-	}
-
+impl ContainerState {
 	/// Flat list of all FileItems across all packages.
 	pub fn all_files(&self) -> Vec<rsfdl_core::sfdl::models::FileItem> {
-		match self.container.read().as_ref() {
-			Some(c) => c.packages.iter().flat_map(|p| p.file_list.iter().cloned()).collect(),
-			None => Vec::new(),
-		}
+		self.container.packages.iter().flat_map(|p| p.file_list.iter().cloned()).collect()
 	}
 
 	/// Total size of all files in bytes.
 	pub fn total_size(&self) -> u64 {
-		match self.container.read().as_ref() {
-			Some(c) => c.packages.iter().flat_map(|p| p.file_list.iter()).map(|f| f.file_size).sum(),
-			None => 0,
-		}
+		self.container.packages.iter().flat_map(|p| p.file_list.iter()).map(|f| f.file_size).sum()
 	}
 
 	/// Sum of sizes of only selected files.
 	pub fn selected_size(&self) -> u64 {
 		let files = self.all_files();
-		let selected = self.selected_files.read();
-		files.iter().enumerate().filter(|(i, _)| selected.get(*i).copied().unwrap_or(false)).map(|(_, f)| f.file_size).sum()
+		files.iter().enumerate().filter(|(i, _)| self.selected_files.get(*i).copied().unwrap_or(false)).map(|(_, f)| f.file_size).sum()
 	}
 
 	/// Count of selected files.
 	pub fn selected_count(&self) -> usize {
-		self.selected_files.read().iter().filter(|&&s| s).count()
+		self.selected_files.iter().filter(|&&s| s).count()
 	}
 
-	/// Reset download-related state (phase, file states, summary, progress).
-	pub fn reset_download_state(&mut self) {
-		self.download_phase.set(DownloadPhase::Idle);
-		self.file_states.write().clear();
-		self.summary.set(None);
-		self.global_progress.set(GlobalProgressState::default());
+	/// Reset download-related state to allow re-downloading.
+	pub fn reset_download(&mut self) {
+		self.phase = ContainerPhase::Ready;
+		self.file_states.clear();
+		self.cancel_token = None;
+		self.file_cancel_tx = None;
+		self.global_progress = GlobalProgressState::default();
+		self.summary = None;
 	}
 
-	/// Reset all container/download state for loading a new container.
-	pub fn reset_for_new_container(&mut self) {
-		self.needs_password.set(false);
-		self.password_error.set(None);
-		self.error_message.set(None);
-		self.reset_download_state();
-	}
-
-	/// Total bulk folder count.
-	#[allow(dead_code)]
-	pub fn bulk_folder_count(&self) -> usize {
-		match self.container.read().as_ref() {
-			Some(c) => c.packages.iter().map(|p| p.bulk_folder_list.len()).sum(),
-			None => 0,
+	/// Display name derived from container description or file path.
+	pub fn display_name(&self) -> &str {
+		let desc = &self.container.description;
+		if !desc.is_empty() {
+			desc
+		} else {
+			self.file_path.rsplit('/').next().unwrap_or(&self.file_path)
 		}
+	}
+
+	/// Whether this container is encrypted.
+	pub fn is_encrypted(&self) -> bool {
+		self.container.encrypted
+	}
+
+	/// SFDL version string (e.g. "v3").
+	pub fn version_tag(&self) -> &str {
+		if self.container.version == 3 {
+			"v3"
+		} else {
+			"v2"
+		}
+	}
+
+	/// Total number of files across all packages.
+	pub fn total_file_count(&self) -> usize {
+		self.container.packages.iter().map(|p| p.file_list.len()).sum()
+	}
+
+	/// Total number of packages.
+	pub fn package_count(&self) -> usize {
+		self.container.packages.len()
+	}
+
+	/// FTP host string (host:port) if available.
+	pub fn host_display(&self) -> Option<String> {
+		let conn = &self.container.connection;
+		if conn.host.is_empty() {
+			return None;
+		}
+		Some(format!("{}:{}", conn.host, conn.port))
+	}
+}
+
+// ---------------------------------------------------------------------------
+// Central app state
+// ---------------------------------------------------------------------------
+
+/// Central app state provided via use_context_provider at root.
+/// All fields are Signal handles (Clone + Copy).
+#[derive(Clone, Copy)]
+pub struct AppState {
+	pub current_view: Signal<AppView>,
+	pub containers: Signal<Vec<ContainerState>>,
+	pub next_id: Signal<ContainerId>,
+	pub settings: Signal<Settings>,
+	pub error_message: Signal<Option<String>>,
+	pub theme: Signal<Theme>,
+}
+
+impl AppState {
+	pub fn new() -> Self {
+		let settings = Self::load_settings_from_file();
+
+		Self {
+			current_view: Signal::new(AppView::Main),
+			containers: Signal::new(Vec::new()),
+			next_id: Signal::new(1),
+			settings: Signal::new(settings),
+			error_message: Signal::new(None),
+			theme: Signal::new(Theme::System),
+		}
+	}
+
+	fn load_settings_from_file() -> Settings {
+		let path = rsfdl_core::settings::default_settings_path();
+		rsfdl_core::settings::load(&path).settings
+	}
+
+	/// Add a new container to the list. Returns the assigned ID.
+	pub fn add_container(&mut self, file_path: String, container: SfdlContainer, phase: ContainerPhase) -> ContainerId {
+		let id = *self.next_id.read();
+		self.next_id.set(id + 1);
+
+		let patterns = self.settings.read().exclusion_patterns.clone();
+		let selected = rsfdl_core::container::compute_file_selection(&container, &patterns);
+
+		let cs = ContainerState {
+			id,
+			file_path,
+			container,
+			phase,
+			expanded: true,
+			password_error: None,
+			selected_files: selected,
+			file_states: HashMap::new(),
+			cancel_token: None,
+			file_cancel_tx: None,
+			global_progress: GlobalProgressState::default(),
+			summary: None,
+		};
+
+		self.containers.write().push(cs);
+		id
+	}
+
+	/// Remove a container by ID.
+	pub fn remove_container(&mut self, id: ContainerId) {
+		self.containers.write().retain(|c| c.id != id);
+	}
+
+	/// Remove all containers.
+	pub fn remove_all(&mut self) {
+		self.containers.write().clear();
+	}
+
+	/// Move a container from one position to another.
+	pub fn reorder(&mut self, from_idx: usize, to_idx: usize) {
+		let mut list = self.containers.write();
+		if from_idx < list.len() && to_idx < list.len() && from_idx != to_idx {
+			let item = list.remove(from_idx);
+			list.insert(to_idx, item);
+		}
+	}
+
+	/// Move a container up by one position.
+	pub fn move_up(&mut self, id: ContainerId) {
+		let list = self.containers.read();
+		if let Some(idx) = list.iter().position(|c| c.id == id) {
+			drop(list);
+			if idx > 0 {
+				self.reorder(idx, idx - 1);
+			}
+		}
+	}
+
+	/// Move a container down by one position.
+	pub fn move_down(&mut self, id: ContainerId) {
+		let list = self.containers.read();
+		let len = list.len();
+		if let Some(idx) = list.iter().position(|c| c.id == id) {
+			drop(list);
+			if idx + 1 < len {
+				self.reorder(idx, idx + 1);
+			}
+		}
+	}
+
+	/// Check if any container is currently downloading.
+	pub fn is_any_downloading(&self) -> bool {
+		self.containers.read().iter().any(|c| c.phase == ContainerPhase::Downloading)
+	}
+
+	/// Find the next container in sort order that is Ready to download.
+	pub fn next_queued(&self) -> Option<ContainerId> {
+		self.containers.read().iter().find(|c| c.phase == ContainerPhase::Ready).map(|c| c.id)
+	}
+
+	/// Mutate a specific container by ID. Returns false if not found.
+	pub fn with_container_mut<F>(&mut self, id: ContainerId, f: F) -> bool
+	where
+		F: FnOnce(&mut ContainerState),
+	{
+		let mut list = self.containers.write();
+		if let Some(cs) = list.iter_mut().find(|c| c.id == id) {
+			f(cs);
+			true
+		} else {
+			false
+		}
+	}
+
+	/// Toggle expand/collapse for a container.
+	pub fn toggle_expanded(&mut self, id: ContainerId) {
+		self.with_container_mut(id, |cs| {
+			cs.expanded = !cs.expanded;
+		});
+	}
+
+	/// Container count.
+	pub fn container_count(&self) -> usize {
+		self.containers.read().len()
 	}
 }
