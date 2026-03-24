@@ -29,11 +29,11 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], dest: Option<&str>, 
 	}
 	settings.max_threads = threads;
 
-	// UC-DL-001 + UC-DL-002: Apply file exclusion patterns
-	let mut all_patterns = settings.exclusion_patterns.clone();
-	all_patterns.extend_from_slice(cli_exclude);
+	// DL-002: Resolve exclusion patterns (settings + CLI)
+	let patterns = rsfdl_core::filter::resolve_patterns(&settings.exclusion_patterns, cli_exclude, false);
 
-	let selection = rsfdl_core::container::compute_file_selection(&container, &all_patterns);
+	// DL-001: Compute file selection
+	let selection = rsfdl_core::container::compute_file_selection(&container, &patterns);
 	let excluded_count = selection.total_count() - selection.selected_count();
 	if excluded_count > 0 {
 		eprintln!("Excluded {} file(s) matching patterns", excluded_count);

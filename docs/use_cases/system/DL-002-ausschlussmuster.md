@@ -53,9 +53,9 @@
 
 ### BR-DL-004: Standard-Blacklist
 
-- Default-Muster (bei Erstinstallation): `*.nfo`, `*.jpg`, `*.png`, `*.txt`, `*sample*`, `*Sample*`
-- Actor kann Muster hinzufuegen und entfernen (CFG-001)
-- Standard-Muster sind als `is_default=true` markiert, koennen aber deaktiviert werden
+- Default-Muster (bei Erstinstallation): `*.nfo`, `*.jpg`, `*.png`, `*.txt`, `*sample*`
+- Da Matching case-insensitiv ist, deckt `*sample*` auch `*Sample*` ab.
+- Actor kann Muster hinzufuegen und entfernen (CFG-001).
 
 ### BR-DL-005: CLI-Ueberschreibung
 
