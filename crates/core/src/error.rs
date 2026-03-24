@@ -16,6 +16,9 @@ pub enum SfdlError {
 
 	#[error("IO error: {0}")]
 	Io(#[from] std::io::Error),
+
+	#[error("File error: {0}")]
+	FileError(String),
 }
 
 #[derive(Debug, Error)]

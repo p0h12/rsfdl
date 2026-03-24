@@ -19,10 +19,34 @@ pub fn detect_version(xml: &str) -> Result<SfdlVersion, SfdlError> {
 /// Parses an SFDL file (v2 or v3) into a unified SfdlContainer.
 pub fn parse_sfdl(xml: &str) -> Result<SfdlContainer, SfdlError> {
 	let version = detect_version(xml)?;
-	match version {
-		SfdlVersion::V3 => parse_v3(xml),
-		SfdlVersion::V2 => parse_v2(xml),
+	let container = match version {
+		SfdlVersion::V3 => parse_v3(xml)?,
+		SfdlVersion::V2 => parse_v2(xml)?,
+	};
+	// A3: Validate required fields
+	validate_container(&container)?;
+	Ok(container)
+}
+
+/// SFDL-001 / A4: Read and parse an SFDL file from disk.
+pub fn load_sfdl_file(path: &std::path::Path) -> Result<SfdlContainer, SfdlError> {
+	let xml = std::fs::read_to_string(path).map_err(|e| SfdlError::FileError(format!("{}: {}", path.display(), e)))?;
+	parse_sfdl(&xml)
+}
+
+/// A3: Validate required fields on a parsed (unencrypted) container.
+///
+/// For encrypted containers, most fields are ciphertext and can't be validated
+/// until after decryption — so we only validate structural requirements.
+fn validate_container(container: &SfdlContainer) -> Result<(), SfdlError> {
+	if container.packages.is_empty() {
+		return Err(SfdlError::ParseError("SFDL file has no packages".into()));
 	}
+	// For unencrypted containers, host must be present
+	if !container.encrypted && container.connection.host.is_empty() {
+		return Err(SfdlError::ParseError("SFDL file missing connection host".into()));
+	}
+	Ok(())
 }
 
 // --- v3 parsing ---
@@ -303,7 +327,7 @@ struct RawSfdlV2 {
 	#[serde(rename = "Uploader", default)]
 	uploader: String,
 	#[serde(rename = "SFDLFileVersion", default)]
-	_version: String,
+	version: String,
 	#[serde(rename = "Encrypted", default)]
 	encrypted: bool,
 	#[serde(rename = "ConnectionInfo")]
@@ -372,6 +396,15 @@ struct RawBulkFolderV2 {
 
 fn parse_v2(xml: &str) -> Result<SfdlContainer, SfdlError> {
 	let raw: RawSfdlV2 = from_str(xml).map_err(|e| SfdlError::ParseError(e.to_string()))?;
+
+	// BR-SFDL-001: Validate SFDLFileVersion number (6-9 = v2)
+	let version_num: u32 = raw.version.trim().parse().unwrap_or(0);
+	if !(6..=9).contains(&version_num) {
+		return Err(SfdlError::ParseError(format!(
+			"Unsupported SFDLFileVersion '{}'. Expected 6-9 for SFDL v2.",
+			raw.version
+		)));
+	}
 
 	Ok(SfdlContainer {
 		container_version: 2,
@@ -606,7 +639,7 @@ mod tests {
   <ContainerVersion>0</ContainerVersion>
   <Encrypted>false</Encrypted>
   <Connection><Host>x</Host><Port>21</Port></Connection>
-  <Packages></Packages>
+  <Packages><Package><Name>P</Name><BulkFolderMode>false</BulkFolderMode></Package></Packages>
 </Container>"#;
 		let result = parse_sfdl(xml);
 		assert!(result.is_err());
@@ -621,7 +654,7 @@ mod tests {
   <ContainerVersion>5</ContainerVersion>
   <Encrypted>false</Encrypted>
   <Connection><Host>x</Host><Port>21</Port></Connection>
-  <Packages></Packages>
+  <Packages><Package><Name>P</Name><BulkFolderMode>false</BulkFolderMode></Package></Packages>
 </Container>"#;
 		let result = parse_sfdl(xml);
 		assert!(result.is_err());
@@ -635,10 +668,90 @@ mod tests {
   <ContainerVersion>11</ContainerVersion>
   <Encrypted>false</Encrypted>
   <Connection><Host>x</Host><Port>21</Port></Connection>
+  <Packages><Package><Name>P</Name><BulkFolderMode>false</BulkFolderMode></Package></Packages>
+</Container>"#;
+		let result = parse_sfdl(xml);
+		assert!(result.is_err());
+	}
+
+	/// SFDL-001 | BR-SFDL-001: v2 SFDLFileVersion 3 is rejected (too low).
+	#[test]
+	fn sfdl001_reject_v2_version_too_low() {
+		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<SFDLFile>
+  <SFDLFileVersion>3</SFDLFileVersion>
+  <Encrypted>false</Encrypted>
+  <ConnectionInfo><Host>x</Host><Port>21</Port></ConnectionInfo>
+  <Packages><SFDLPackage><BulkFolderList></BulkFolderList></SFDLPackage></Packages>
+</SFDLFile>"#;
+		let result = parse_sfdl(xml);
+		assert!(result.is_err());
+		assert!(result.unwrap_err().to_string().contains("SFDLFileVersion"));
+	}
+
+	/// SFDL-001 | A3: No packages → validation error.
+	#[test]
+	fn sfdl001_reject_no_packages() {
+		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>10</ContainerVersion>
+  <Encrypted>false</Encrypted>
+  <Connection><Host>ftp.example.com</Host><Port>21</Port></Connection>
   <Packages></Packages>
 </Container>"#;
 		let result = parse_sfdl(xml);
 		assert!(result.is_err());
+		assert!(result.unwrap_err().to_string().contains("no packages"));
+	}
+
+	/// SFDL-001 | A3: Missing host on unencrypted container → validation error.
+	#[test]
+	fn sfdl001_reject_missing_host() {
+		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>10</ContainerVersion>
+  <Encrypted>false</Encrypted>
+  <Connection><Host></Host><Port>21</Port></Connection>
+  <Packages><Package><Name>P</Name><BulkFolderMode>false</BulkFolderMode></Package></Packages>
+</Container>"#;
+		let result = parse_sfdl(xml);
+		assert!(result.is_err());
+		assert!(result.unwrap_err().to_string().contains("missing connection host"));
+	}
+
+	/// SFDL-001 | A3: Missing host is OK on encrypted container (host is ciphertext).
+	#[test]
+	fn sfdl001_accept_encrypted_empty_host() {
+		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>10</ContainerVersion>
+  <Encrypted>true</Encrypted>
+  <Connection><Host></Host><Port>21</Port></Connection>
+  <Packages><Package><Name>P</Name><BulkFolderMode>false</BulkFolderMode></Package></Packages>
+</Container>"#;
+		// Encrypted containers may have empty host (it's ciphertext that failed to set)
+		let result = parse_sfdl(xml);
+		assert!(result.is_ok());
+	}
+
+	/// SFDL-001 | A4: load_sfdl_file with nonexistent path returns FileError.
+	#[test]
+	fn sfdl001_load_file_not_found() {
+		let result = load_sfdl_file(std::path::Path::new("/nonexistent/path/test.sfdl"));
+		assert!(result.is_err());
+		assert!(result.unwrap_err().to_string().contains("nonexistent"));
+	}
+
+	/// SFDL-001 | A4: load_sfdl_file reads and parses a real file.
+	#[test]
+	fn sfdl001_load_file_success() {
+		let dir = tempfile::tempdir().unwrap();
+		let path = dir.path().join("test.sfdl");
+		std::fs::write(&path, UNENCRYPTED_V3).unwrap();
+
+		let container = load_sfdl_file(&path).unwrap();
+		assert_eq!(container.description, "Test.Release.2026.1080p");
+		assert_eq!(container.version, SfdlVersion::V3);
 	}
 
 	/// SFDL-001 | A1: Invalid XML returns error.
