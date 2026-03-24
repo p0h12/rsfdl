@@ -14,6 +14,7 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], resolve: bool, json:
 	};
 
 	// SFDL-003: Resolve bulk folders if requested
+	let mut bulk_failed = false;
 	if resolve {
 		let has_bulk = container.packages.iter().any(|p| p.bulk_folder_mode && !p.bulk_folder_list.is_empty());
 		if has_bulk {
@@ -22,6 +23,7 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], resolve: bool, json:
 			for w in &warnings {
 				eprintln!("Warning: {}", w);
 			}
+			bulk_failed = !warnings.is_empty();
 		}
 	}
 
@@ -32,6 +34,11 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], resolve: bool, json:
 		print_json(&container, &patterns);
 	} else {
 		print_text(&container, &patterns, show_excluded);
+	}
+
+	// A4: BulkFolder resolution failed → exit 5
+	if bulk_failed {
+		std::process::exit(5);
 	}
 }
 
@@ -68,7 +75,7 @@ fn print_text(container: &rsfdl_core::sfdl::models::SfdlContainer, patterns: &[S
 		}
 	}
 
-	// BR-CLI-002-002: Summary line
+	// BR-CLI-011: Summary line
 	let selected = total_files - excluded_count;
 	let selected_bytes: u64 = container
 		.packages
