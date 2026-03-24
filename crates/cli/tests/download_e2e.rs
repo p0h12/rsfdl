@@ -13,6 +13,19 @@ fn cmd() -> Command {
 	Command::cargo_bin("rsfdl-cli").unwrap()
 }
 
+/// Create a temp settings file with fast retry settings for tests.
+fn fast_settings() -> (tempfile::TempDir, String) {
+	let dir = tempfile::tempdir().unwrap();
+	let path = dir.path().join("settings.toml");
+	fs::write(&path, r#"
+max_retries = 1
+retry_delay_seconds = 1
+ftp_timeout_seconds = 2
+"#).unwrap();
+	let path_str = path.to_str().unwrap().to_string();
+	(dir, path_str)
+}
+
 #[tokio::test]
 async fn cli_download_success() {
 	let ftp_root = tempfile::tempdir().unwrap();
@@ -29,10 +42,12 @@ async fn cli_download_success() {
 	let sfdl_str = sfdl_path.to_str().unwrap().to_string();
 	let dest_str = dest.path().to_str().unwrap().to_string();
 
+	let (_cfg_dir, cfg_path) = fast_settings();
+
 	// Run CLI in a blocking thread to keep the async FTP server alive
 	let output = tokio::task::spawn_blocking(move || {
 		cmd()
-			.args(["download", &sfdl_str, "-d", &dest_str])
+			.args(["download", &sfdl_str, "-d", &dest_str, "--config-file", &cfg_path])
 			.assert()
 			.success()
 			.stderr(predicate::str::contains("Done:"))
@@ -64,8 +79,10 @@ async fn cli_download_with_dest_flag() {
 	let sfdl_str = sfdl_path.to_str().unwrap().to_string();
 	let dest_str = dest.path().to_str().unwrap().to_string();
 
+	let (_cfg_dir, cfg_path) = fast_settings();
+
 	tokio::task::spawn_blocking(move || {
-		cmd().args(["download", &sfdl_str, "-d", &dest_str]).assert().success();
+		cmd().args(["download", &sfdl_str, "-d", &dest_str, "--config-file", &cfg_path]).assert().success();
 	})
 	.await
 	.unwrap();
@@ -85,8 +102,10 @@ async fn cli_download_connection_error() {
 	let sfdl_str = sfdl_path.to_str().unwrap().to_string();
 	let dest_str = dest.path().to_str().unwrap().to_string();
 
+	let (_cfg_dir, cfg_path) = fast_settings();
+
 	tokio::task::spawn_blocking(move || {
-		cmd().args(["download", &sfdl_str, "-d", &dest_str]).assert().failure().stderr(predicate::str::contains("1 failed"));
+		cmd().args(["download", &sfdl_str, "-d", &dest_str, "--config-file", &cfg_path]).assert().failure().stderr(predicate::str::contains("1 failed"));
 	})
 	.await
 	.unwrap();
