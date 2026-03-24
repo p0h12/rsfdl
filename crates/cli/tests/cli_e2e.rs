@@ -138,6 +138,32 @@ fn info_json_encrypted() {
 	assert_eq!(json["host"], "ftp.example.com");
 }
 
+// --- CLI-002: Exit codes ---
+
+/// CLI-002 | A2: Nonexistent file → exit code 1.
+#[test]
+fn list_nonexistent_file_fails() {
+	cmd().args(["list", "/tmp/nonexistent_file_12345.sfdl"]).assert().failure().code(1);
+}
+
+/// CLI-002 | A3: Invalid SFDL → exit code 2.
+#[test]
+fn list_invalid_file_fails() {
+	cmd().args(["list", &fixture("invalid.sfdl")]).assert().failure().code(2);
+}
+
+/// CLI-002 | A1: Encrypted without password → exit code 3.
+#[test]
+fn list_password_required_exit_code() {
+	cmd().args(["list", &fixture("encrypted_v3.sfdl")]).assert().failure().code(3);
+}
+
+/// CLI-002 | A1: Wrong password → exit code 4.
+#[test]
+fn list_wrong_password_exit_code() {
+	cmd().args(["list", &fixture("encrypted_v3.sfdl"), "-p", "wrong"]).assert().failure().code(4);
+}
+
 // --- AT-08: CLI list (unencrypted) ---
 
 #[test]
