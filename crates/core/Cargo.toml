@@ -32,6 +32,9 @@ unrar = "0.5"
 zip = "2"
 regex = "1"
 
+# Platform
+libc = "0.2"
+
 # Utilities
 uuid = { version = "1", features = ["v4"] }
 dirs = "6"

@@ -7,7 +7,7 @@
 **Primary Actor:** System (automatisch vor Download-Start)
 **Goal:** Sicherstellen, dass genuegend Speicherplatz fuer den Download vorhanden ist.
 **Requirements:** FR-19
-**Status:** Not Implemented
+**Status:** Stable
 
 ## Preconditions
 
