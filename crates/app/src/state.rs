@@ -18,6 +18,7 @@ use rsfdl_core::sfdl::models::SfdlContainer;
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[allow(dead_code)]
 pub enum AppView {
 	Main,
 	Settings,
@@ -152,11 +153,13 @@ impl ContainerState {
 	}
 
 	/// Total size of all files in bytes.
+	#[allow(dead_code)]
 	pub fn total_size(&self) -> u64 {
 		self.selection.total_size()
 	}
 
 	/// Sum of sizes of only selected files.
+	#[allow(dead_code)]
 	pub fn selected_size(&self) -> u64 {
 		self.selection.selected_size()
 	}
@@ -351,6 +354,7 @@ impl AppState {
 	}
 
 	/// Container count.
+	#[allow(dead_code)]
 	pub fn container_count(&self) -> usize {
 		self.containers.read().len()
 	}

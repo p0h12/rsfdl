@@ -135,10 +135,8 @@ fn format_json(w: &mut impl Write, container: &SfdlContainer, patterns: &[String
 				"excluded": excluded,
 			});
 
-			if excluded {
-				if let Some(pattern) = patterns.iter().find(|p| is_excluded(&file.file_name, &[p.to_string()])) {
-					file_obj["exclude_pattern"] = serde_json::json!(pattern);
-				}
+			if excluded && let Some(pattern) = patterns.iter().find(|p| is_excluded(&file.file_name, &[p.to_string()])) {
+				file_obj["exclude_pattern"] = serde_json::json!(pattern);
 			}
 
 			files_json.push(file_obj);

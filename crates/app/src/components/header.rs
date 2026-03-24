@@ -104,6 +104,7 @@ fn ThemeToggle(theme: Theme) -> Element {
 }
 
 /// BR-UI-017: Check if a filename has the `.sfdl` extension (case-insensitive).
+#[allow(dead_code)]
 pub fn is_sfdl_file(name: &str) -> bool {
 	name.contains('.') && name.rsplit('.').next().is_some_and(|ext| ext.eq_ignore_ascii_case("sfdl"))
 }
@@ -192,7 +193,7 @@ pub async fn resolve_bulk_folders_for(mut state: AppState, container_id: u32) {
 pub enum DecryptOutcome {
 	/// Main Success: container decrypted, selection computed.
 	Success {
-		container: rsfdl_core::sfdl::models::SfdlContainer,
+		container: Box<rsfdl_core::sfdl::models::SfdlContainer>,
 		selection: FileSelection,
 	},
 	/// A1: Invalid password.
@@ -209,7 +210,7 @@ pub fn attempt_decrypt(container: &rsfdl_core::sfdl::models::SfdlContainer, pass
 	match rsfdl_core::container::decrypt_with_password(&mut c, password) {
 		Ok(()) => {
 			let selection = FileSelection::new(&c, exclusion_patterns);
-			DecryptOutcome::Success { container: c, selection }
+			DecryptOutcome::Success { container: Box::new(c), selection }
 		}
 		Err(rsfdl_core::error::AppError::InvalidPassword) => DecryptOutcome::InvalidPassword,
 		Err(e) => DecryptOutcome::OtherError(format!("Decryption failed: {e}")),
@@ -233,7 +234,7 @@ pub fn try_decrypt_container(mut state: AppState, container_id: u32, password: &
 	match attempt_decrypt(&container, password, &patterns) {
 		DecryptOutcome::Success { container: decrypted, selection } => {
 			state.with_container_mut(container_id, |cs| {
-				cs.container = decrypted;
+				cs.container = *decrypted;
 				cs.selection = selection;
 				cs.phase = ContainerPhase::Ready;
 				cs.password_error = None;
@@ -279,7 +280,7 @@ mod tests {
 		assert!(matches!(result, DecryptOutcome::Success { .. }));
 		if let DecryptOutcome::Success { container, .. } = result {
 			assert!(!container.encrypted);
-			assert_eq!(container.connection.host, "ftp.example.com");
+			assert_eq!(container.connection.host, "ftp.example.com"); // Box auto-derefs
 		}
 	}
 

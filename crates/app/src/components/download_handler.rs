@@ -183,10 +183,10 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 					});
 
 					// Queue: Auto-start next container if none is downloading
-					if !state.is_any_downloading() {
-						if let Some(next_id) = state.next_queued() {
-							start_download(state, next_id);
-						}
+					if !state.is_any_downloading()
+						&& let Some(next_id) = state.next_queued()
+					{
+						start_download(state, next_id);
 					}
 				}
 				// Extraction events (deferred)
