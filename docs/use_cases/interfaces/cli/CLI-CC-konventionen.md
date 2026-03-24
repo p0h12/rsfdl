@@ -1,10 +1,10 @@
 # CLI-Konventionen (Cross-Cutting)
 
 **Spec ID:** CLI-CC
-**Gilt fuer:** Alle CLI-Kommandos (CLI-001 bis CLI-006)
+**Gilt für:** Alle CLI-Kommandos (CLI-001 bis CLI-006)
 **Status:** Stable
 
-Dieses Dokument ist kein Use Case. Es definiert Regeln die querschnittlich fuer alle CLI-Befehle gelten.
+Dieses Dokument ist kein Use Case. Es definiert Regeln die querschnittlich für alle CLI-Befehle gelten.
 
 ---
 
@@ -15,11 +15,11 @@ Dieses Dokument ist kein Use Case. Es definiert Regeln die querschnittlich fuer 
 | `stdout` | Ergebnis-Daten (Container-Info, Dateilisten, Speed-Report) |
 | `stderr` | Fortschritt, Warnungen, Fehlermeldungen, Logging           |
 
-Diese Trennung ermoeglicht: `rsfdl list file.sfdl > filelist.txt` ohne Fortschritts-Rauschen.
+Diese Trennung ermöglicht: `rsfdl list file.sfdl > filelist.txt` ohne Fortschritts-Rauschen.
 
 ## BR-CLI-002: Fortschrittsanzeige
 
-- Terminal: `\r` fuer In-Place-Updates mit Progress-Bars.
+- Terminal: `\r` für In-Place-Updates mit Progress-Bars.
 - Nicht-Terminal (Pipe/Redirect): Eine Zeile pro Datei-Abschluss.
 - Debouncing: Max. 10 Updates/Sekunde.
 
@@ -34,8 +34,8 @@ Alle Kommandos mit `--json` Flag geben maschinenlesbares JSON aus.
 | status           | string | "success", "partial", "failed"                   |
 | completed        | number | Anzahl erfolgreich heruntergeladener Dateien     |
 | failed           | number | Anzahl fehlgeschlagener Dateien                  |
-| skipped          | number | Anzahl uebersprungener Dateien                   |
-| total_bytes      | number | Gesamtgroesse in Bytes                           |
+| skipped          | number | Anzahl übersprungener Dateien                    |
+| total_bytes      | number | Gesamtgrösse in Bytes                            |
 | duration_seconds | number | Dauer in Sekunden                                |
 | avg_speed_bps    | number | Durchschnittsgeschwindigkeit in Bytes/s          |
 | failures[]       | array  | Liste der Fehler (filename, error_type, retries) |
@@ -52,44 +52,44 @@ Alle Kommandos mit `--json` Flag geben maschinenlesbares JSON aus.
 
 ## BR-CLI-004: Logging
 
-- Gesteuert ueber `RSFDL_LOG` Umgebungsvariable oder `--log-level`.
+- Gesteuert über `RSFDL_LOG` Umgebungsvariable oder `--log-level`.
 - Werte: `error`, `warn`, `info`, `debug`, `trace`. Standard: `warn`.
 - Log-Ausgabe auf stderr, prefixed mit Timestamp und Level.
 
 ## BR-CLI-005: Farben
 
 - Farben nur wenn stderr ein Terminal ist.
-- `NO_COLOR` Umgebungsvariable deaktiviert Farben (gemaess no-color.org).
-- Rot: Fehler. Gelb: Warnungen. Gruen: Erfolg. Blau: Info/Fortschritt.
+- `NO_COLOR` Umgebungsvariable deaktiviert Farben (gemäss no-color.org).
+- Rot: Fehler. Gelb: Warnungen. Grün: Erfolg. Blau: Info/Fortschritt.
 
-## BR-CLI-006: Parameter-Prioritaet
+## BR-CLI-006: Parameter-Priorität
 
-- Prioritaet: **CLI-Parameter > Konfigurationsdatei > Standardwerte**.
+- Priorität: **CLI-Parameter > Konfigurationsdatei > Standardwerte**.
 - Alle Parameter mit Standard "CFG" lesen ihren Defaultwert aus der Konfigurationsdatei (-> CFG-001).
-- CLI-Parameter ueberschreiben diese Werte nur fuer die aktuelle Ausfuehrung.
-- Ueberschriebene Werte werden nicht in die Konfigurationsdatei zurueckgeschrieben.
+- CLI-Parameter überschreiben diese Werte nur für die aktuelle Ausführung.
+- Überschriebene Werte werden nicht in die Konfigurationsdatei zurückgeschrieben.
 
 ## BR-CLI-007: Exit-Code-Schema
 
-Gemeinsame Exit-Codes fuer alle CLI-Befehle:
+Gemeinsame Exit-Codes für alle CLI-Befehle:
 
 | Code | Bedeutung                                |
 |------|------------------------------------------|
 | 0    | Erfolg                                   |
 | 1    | Datei nicht gefunden / nicht lesbar      |
-| 2    | Ungueltiges SFDL-Format                  |
+| 2    | Ungültiges SFDL-Format                   |
 | 3    | Passwort erforderlich (nicht-interaktiv) |
 | 4    | Falsches Passwort                        |
 
-Zusaetzliche Exit-Codes fuer `download` (CLI-003):
+Zusätzliche Exit-Codes für `download` (CLI-003):
 
-| Code | Bedeutung                                |
-|------|------------------------------------------|
-| 5    | FTP-Fehler bei BulkFolder-Aufloesung     |
-| 6    | Nicht genuegend Speicherplatz            |
-| 10   | Teilweise fehlgeschlagen                 |
-| 11   | Alle Downloads fehlgeschlagen            |
-| 12   | Abbruch durch Signal (SIGINT/SIGTERM)    |
+| Code | Bedeutung                             |
+|------|---------------------------------------|
+| 5    | FTP-Fehler bei BulkFolder-Auflösung   |
+| 6    | Nicht genügend Speicherplatz          |
+| 10   | Teilweise fehlgeschlagen              |
+| 11   | Alle Downloads fehlgeschlagen         |
+| 12   | Abbruch durch Signal (SIGINT/SIGTERM) |
 
 ## BR-CLI-008: Quiet-Modus
 

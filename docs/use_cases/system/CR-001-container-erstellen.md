@@ -5,7 +5,7 @@
 **Use Case ID:** CR-001
 **Use Case Name:** SFDL-Container erstellen
 **Primary Actor:** Benutzer
-**Goal:** Aus FTP-Verbindungsdaten und Pfaden eine gueltige `.sfdl`-Datei erstellen.
+**Goal:** Aus FTP-Verbindungsdaten und Pfaden eine gültige `.sfdl`-Datei erstellen.
 **Requirements:** FR-20
 **Status:** Stable
 
@@ -15,16 +15,16 @@
 
 ## Main Success Scenario
 
-1. Actor uebergibt FTP-Verbindungsdaten und einen oder mehrere Pfade.
+1. Actor übergibt FTP-Verbindungsdaten und einen oder mehrere Pfade.
 2. System erstellt ein leeres Container-Objekt mit den Verbindungsdaten.
-3. System prueft den Modus:
+3. System prüft den Modus:
     - BulkFolder-Modus -> **extend** CR-003
     - FTP-Listing-Modus -> **extend** CR-002
 4. **[Optional]** Actor setzt Metadaten -> **extend** CR-006
-5. **[Optional]** Actor gibt ein Verschluesselungspasswort an -> **extend** CR-004
+5. **[Optional]** Actor gibt ein Verschlüsselungspasswort an -> **extend** CR-004
 6. -> **include** CR-005 (Container serialisieren)
 7. System schreibt die serialisierte XML-Datei auf das Dateisystem.
-8. System gibt den Pfad zur erstellten `.sfdl`-Datei zurueck.
+8. System gibt den Pfad zur erstellten `.sfdl`-Datei zurück.
 
 ## Alternative Flows
 
@@ -34,7 +34,7 @@
 **Flow:**
 
 1. System erkennt fehlende Pflichtfelder (z.B. kein Host oder kein Pfad).
-2. System meldet: "Container-Erstellung unvollstaendig: [fehlende Felder]."
+2. System meldet: "Container-Erstellung unvollständig: [fehlende Felder]."
 3. Use Case endet.
 
 ### A2: Datei kann nicht geschrieben werden
@@ -50,7 +50,7 @@
 
 ### Success Postconditions
 
-- Eine gueltige `.sfdl`-Datei (v3, ContainerVersion=10) wurde auf dem Dateisystem geschrieben.
+- Eine gültige `.sfdl`-Datei (v3, ContainerVersion=10) wurde auf dem Dateisystem geschrieben.
 
 ### Failure Postconditions
 
@@ -59,9 +59,9 @@
 
 ## Business Rules
 
-### BR-CR-001: Round-Trip-Kompatibilitaet
+### BR-CR-001: Round-Trip-Kompatibilität
 
-- Jeder erstellte Container muss von rsfdl und SFDL.NET gelesen werden koennen.
+- Jeder erstellte Container muss von rsfdl und SFDL.NET gelesen werden können.
 - Validierung: `parse_sfdl(serialize_v3(container))` ergibt semantisch identischen Container.
 
 ### BR-CR-002: Standard-Werte
@@ -78,8 +78,8 @@
 - `password`: FTP-Passwort
 - `paths`: Liste von Pfaden auf dem FTP-Server
 - `bulk_folder_mode`: bool (Standard: false)
-- `encryption_password`: Optional -- Passwort fuer Verschluesselung
-- `output_path`: Ziel-Dateipfad fuer die `.sfdl`-Datei
+- `encryption_password`: Optional -- Passwort für Verschlüsselung
+- `output_path`: Ziel-Dateipfad für die `.sfdl`-Datei
 
 ## Output
 

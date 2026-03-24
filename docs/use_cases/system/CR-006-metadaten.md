@@ -22,7 +22,7 @@
     - Max-Download-Threads
 2. System validiert die Werte (-> BR-CR-013).
 3. System setzt die Metadaten im Container-Objekt.
-4. System gibt den Container an CR-001 zurueck.
+4. System gibt den Container an CR-001 zurück.
 
 ## Alternative Flows
 
@@ -34,9 +34,9 @@
 1. System verwendet die Standardwerte (-> BR-CR-013).
 2. Use Case endet erfolgreich.
 
-### A2: Ungueltiger Wert fuer MaxDownloadThreads
+### A2: Ungültiger Wert für MaxDownloadThreads
 
-**Trigger:** Actor gibt einen Wert ausserhalb des gueltigen Bereichs an (Schritt 2)
+**Trigger:** Actor gibt einen Wert ausserhalb des gültigen Bereichs an (Schritt 2)
 **Flow:**
 
 1. Actor gibt einen Wert < 1 oder > 10 an.
@@ -47,7 +47,7 @@
 
 ### Success Postconditions
 
-- Container enthaelt die gesetzten Metadaten.
+- Container enthält die gesetzten Metadaten.
 
 ### Failure Postconditions
 
@@ -64,7 +64,7 @@
 ### BR-CR-014: Validierung
 
 - `MaxDownloadThreads` muss ein positiver Integer sein (1-10).
-- `Description` und `Uploader` sind Freitextfelder ohne Laengenbeschraenkung.
+- `Description` und `Uploader` sind Freitextfelder ohne Längenbeschränkung.
 
 ## Input
 

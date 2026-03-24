@@ -1,25 +1,25 @@
-# Use Case: Passwort ermitteln und entschluesseln
+# Use Case: Passwort ermitteln und entschlüsseln
 
 ## Overview
 
 **Use Case ID:** CLI-004
-**Use Case Name:** Passwort ermitteln und entschluesseln
+**Use Case Name:** Passwort ermitteln und entschlüsseln
 **Primary Actor:** Benutzer
-**Goal:** Das Passwort fuer einen verschluesselten Container ermitteln und den Container entschluesseln.
+**Goal:** Das Passwort für einen verschlüsselten Container ermitteln und den Container entschlüsseln.
 **Implements:** SFDL-002
 **Status:** Stable
 
 ## Preconditions
 
-- Ein verschluesselter SFDL-Container wurde geparst (SFDL-001).
+- Ein verschlüsselter SFDL-Container wurde geparst (SFDL-001).
 - Auto-Passwort-Liste ist aus Einstellungen geladen (CFG-001).
 
 ## Main Success Scenario
 
 1. System probiert jedes Passwort der Auto-Liste (-> SFDL-002).
 2. Ein Passwort passt.
-3. System entschluesselt den Container.
-4. System gibt den entschluesselten Container zurueck.
+3. System entschlüsselt den Container.
+4. System gibt den entschlüsselten Container zurück.
 
 ## Alternative Flows
 
@@ -29,7 +29,7 @@
 **Flow:**
 
 1. System verwendet das angegebene Passwort.
-2. System entschluesselt den Container (-> SFDL-002).
+2. System entschlüsselt den Container (-> SFDL-002).
 3. Use Case endet erfolgreich.
 
 ### A2: Kein Auto-Passwort passt — interaktiver Prompt
@@ -39,10 +39,10 @@
 
 1. System zeigt Passwort-Prompt (keine Echo-Ausgabe).
 2. Benutzer gibt Passwort ein.
-3. System entschluesselt den Container (-> SFDL-002).
+3. System entschlüsselt den Container (-> SFDL-002).
 4. Use Case endet erfolgreich.
 
-### A3: Kein Passwort verfuegbar (nicht-interaktiv)
+### A3: Kein Passwort verfügbar (nicht-interaktiv)
 
 **Trigger:** Kein Passwort passt, kein Terminal (Schritt 1)
 **Flow:**
@@ -62,18 +62,18 @@
 
 ### Success Postconditions
 
-- Container ist entschluesselt.
+- Container ist entschlüsselt.
 
 ### Failure Postconditions
 
-- Container bleibt verschluesselt.
+- Container bleibt verschlüsselt.
 - Fehlermeldung auf stderr.
 
 ## Business Rules
 
-### BR-CLI-018: Passwort-Prioritaet
+### BR-CLI-018: Passwort-Priorität
 
-- Prioritaet: `--password` Flag > Auto-Passwort-Liste (CFG) > Interaktiver Prompt > Fehler.
+- Priorität: `--password` Flag > Auto-Passwort-Liste (CFG) > Interaktiver Prompt > Fehler.
 - Interaktiver Prompt nur wenn stderr ein Terminal ist.
 - Passwort-Eingabe ohne Echo (rpassword).
 

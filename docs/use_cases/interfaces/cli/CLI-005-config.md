@@ -5,7 +5,7 @@
 **Use Case ID:** CLI-005
 **Use Case Name:** CLI config
 **Primary Actor:** Benutzer
-**Goal:** Einstellungen ueber die Kommandozeile anzeigen, bearbeiten oder den Dateipfad ermitteln.
+**Goal:** Einstellungen über die Kommandozeile anzeigen, bearbeiten oder den Dateipfad ermitteln.
 **Implementiert:** CFG-001
 **Status:** Stable
 
@@ -19,10 +19,10 @@
 
 1. Benutzer ruft `rsfdl config show` auf.
 2. System ermittelt den Konfigurationspfad (-> BR-CLI-014).
-3. System laedt die Einstellungen (-> CFG-001, Variante A).
+3. System lädt die Einstellungen (-> CFG-001, Variante A).
 4. System gibt Warnings (korrupte Datei, korrigierte Werte) auf stderr aus.
 5. System gibt die Einstellungen im key=value-Format auf stdout aus.
-6. Passwoerter werden maskiert angezeigt (nur Anzahl).
+6. Passwörter werden maskiert angezeigt (nur Anzahl).
 
 ### `rsfdl config edit`
 
@@ -30,7 +30,7 @@
 2. System ermittelt den Konfigurationspfad (-> BR-CLI-014).
 3. System erstellt die Konfigurationsdatei mit Standardwerten, falls nicht vorhanden (-> CFG-001, A1).
 4. System ermittelt den Editor (-> BR-CLI-015).
-5. System oeffnet die Datei im Editor.
+5. System öffnet die Datei im Editor.
 6. Benutzer bearbeitet die Datei und schliesst den Editor.
 7. System validiert die bearbeitete Datei (-> CFG-001, Variante A).
 8. System gibt Warnings auf stderr aus.
@@ -43,7 +43,7 @@
 
 ## Alternative Flows
 
-### A1: Editor-Prozess schlaegt fehl
+### A1: Editor-Prozess schlägt fehl
 
 **Trigger:** Editor beendet sich mit Exit-Code != 0 (config edit, Schritt 6)
 **Flow:**
@@ -51,7 +51,7 @@
 1. System meldet: "Editor '{name}' exited with {code}."
 2. Use Case endet mit Exit-Code 1.
 
-### A2: Datei nach Bearbeitung ungueltig
+### A2: Datei nach Bearbeitung ungültig
 
 **Trigger:** Validierung nach Editor-Schliessung findet Fehler (config edit, Schritt 7)
 **Flow:**
@@ -77,7 +77,7 @@
 
 ### Failure Postconditions
 
-- Fehlermeldung auf stderr. Konfigurationsdatei bleibt unveraendert.
+- Fehlermeldung auf stderr. Konfigurationsdatei bleibt unverändert.
 
 ## Business Rules
 
@@ -94,18 +94,18 @@
 ### BR-CLI-016: Ausgabeformat
 
 - `config show` gibt key=value-Format auf stdout aus.
-- Passwoerter werden maskiert: nur `(N entries)` angezeigt (-> CFG-001, BR-CFG-003).
+- Passwörter werden maskiert: nur `(N entries)` angezeigt (-> CFG-001, BR-CFG-003).
 - Warnings und Fehler gehen auf stderr.
 
 Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Exit-Codes (BR-CLI-007).
 
 ## Syntax
 
-| Subcommand    | Optionen                 | Beschreibung                          |
-|---------------|--------------------------|---------------------------------------|
-| `config show` | —                        | Einstellungen anzeigen                |
-| `config edit` | —                        | Konfigurationsdatei im Editor oeffnen |
-| `config path` | —                        | Pfad zur Konfigurationsdatei ausgeben |
+| Subcommand    | Optionen | Beschreibung                          |
+|---------------|----------|---------------------------------------|
+| `config show` | —        | Einstellungen anzeigen                |
+| `config edit` | —        | Konfigurationsdatei im Editor öffnen  |
+| `config path` | —        | Pfad zur Konfigurationsdatei ausgeben |
 
 ## Exit-Codes
 

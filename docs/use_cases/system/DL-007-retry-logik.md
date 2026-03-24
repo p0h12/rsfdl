@@ -5,7 +5,7 @@
 **Use Case ID:** DL-007
 **Use Case Name:** Fehlgeschlagene Downloads wiederholen
 **Primary Actor:** System (automatisch bei Fehler)
-**Goal:** Fehlgeschlagene Downloads mit retry-faehigen Fehlern automatisch erneut versuchen.
+**Goal:** Fehlgeschlagene Downloads mit retry-fähigen Fehlern automatisch erneut versuchen.
 **Requirements:** FR-10
 **Status:** Stable
 
@@ -13,16 +13,16 @@
 
 - Task hat Status `Failed`.
 - `retry_count < max_retries`.
-- Fehlertyp ist retry-faehig (→ BR-DL-010).
+- Fehlertyp ist retry-fähig (→ BR-DL-010).
 
 ## Main Success Scenario
 
-1. System prueft den Fehlertyp der fehlgeschlagenen Task (→ BR-DL-010).
-2. Fehlertyp ist retry-faehig.
-3. System prueft: `retry_count < max_retries`.
+1. System prüft den Fehlertyp der fehlgeschlagenen Task (→ BR-DL-010).
+2. Fehlertyp ist retry-fähig.
+3. System prüft: `retry_count < max_retries`.
 4. System wartet `delay_seconds` (→ BR-DL-015).
-5. System erhoeht `retry_count` um 1.
-6. System setzt Task-Status zurueck auf `Pending`.
+5. System erhöht `retry_count` um 1.
+6. System setzt Task-Status zurück auf `Pending`.
 7. Task wird in die Worker-Queue eingereiht.
 8. → DL-004 verarbeitet die Task erneut (inkl. Resume, falls teilweise vorhanden).
 
@@ -30,10 +30,10 @@
 
 ### A1: Permanenter Fehler
 
-**Trigger:** Fehlertyp ist nicht retry-faehig (Schritt 1)
+**Trigger:** Fehlertyp ist nicht retry-fähig (Schritt 1)
 **Flow:**
 
-1. Fehlertyp ist nicht retry-faehig (FileNotFound, IOError, etc.).
+1. Fehlertyp ist nicht retry-fähig (FileNotFound, IOError, etc.).
 2. Task bleibt `Failed` mit Fehlermeldung.
 3. Kein Retry. Use Case endet.
 
@@ -51,11 +51,11 @@
 
 ### Success Postconditions
 
-- Task wird erneut als `Pending` eingereiht und beim naechsten freien Worker ausgefuehrt.
+- Task wird erneut als `Pending` eingereiht und beim nächsten freien Worker ausgeführt.
 
 ### Failure Postconditions
 
-- Task bleibt `Failed`. Fehlermeldung enthaelt Retry-Historie.
+- Task bleibt `Failed`. Fehlermeldung enthält Retry-Historie.
 
 ## Business Rules
 
@@ -63,7 +63,7 @@
 
 - Wartezeit zwischen Retries: konfigurierbar (Standard: 10s)
 - Bei `ServerFull (421)`: doppelte Wartezeit (Exponential Backoff bis max 120s)
-- Bei `AuthError (530)`: einfache Wartezeit (Server koennte temporaer Verbindungen begrenzen)
+- Bei `AuthError (530)`: einfache Wartezeit (Server könnte temporär Verbindungen begrenzen)
 
 ### BR-DL-016: Retry-Konfiguration
 
@@ -78,4 +78,4 @@
 
 ## Output
 
-- Task zurueck in `Pending`-Queue oder permanent `Failed`
+- Task zurück in `Pending`-Queue oder permanent `Failed`

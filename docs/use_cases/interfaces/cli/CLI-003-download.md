@@ -5,7 +5,7 @@
 **Use Case ID:** CLI-003
 **Use Case Name:** rsfdl download
 **Primary Actor:** Benutzer
-**Goal:** SFDL-Container oeffnen und selektierte Dateien herunterladen.
+**Goal:** SFDL-Container öffnen und selektierte Dateien herunterladen.
 **Implements:** DL-001 bis DL-008, POST-001, POST-002, POST-003
 **Status:** Stable
 
@@ -21,33 +21,33 @@
 
 ## Parameter
 
-| Parameter             | Pflicht | Standard | Beschreibung                                |
-|-----------------------|---------|----------|---------------------------------------------|
-| `<datei.sfdl>`        | ja      | —        | Pfad zur SFDL-Datei                         |
-| `--password <pw>`     | nein    | CFG      | Passwort fuer verschluesselte Container     |
-| `--output <dir>`      | nein    | CFG      | Zielverzeichnis                             |
-| `--threads <n>`       | nein    | CFG      | Max. parallele Downloads                    |
-| `--max-speed <KB/s>`  | nein    | CFG      | Bandbreitenbegrenzung (0 = unbegrenzt)      |
-| `--exclude <pattern>` | nein    | CFG      | Zusaetzliches Ausschlussmuster (mehrfach)   |
-| `--no-exclude`        | nein    | false    | Alle Ausschlussmuster deaktivieren          |
-| `--retries <n>`       | nein    | CFG      | Max. Retry-Versuche                         |
-| `--retry-delay <s>`   | nein    | CFG      | Wartezeit zwischen Retries                  |
-| `--strict-disk-check` | nein    | CFG      | Bei zu wenig Speicherplatz abbrechen        |
-| `--extract`           | nein    | CFG      | Auto-Extraktion nach Download               |
-| `--delete-archives`   | nein    | CFG      | Archive nach Extraktion loeschen            |
-| `--verify`            | nein    | false    | Hash-Verifikation nach Download (geplant)   |
-| `--speedreport`       | nein    | false    | Speed-Report auf stdout (geplant)           |
-| `--json`              | nein    | false    | JSON-Ausgabe (geplant, -> CLI-CC)           |
-| `--quiet`             | nein    | false    | Keine Fortschrittsanzeige, nur Ergebnis     |
+| Parameter             | Pflicht | Standard | Beschreibung                              |
+|-----------------------|---------|----------|-------------------------------------------|
+| `<datei.sfdl>`        | ja      | —        | Pfad zur SFDL-Datei                       |
+| `--password <pw>`     | nein    | CFG      | Passwort für verschlüsselte Container     |
+| `--output <dir>`      | nein    | CFG      | Zielverzeichnis                           |
+| `--threads <n>`       | nein    | CFG      | Max. parallele Downloads                  |
+| `--max-speed <KB/s>`  | nein    | CFG      | Bandbreitenbegrenzung (0 = unbegrenzt)    |
+| `--exclude <pattern>` | nein    | CFG      | Zusätzliches Ausschlussmuster (mehrfach)  |
+| `--no-exclude`        | nein    | false    | Alle Ausschlussmuster deaktivieren        |
+| `--retries <n>`       | nein    | CFG      | Max. Retry-Versuche                       |
+| `--retry-delay <s>`   | nein    | CFG      | Wartezeit zwischen Retries                |
+| `--strict-disk-check` | nein    | CFG      | Bei zu wenig Speicherplatz abbrechen      |
+| `--extract`           | nein    | CFG      | Auto-Extraktion nach Download             |
+| `--delete-archives`   | nein    | CFG      | Archive nach Extraktion löschen           |
+| `--verify`            | nein    | false    | Hash-Verifikation nach Download (geplant) |
+| `--speedreport`       | nein    | false    | Speed-Report auf stdout (geplant)         |
+| `--json`              | nein    | false    | JSON-Ausgabe (geplant, -> CLI-CC)         |
+| `--quiet`             | nein    | false    | Keine Fortschrittsanzeige, nur Ergebnis   |
 
 ## Main Success Scenario
 
 1. Benutzer ruft `rsfdl download <datei.sfdl>` auf.
-2. System oeffnet und parst die SFDL-Datei (-> SFDL-001).
-3. System loest den Inhalt auf (-> SFDL-003).
+2. System öffnet und parst die SFDL-Datei (-> SFDL-001).
+3. System löst den Inhalt auf (-> SFDL-003).
 4. System wendet Ausschlussmuster an (-> DL-002).
 5. System erstellt die Selektion (-> DL-001): Alle nicht-ausgeschlossenen Dateien.
-6. System prueft den Speicherplatz (-> DL-003).
+6. System prüft den Speicherplatz (-> DL-003).
 7. System startet den Download (-> DL-004) mit Fortschrittsanzeige auf stderr (-> CLI-CC).
 8. Nach Abschluss: optionale Verifikation (-> POST-001), Extraktion (-> POST-002).
 9. System gibt Ergebnis-Zusammenfassung auf stdout aus.
@@ -55,13 +55,13 @@
 
 ## Alternative Flows
 
-### A1: Container verschluesselt
+### A1: Container verschlüsselt
 
 **Trigger:** Container hat Encrypted=true (Schritt 2)
 **Flow:**
 
-1. System ermittelt das Passwort und entschluesselt den Container (-> include CLI-004).
-2. Use Case faehrt mit Schritt 3 fort.
+1. System ermittelt das Passwort und entschlüsselt den Container (-> include CLI-004).
+2. Use Case fährt mit Schritt 3 fort.
 
 ### A2: Datei nicht gefunden
 
@@ -71,7 +71,7 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 1.
 
-### A3: Ungueltiges SFDL-Format
+### A3: Ungültiges SFDL-Format
 
 **Trigger:** Datei kann nicht geparst werden (Schritt 2)
 **Flow:**
@@ -112,13 +112,13 @@
 2. SIGINT innerhalb 2s erneut: Sofortiger Abbruch.
 3. Exit-Code 12.
 
-### A8: CLI-Parameter ueberschreiben Settings
+### A8: CLI-Parameter überschreiben Settings
 
 **Trigger:** Benutzer gibt `--threads`, `--retries`, etc. an (Schritt 1)
 **Flow:**
 
-1. CLI-Parameter ueberschreiben die konfigurierten Werte fuer diese Ausfuehrung (-> CLI-CC, BR-CLI-006).
-2. Werte werden nicht in die Datei zurueckgeschrieben.
+1. CLI-Parameter überschreiben die konfigurierten Werte für diese Ausführung (-> CLI-CC, BR-CLI-006).
+2. Werte werden nicht in die Datei zurückgeschrieben.
 
 ## Postconditions
 
@@ -130,7 +130,7 @@
 
 ### Failure Postconditions
 
-- Fehlgeschlagene Dateien bleiben als partielle Downloads auf Disk (fuer Resume).
+- Fehlgeschlagene Dateien bleiben als partielle Downloads auf Disk (für Resume).
 - Ergebnis mit Fehlerliste auf stdout.
 
 ## Business Rules
@@ -147,15 +147,15 @@
 - SIGINT zweimal (< 2s): Sofortiger Abbruch.
 - SIGTERM: Wie einmaliges SIGINT.
 
-Weitere Regeln: -> CLI-CC (Cross-Cutting): Parameter-Prioritaet (BR-CLI-006), Exit-Codes (BR-CLI-007), Quiet-Modus (BR-CLI-008).
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Parameter-Priorität (BR-CLI-006), Exit-Codes (BR-CLI-007), Quiet-Modus (BR-CLI-008).
 
 ## Fortschrittsanzeige (stderr)
 
-Zeigt pro aktiver Datei: Zaehler, Dateiname, Fortschrittsbalken, Prozent, Geschwindigkeit, ETA. Darunter eine Gesamtzeile mit aggregiertem Fortschritt, Durchschnittsgeschwindigkeit und Gesamt-ETA. Updates per `\r` wenn Terminal, sonst eine Zeile pro Datei-Abschluss.
+Zeigt pro aktiver Datei: Zähler, Dateiname, Fortschrittsbalken, Prozent, Geschwindigkeit, ETA. Darunter eine Gesamtzeile mit aggregiertem Fortschritt, Durchschnittsgeschwindigkeit und Gesamt-ETA. Updates per `\r` wenn Terminal, sonst eine Zeile pro Datei-Abschluss.
 
 ## Ergebnis-Ausgabe (stdout)
 
-Zusammenfassung mit Anzahl OK/fehlgeschlagen/uebersprungen, Dauer, Gesamtgroesse, Durchschnittsgeschwindigkeit. Bei Fehlern: Liste der fehlgeschlagenen Dateien mit Fehlertyp und Retry-Anzahl.
+Zusammenfassung mit Anzahl OK/fehlgeschlagen/übersprungen, Dauer, Gesamtgrösse, Durchschnittsgeschwindigkeit. Bei Fehlern: Liste der fehlgeschlagenen Dateien mit Fehlertyp und Retry-Anzahl.
 
 ## Exit-Codes
 
@@ -163,10 +163,10 @@ Zusammenfassung mit Anzahl OK/fehlgeschlagen/uebersprungen, Dauer, Gesamtgroesse
 |------|------------------------------------------|
 | 0    | Alle Dateien erfolgreich                 |
 | 1    | Datei nicht gefunden / nicht lesbar      |
-| 2    | Ungueltiges SFDL-Format                  |
+| 2    | Ungültiges SFDL-Format                   |
 | 3    | Passwort erforderlich (nicht-interaktiv) |
 | 4    | Falsches Passwort                        |
-| 5    | FTP-Fehler bei BulkFolder-Aufloesung     |
+| 5    | FTP-Fehler bei BulkFolder-Auflösung      |
 | 6    | Nicht genug Speicherplatz (strict mode)  |
 | 10   | Teilweise fehlgeschlagen                 |
 | 11   | Alle Downloads fehlgeschlagen            |

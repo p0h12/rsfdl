@@ -5,7 +5,7 @@
 **Use Case ID:** CR-003
 **Use Case Name:** BulkFolder-Modus
 **Primary Actor:** System
-**Goal:** Einen Container mit BulkFolder-Eintraegen erstellen, ohne eine FTP-Verbindung herzustellen.
+**Goal:** Einen Container mit BulkFolder-Einträgen erstellen, ohne eine FTP-Verbindung herzustellen.
 **Requirements:** FR-22
 **Status:** Stable
 
@@ -17,9 +17,9 @@
 ## Main Success Scenario
 
 1. System setzt `BulkFolderMode=true` im Container.
-2. System erstellt fuer jeden angegebenen Pfad einen BulkFolder-Eintrag.
-3. System fuegt die BulkFolderList dem Package hinzu (statt FileList).
-4. System gibt das Package an CR-001 zurueck.
+2. System erstellt für jeden angegebenen Pfad einen BulkFolder-Eintrag.
+3. System fügt die BulkFolderList dem Package hinzu (statt FileList).
+4. System gibt das Package an CR-001 zurück.
 
 ## Alternative Flows
 
@@ -36,7 +36,7 @@
 
 ### Success Postconditions
 
-- Container enthaelt BulkFolderList mit den angegebenen Pfaden.
+- Container enthält BulkFolderList mit den angegebenen Pfaden.
 - Keine FTP-Verbindung wurde hergestellt.
 
 ### Failure Postconditions
@@ -47,13 +47,13 @@
 
 ### BR-CR-005: BulkFolder vs. FileList
 
-- Im BulkFolder-Modus enthaelt das Package ausschliesslich eine BulkFolderList, keine FileList.
-- Die Dateiaufloesung erfolgt erst beim Download (SFDL-003).
-- Es wird keine FTP-Verbindung benoetigt -- nur die Pfade werden gespeichert.
+- Im BulkFolder-Modus enthält das Package ausschliesslich eine BulkFolderList, keine FileList.
+- Die Dateiauflösung erfolgt erst beim Download (SFDL-003).
+- Es wird keine FTP-Verbindung benötigt -- nur die Pfade werden gespeichert.
 
-### BR-CR-006: Kompatibilitaet
+### BR-CR-006: Kompatibilität
 
-- Der generierte BulkFolder-Container muss kompatibel sein mit der BulkFolder-Aufloesung beim Download (SFDL-003).
+- Der generierte BulkFolder-Container muss kompatibel sein mit der BulkFolder-Auflösung beim Download (SFDL-003).
 
 ## Input
 

@@ -17,7 +17,7 @@
 
 ### Variante A: Einstellungen laden
 
-1. System erhaelt den Konfigurationspfad (-> CFG-002).
+1. System erhält den Konfigurationspfad (-> CFG-002).
 2. System prüft, ob die Konfigurationsdatei existiert.
 3. System liest und parst die TOML-Datei.
 4. System validiert die Werte (-> BR-CFG-002).
@@ -62,7 +62,7 @@
 **Trigger:** Einzelne Werte liegen ausserhalb der gültigen Bereiche (Variante A, Schritt 4)
 **Flow:**
 
-1. System ersetzt ungueltige Werte durch die jeweiligen Standardwerte (-> BR-CFG-001).
+1. System ersetzt ungültige Werte durch die jeweiligen Standardwerte (-> BR-CFG-001).
 2. System meldet: "Ungültige Werte korrigiert: [Feldliste]."
 3. Use Case fährt mit Schritt 5 fort.
 
@@ -127,9 +127,9 @@
 
 ### BR-CFG-003: Passwort-Speicherung
 
-- Passwoerter in der `auto_passwords` Liste werden aktuell im Klartext in der TOML-Datei gespeichert.
-- Geplant: OS-spezifischer Keyring oder AES mit maschinengebundenem Schluessel (NFR-06).
-- Die GUI zeigt Passwoerter verdeckt an (Bullet-Zeichen), CLI maskiert sie in der `config show` Ausgabe.
+- Passwörter in der `auto_passwords` Liste werden aktuell im Klartext in der TOML-Datei gespeichert.
+- Geplant: OS-spezifischer Keyring oder AES mit maschinengebundenem Schlüssel (NFR-06).
+- Die GUI zeigt Passwörter verdeckt an (Bullet-Zeichen), CLI maskiert sie in der `config show` Ausgabe.
 
 ## Input
 

@@ -5,13 +5,13 @@
 **Use Case ID:** CR-005
 **Use Case Name:** Container serialisieren
 **Primary Actor:** System
-**Goal:** Einen vollstaendigen Container-Objekt in einen gueltigen SFDL v3 XML-String serialisieren.
+**Goal:** Einen vollständigen Container-Objekt in einen gültigen SFDL v3 XML-String serialisieren.
 **Requirements:** FR-24
 **Status:** Stable
 
 ## Preconditions
 
-- Ein vollstaendiger Container liegt vor (ggf. verschluesselt).
+- Ein vollständiger Container liegt vor (ggf. verschlüsselt).
 - Wird von CR-001 aufgerufen (include).
 
 ## Main Success Scenario
@@ -22,24 +22,24 @@
     - Alle Elementnamen in PascalCase
     - Enum-Werte als Strings (z.B. `UTF8`, `Binary`, `Passive`)
 3. System serialisiert leere Listen als leere XML-Elemente (nicht weglassen).
-4. System gibt den XML-String zurueck.
+4. System gibt den XML-String zurück.
 
 ## Alternative Flows
 
-### A1: Ungueltige Daten
+### A1: Ungültige Daten
 
 **Trigger:** System erkennt Daten, die nicht im XML-Schema abbildbar sind (Schritt 2)
 **Flow:**
 
 1. System erkennt Daten, die nicht im XML-Schema abbildbar sind.
-2. System meldet: "Container enthaelt ungueltige Daten: [Details]."
+2. System meldet: "Container enthält ungültige Daten: [Details]."
 3. Use Case endet mit Fehler.
 
 ## Postconditions
 
 ### Success Postconditions
 
-- Gueltiges SFDL v3 XML als String liegt vor.
+- Gültiges SFDL v3 XML als String liegt vor.
 
 ### Failure Postconditions
 
@@ -48,10 +48,10 @@
 
 ## Business Rules
 
-### BR-CR-010: XML-Konformitaet
+### BR-CR-010: XML-Konformität
 
 - Ausgabe folgt dem v3 XML-Schema mit Root-Element `<Container>`.
-- PascalCase fuer alle XML-Elementnamen: `ContainerVersion`, `MaxDownloadThreads`, etc.
+- PascalCase für alle XML-Elementnamen: `ContainerVersion`, `MaxDownloadThreads`, etc.
 - Encoding: UTF-8.
 
 ### BR-CR-011: Round-Trip
@@ -65,7 +65,7 @@
 
 ## Input
 
-- `container`: Vollstaendiger Container (optional verschluesselt)
+- `container`: Vollständiger Container (optional verschlüsselt)
 
 ## Output
 

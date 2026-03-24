@@ -23,29 +23,29 @@
 | Parameter             | Pflicht | Standard | Beschreibung                                        |
 |-----------------------|---------|----------|-----------------------------------------------------|
 | `<datei.sfdl>`        | ja      | —        | Pfad zur SFDL-Datei                                 |
-| `--password <pw>`     | nein    | CFG      | Passwort fuer verschluesselte Container             |
+| `--password <pw>`     | nein    | CFG      | Passwort für verschlüsselte Container               |
 | `--json`              | nein    | false    | Ausgabe als JSON                                    |
-| `--exclude <pattern>` | nein    | CFG      | Zusaetzliches Ausschlussmuster (mehrfach verwendbar) |
+| `--exclude <pattern>` | nein    | CFG      | Zusätzliches Ausschlussmuster (mehrfach verwendbar) |
 | `--no-exclude`        | nein    | false    | Alle Ausschlussmuster deaktivieren                  |
 | `--show-excluded`     | nein    | false    | Ausgeschlossene Dateien mit anzeigen (markiert)     |
 
 ## Main Success Scenario
 
 1. Benutzer ruft `rsfdl list <datei.sfdl>` auf.
-2. System oeffnet und parst die SFDL-Datei (-> SFDL-001).
-3. System loest den Container-Inhalt auf (-> SFDL-003).
+2. System öffnet und parst die SFDL-Datei (-> SFDL-001).
+3. System löst den Container-Inhalt auf (-> SFDL-003).
 4. System wendet Ausschlussmuster an (-> DL-002).
 5. System gibt die Dateiliste auf stdout aus.
 
 ## Alternative Flows
 
-### A1: Container verschluesselt
+### A1: Container verschlüsselt
 
 **Trigger:** Container hat Encrypted=true (Schritt 2)
 **Flow:**
 
-1. System ermittelt das Passwort und entschluesselt den Container (-> include CLI-004).
-2. Use Case faehrt mit Schritt 3 fort.
+1. System ermittelt das Passwort und entschlüsselt den Container (-> include CLI-004).
+2. Use Case fährt mit Schritt 3 fort.
 
 ### A2: Datei nicht gefunden
 
@@ -55,7 +55,7 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 1.
 
-### A3: Ungueltiges SFDL-Format
+### A3: Ungültiges SFDL-Format
 
 **Trigger:** Datei kann nicht geparst werden (Schritt 2)
 **Flow:**
@@ -63,22 +63,22 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 2.
 
-### A4: BulkFolder-Aufloesung fehlgeschlagen
+### A4: BulkFolder-Auflösung fehlgeschlagen
 
-**Trigger:** FTP-Verbindung fuer BulkFolder schlaegt fehl (Schritt 3)
+**Trigger:** FTP-Verbindung für BulkFolder schlägt fehl (Schritt 3)
 **Flow:**
 
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 5.
 
-### A5: Ausschlussmuster ueberschreiben
+### A5: Ausschlussmuster überschreiben
 
 **Trigger:** `--exclude` oder `--no-exclude` angegeben (Schritt 4)
 **Flow:**
 
 1. `--no-exclude`: Keine Muster werden angewendet.
-2. `--exclude <pattern>`: Zusaetzliche Muster werden zu den konfigurierten hinzugefuegt.
-3. Use Case faehrt mit Schritt 5 fort.
+2. `--exclude <pattern>`: Zusätzliche Muster werden zu den konfigurierten hinzugefügt.
+3. Use Case fährt mit Schritt 5 fort.
 
 ## Postconditions
 
@@ -101,11 +101,11 @@
 
 Die letzte Zeile zeigt: "N Dateien (X GB), M ausgeschlossen".
 
-Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Parameter-Prioritaet (BR-CLI-006), Exit-Codes (BR-CLI-007).
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Parameter-Priorität (BR-CLI-006), Exit-Codes (BR-CLI-007).
 
 ## Ausgabe (Standard)
 
-Gruppiert nach Paketen, pro Datei eine Zeile mit Dateiname und Groesse. Bei `--show-excluded` werden ausgeschlossene Dateien mit `[excluded]` markiert. Abschlusszeile mit Zusammenfassung (Dateien, Groesse, Ausgeschlossene).
+Gruppiert nach Paketen, pro Datei eine Zeile mit Dateiname und Grösse. Bei `--show-excluded` werden ausgeschlossene Dateien mit `[excluded]` markiert. Abschlusszeile mit Zusammenfassung (Dateien, Grösse, Ausgeschlossene).
 
 ## Ausgabe (JSON)
 
@@ -114,16 +114,16 @@ JSON-Objekt auf stdout:
 | Feld                     | Typ     | Beschreibung                              |
 |--------------------------|---------|-------------------------------------------|
 | packages[].name          | string  | Paketname                                 |
-| packages[].files[]       | array   | Datei-Eintraege                           |
+| packages[].files[]       | array   | Datei-Einträge                            |
 | .files[].filename        | string  | Dateiname                                 |
-| .files[].size_bytes      | number  | Dateigroesse in Bytes                     |
+| .files[].size_bytes      | number  | Dateigrösse in Bytes                      |
 | .files[].excluded        | boolean | Ob durch Ausschlussmuster ausgeschlossen  |
 | .files[].exclude_pattern | string  | Das passende Muster (nur wenn excluded)   |
 | summary.total_files      | number  | Gesamtanzahl Dateien                      |
 | summary.selected_files   | number  | Anzahl nicht-ausgeschlossene Dateien      |
 | summary.excluded_files   | number  | Anzahl ausgeschlossene Dateien            |
-| summary.total_bytes      | number  | Gesamtgroesse in Bytes                    |
-| summary.selected_bytes   | number  | Groesse der nicht-ausgeschlossenen Dateien |
+| summary.total_bytes      | number  | Gesamtgrösse in Bytes                     |
+| summary.selected_bytes   | number  | Grösse der nicht-ausgeschlossenen Dateien |
 
 ## Exit-Codes
 
@@ -131,7 +131,7 @@ JSON-Objekt auf stdout:
 |------|------------------------------------------|
 | 0    | Erfolg                                   |
 | 1    | Datei nicht gefunden / nicht lesbar      |
-| 2    | Ungueltiges SFDL-Format                  |
+| 2    | Ungültiges SFDL-Format                   |
 | 3    | Passwort erforderlich (nicht-interaktiv) |
 | 4    | Falsches Passwort                        |
-| 5    | FTP-Fehler bei BulkFolder-Aufloesung     |
+| 5    | FTP-Fehler bei BulkFolder-Auflösung      |

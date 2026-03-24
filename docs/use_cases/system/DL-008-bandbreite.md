@@ -17,10 +17,10 @@
 
 1. System berechnet das Limit pro Thread: `max_bytes_per_thread = (max_speed_kbps * 1024) / aktive_threads`.
 2. Nach jedem geschriebenen Block misst der Worker die aktuelle Geschwindigkeit.
-3. Wenn die Geschwindigkeit das Pro-Thread-Limit ueberschreitet:
+3. Wenn die Geschwindigkeit das Pro-Thread-Limit überschreitet:
     - System berechnet die erforderliche Pause.
     - Worker wartet (sleep) die berechnete Zeit.
-4. System passt das Pro-Thread-Limit dynamisch an, wenn sich die Anzahl aktiver Threads aendert (Task endet, neue Task startet).
+4. System passt das Pro-Thread-Limit dynamisch an, wenn sich die Anzahl aktiver Threads ändert (Task endet, neue Task startet).
 
 ## Alternative Flows
 
@@ -29,13 +29,13 @@
 **Trigger:** Anzahl aktiver Threads sinkt auf 1 (Schritt 4)
 **Flow:**
 
-1. Der eine aktive Thread erhaelt das gesamte Bandbreitenlimit.
+1. Der eine aktive Thread erhält das gesamte Bandbreitenlimit.
 
 ## Postconditions
 
 ### Success Postconditions
 
-- Download-Geschwindigkeit ueberschreitet das konfigurierte Limit nicht.
+- Download-Geschwindigkeit überschreitet das konfigurierte Limit nicht.
 
 ### Failure Postconditions
 
@@ -47,7 +47,7 @@
 
 - Throttling geschieht im Read-Loop nach jedem Buffer-Write (32 KB Block).
 - Berechnung: `sleep_time = bytes_written / limit_per_second - elapsed_time`
-- Wenn `sleep_time <= 0`: kein Throttling noetig.
+- Wenn `sleep_time <= 0`: kein Throttling nötig.
 
 ### BR-DL-018: Dynamische Anpassung
 
@@ -62,7 +62,7 @@
 ## Input
 
 - `max_speed_kbps: int` — globales Limit
-- `active_threads: int` — aktuelle Anzahl aktiver Worker
+- `active_threads: int` — aktülle Anzahl aktiver Worker
 
 ## Output
 

@@ -17,33 +17,33 @@
 
 ## Main Success Scenario
 
-1. System zeigt in der Container-Card eine Inline-Passwort-Sektion mit Schluessel-Icon, Titel "Passwort erforderlich" und Hinweis.
+1. System zeigt in der Container-Card eine Inline-Passwort-Sektion mit Schlüssel-Icon, Titel "Passwort erforderlich" und Hinweis.
 2. Benutzer gibt das Passwort in das Eingabefeld ein.
-3. Benutzer klickt "Entschluesseln" oder drueckt Enter.
-4. System versucht den Container zu entschluesseln (-> SFDL-002).
-5. Entschluesselung erfolgreich: Passwort-Sektion wird durch die Dateiliste ersetzt.
-6. System loest BulkFolders auf, falls vorhanden (-> SFDL-003).
+3. Benutzer klickt "Entschlüsseln" oder drückt Enter.
+4. System versucht den Container zu entschlüsseln (-> SFDL-002).
+5. Entschlüsselung erfolgreich: Passwort-Sektion wird durch die Dateiliste ersetzt.
+6. System löst BulkFolders auf, falls vorhanden (-> SFDL-003).
 7. Container-Card zeigt Info-Banner und Dateiliste.
 
 ## Alternative Flows
 
 ### A1: Falsches Passwort
 
-**Trigger:** Entschluesselung schlaegt fehl mit `InvalidPassword` (Schritt 4)
+**Trigger:** Entschlüsselung schlägt fehl mit `InvalidPassword` (Schritt 4)
 **Flow:**
 
 1. System zeigt roten Hinweis unter dem Eingabefeld: "Invalid password".
 2. Passwort-Sektion bleibt sichtbar.
-3. Use Case faehrt mit Schritt 2 fort.
+3. Use Case fährt mit Schritt 2 fort.
 
-### A2: Entschluesselungsfehler (kein Passwort-Fehler)
+### A2: Entschlüsselungsfehler (kein Passwort-Fehler)
 
-**Trigger:** Entschluesselung schlaegt aus anderem Grund fehl (Schritt 4)
+**Trigger:** Entschlüsselung schlägt aus anderem Grund fehl (Schritt 4)
 **Flow:**
 
 1. System zeigt Fehlermeldung: "Decryption failed: [Fehlerdetail]".
 2. Passwort-Sektion bleibt sichtbar.
-3. Use Case faehrt mit Schritt 2 fort.
+3. Use Case fährt mit Schritt 2 fort.
 
 ### A3: Container entfernen
 
@@ -55,19 +55,19 @@
 
 ### A4: Auto-Passwort-Treffer
 
-**Trigger:** Beim Oeffnen der SFDL-Datei passt ein Auto-Passwort (vor Schritt 1)
+**Trigger:** Beim Öffnen der SFDL-Datei passt ein Auto-Passwort (vor Schritt 1)
 **Flow:**
 
-1. Die Passwort-Eingabe wird komplett uebersprungen.
+1. Die Passwort-Eingabe wird komplett übersprungen.
 2. Container wird direkt mit Phase "Ready" geladen (-> UI-001 Schritt 7).
 
 ## Postconditions
 
 ### Success Postconditions
 
-- Container ist entschluesselt und zeigt die Dateiliste.
+- Container ist entschlüsselt und zeigt die Dateiliste.
 - Container-Phase ist "Ready".
-- BulkFolders werden aufgeloest (falls vorhanden).
+- BulkFolders werden aufgelöst (falls vorhanden).
 
 ### Failure Postconditions
 
@@ -80,19 +80,19 @@
 
 - Eingabefeld ist verdeckt (`type="password"`).
 - Sichtbarkeits-Toggle (Auge-Icon) erlaubt das Passwort anzuzeigen.
-- Enter-Taste loest "Entschluesseln" aus.
+- Enter-Taste löst "Entschlüsseln" aus.
 
 ### BR-UI-006: Inline-Darstellung
 
 - Die Passwort-Eingabe ist inline im Card-Body (kein separater modaler Dialog).
 - Die Card bleibt in der Container-Liste an ihrer Position.
-- Andere Container bleiben unberuehrt.
+- Andere Container bleiben unberührt.
 
 ## Layout
 
 - Inline-Sektion in der Container-Card (kein modaler Dialog)
-- Schluessel-Icon + Titel "Passwort erforderlich"
-- Hinweis: "Dieser Container ist verschluesselt. Bitte Passwort eingeben."
+- Schlüssel-Icon + Titel "Passwort erforderlich"
+- Hinweis: "Dieser Container ist verschlüsselt. Bitte Passwort eingeben."
 - Passwort-Eingabefeld mit Sichtbarkeits-Toggle (Auge-Icon)
-- Button "Entschluesseln"
+- Button "Entschlüsseln"
 - Fehleranzeige (rot, unter dem Eingabefeld, nur bei Fehler)

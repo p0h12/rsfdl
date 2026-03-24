@@ -17,8 +17,8 @@
 ## Main Success Scenario
 
 1. System zeigt das Hauptfenster mit Header (App-Name, Buttons: Open, Settings, Theme-Toggle) und der Drop-Zone.
-2. Benutzer klickt "Open" im Header oder "Datei auswaehlen" in der Drop-Zone.
-3. System oeffnet den OS-Dateidialog (Filter: `*.sfdl`, Mehrfachauswahl).
+2. Benutzer klickt "Open" im Header oder "Datei auswählen" in der Drop-Zone.
+3. System öffnet den OS-Dateidialog (Filter: `*.sfdl`, Mehrfachauswahl).
 4. Benutzer wählt eine oder mehrere SFDL-Dateien.
 5. System liest und parst jede Datei (-> SFDL-001) und fügt sie als Card zur Container-Liste hinzu.
 6. System prüft pro Container ob Auto-Passwörter greifen. Bei unverschlüsseltem oder auto-entschlüsseltem Container: weiter.
@@ -124,7 +124,7 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 
 - Mehrere Container können gleichzeitig geladen sein.
 - Container werden als Cards in einer sortierbaren Liste dargestellt.
-- Up/Down-Buttons im Card-Header erlauben die Reihenfolge der Cards zu aendern.
+- Up/Down-Buttons im Card-Header erlauben die Reihenfolge der Cards zu ändern.
 - Downloads werden von oben nach unten abgearbeitet: Der oberste Container wird zuerst heruntergeladen, dann der nächste, usw.
 - Die verfügbaren Download-Slots (`max_threads`) werden auf den aktuell aktiven Container verteilt.
 - Erst wenn ein Container fertig ist (Done), beginnt der nächste.
@@ -140,7 +140,7 @@ Der OS-Dateidialog filtert auf `*.sfdl`-Dateien.
 ### Zustand: Kein Container geladen
 
 - Header mit App-Name, Buttons (Open, Settings), Theme-Toggle
-- Drop-Zone: "SFDL-Container laden" + "Datei auswaehlen"-Button
+- Drop-Zone: "SFDL-Container laden" + "Datei auswählen"-Button
 
 ### Zustand: Container geladen
 

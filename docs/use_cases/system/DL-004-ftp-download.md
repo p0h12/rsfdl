@@ -1,17 +1,17 @@
-# Use Case: FTP-Download durchfuehren
+# Use Case: FTP-Download durchführen
 
 ## Overview
 
 **Use Case ID:** DL-004
-**Use Case Name:** FTP-Download durchfuehren
+**Use Case Name:** FTP-Download durchführen
 **Primary Actor:** Benutzer
-**Goal:** Alle selektierten Dateien parallel ueber FTP herunterladen und im Zielverzeichnis speichern.
+**Goal:** Alle selektierten Dateien parallel über FTP herunterladen und im Zielverzeichnis speichern.
 **Requirements:** FR-05, FR-08
 **Status:** Stable
 
 ## Preconditions
 
-- Ein aufgeloester Container, eine bestaetigte Selektion und ein Zielverzeichnis liegen vor.
+- Ein aufgelöster Container, eine bestätigte Selektion und ein Zielverzeichnis liegen vor.
 
 ## Main Success Scenario
 
@@ -19,20 +19,20 @@
     - `target_directory` aus Einstellungen oder Parameter
     - `max_threads` aus Einstellungen oder Parameter (Standard: 3)
     - `max_speed_kbps` aus Einstellungen oder Parameter (Standard: 0 = unbegrenzt)
-2. → **include** DL-003 (Speicherplatz pruefen)
-3. System erstellt fuer jede selektierte Datei eine DownloadTask im Status `Pending`.
-4. Fuer jede Datei prueft das System, ob sie lokal bereits existiert:
-    - Vollstaendig vorhanden (Groesse stimmt) → Status `Skipped`
+2. → **include** DL-003 (Speicherplatz prüfen)
+3. System erstellt für jede selektierte Datei eine DownloadTask im Status `Pending`.
+4. Für jede Datei prüft das System, ob sie lokal bereits existiert:
+    - Vollständig vorhanden (Grösse stimmt) → Status `Skipped`
     - Teilweise vorhanden → Status `Pending`, mit `bytes_downloaded` gesetzt (→ DL-005)
     - Nicht vorhanden → Status `Pending`, `bytes_downloaded=0`
 5. System startet den Thread-Pool mit `max_threads` parallelen Workern.
-6. Jeder Worker nimmt die naechste `Pending`-Task und:
-    - Oeffnet eine FTP-Verbindung mit ConnectionInfo aus dem Container.
+6. Jeder Worker nimmt die nächste `Pending`-Task und:
+    - Öffnet eine FTP-Verbindung mit ConnectionInfo aus dem Container.
     - **[FTPS konfiguriert]** Baut TLS-Handshake auf (→ BR-DL-009).
     - Wechselt in Passive Mode.
     - **[Resume]** Sendet `REST <bytes_downloaded>` (→ DL-005).
     - Sendet `RETR <remote_path>`.
-    - Empfaengt Daten in Bloecken und schreibt sie in die lokale Datei.
+    - Empfängt Daten in Blöcken und schreibt sie in die lokale Datei.
     - **[Bandbreite konfiguriert]** Throttling nach jedem Block (→ DL-008).
     - Aktualisiert `bytes_downloaded` und `current_speed_bps` nach jedem Block.
     - System emittiert ein Progress-Event (→ Interface Specs).
@@ -51,8 +51,8 @@
 
 1. Worker kann keine Verbindung herstellen.
 2. Task-Status → `Failed` mit `error_type=ConnectionError`.
-3. → **extend** DL-007 (Retry) falls Retries verfuegbar.
-4. Worker nimmt naechste Task.
+3. → **extend** DL-007 (Retry) falls Retries verfügbar.
+4. Worker nimmt nächste Task.
 
 ### A2: Datei nicht gefunden
 
@@ -62,14 +62,14 @@
 1. FTP-Server meldet 550 (File not found).
 2. Task-Status → `Failed` mit `error_type=FileNotFound`.
 3. Kein Retry (permanent failure, → BR-DL-010).
-4. Worker nimmt naechste Task.
+4. Worker nimmt nächste Task.
 
 ### A3: Verbindung unterbrochen
 
-**Trigger:** Verbindung bricht waehrend des Transfers ab (Schritt 6)
+**Trigger:** Verbindung bricht während des Transfers ab (Schritt 6)
 **Flow:**
 
-1. Verbindung bricht waehrend des Transfers ab.
+1. Verbindung bricht während des Transfers ab.
 2. Bereits geschriebene Bytes bleiben erhalten.
 3. Task-Status → `Failed` mit `error_type=ConnectionError`.
 4. → **extend** DL-007 (Retry).
@@ -108,23 +108,23 @@
 
 - Jeder Worker verwendet eine eigene FTP-Verbindung.
 - `max_threads` bestimmt die maximale Anzahl gleichzeitiger Verbindungen.
-- Bei `max_threads=1` werden Dateien sequentiell heruntergeladen.
+- Bei `max_threads=1` werden Dateien seqüntiell heruntergeladen.
 
 ### BR-DL-008: Streaming
 
 - Daten werden blockweise gelesen und geschrieben (Buffer: 32 KB).
 - Es werden nie ganze Dateien im RAM gehalten (NFR-04).
-- Lokale Dateien werden im Append-Modus geoeffnet (fuer Resume-Kompatibilitaet).
+- Lokale Dateien werden im Append-Modus geöffnet (für Resume-Kompatibilität).
 
 ### BR-DL-009: FTPS/TLS (geplant)
 
-- Aktuell: Nur unverschluesseltes FTP unterstuetzt.
+- Aktuell: Nur unverschlüsseltes FTP unterstützt.
 - Geplant: Explicit FTPS (`AUTH TLS`, `PBSZ 0`, `PROT P`) und Implicit FTPS (Port 990).
 - Die SSL-Einstellung aus dem SFDL-Container soll Vorrang vor den App-Einstellungen haben.
 
 ### BR-DL-010: Fehlerklassifikation
 
-- Retry-faehig: `ServerFull (421)`, `AuthError (530/430)`, `ConnectionError (425/426)`, `Timeout`
+- Retry-fähig: `ServerFull (421)`, `AuthError (530/430)`, `ConnectionError (425/426)`, `Timeout`
 - Permanent: `ServerDown (434)`, `FileNotFound (450-452/501/550)`, `IOError`
 - Detaillierter Fehlerstatus pro Task (nicht nur "Fehlgeschlagen").
 
@@ -135,8 +135,8 @@
 
 ## Input
 
-- `container`: Aufgeloester Container
-- `selection`: Bestaetigte Selektion
+- `container`: Aufgelöster Container
+- `selection`: Bestätigte Selektion
 - `target_directory`: Zielverzeichnis
 - `max_threads: int`
 - `max_speed_kbps: int`

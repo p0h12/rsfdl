@@ -14,10 +14,10 @@
 
 ## Main Success Scenario
 
-1. System prueft die Umgebungsvariable `RSFDL_CONFIG`.
+1. System prüft die Umgebungsvariable `RSFDL_CONFIG`.
 2. Variable ist nicht gesetzt.
 3. System ermittelt den Plattform-Standardpfad (-> BR-CFG-004).
-4. System gibt den Pfad zurueck.
+4. System gibt den Pfad zurück.
 
 ## Alternative Flows
 
@@ -49,6 +49,6 @@
 
 ### BR-CFG-005: Umgebungsvariable
 
-- `RSFDL_CONFIG` ueberschreibt den Plattform-Standardpfad.
+- `RSFDL_CONFIG` überschreibt den Plattform-Standardpfad.
 - Wird von CLI und Desktop-App respektiert.
-- Gedacht fuer User die ihre Config permanent an einem anderen Ort haben wollen.
+- Gedacht für User die ihre Config permanent an einem anderen Ort haben wollen.

@@ -5,41 +5,41 @@
 **Use Case ID:** POST-001
 **Use Case Name:** Dateien verifizieren
 **Primary Actor:** System (automatisch nach Download)
-**Goal:** Integritaet heruntergeladener Dateien anhand von Hash-Werten pruefen.
+**Goal:** Integrität heruntergeladener Dateien anhand von Hash-Werten prüfen.
 **Requirements:** FR-09
 **Status:** Stable
 
 ## Preconditions
 
-- Datei ist vollstaendig heruntergeladen.
-- Container enthaelt optional Hash-Werte pro Datei.
+- Datei ist vollständig heruntergeladen.
+- Container enthält optional Hash-Werte pro Datei.
 
 ## Main Success Scenario
 
-1. System prueft, ob der FileEntry einen Hash enthaelt.
+1. System prüft, ob der FileEntry einen Hash enthält.
 2. **[Hash vorhanden]** System berechnet den lokalen Hash mit dem passenden Algorithmus (MD5, CRC32, SHA1).
 3. System vergleicht den berechneten Hash mit dem gespeicherten Hash.
-4. Uebereinstimmung → HashResult: `Valid`.
+4. Übereinstimmung → HashResult: `Valid`.
 
 ## Alternative Flows
 
 ### A1: Kein Hash im Container
 
-**Trigger:** FileEntry enthaelt keinen Hash (Schritt 1)
+**Trigger:** FileEntry enthält keinen Hash (Schritt 1)
 **Flow:**
 
-1. System prueft, ob der FTP-Server Hash-Faehigkeiten hat (via `FEAT`).
-2. **[Server unterstuetzt Hash]** System fragt den Hash serverseitig ab (XMD5, XSHA1, XCRC).
+1. System prüft, ob der FTP-Server Hash-Fähigkeiten hat (via `FEAT`).
+2. **[Server unterstützt Hash]** System fragt den Hash serverseitig ab (XMD5, XSHA1, XCRC).
 3. System vergleicht mit lokalem Hash.
-4. **[Server unterstuetzt keinen Hash]** HashResult: `NoHash`.
+4. **[Server unterstützt keinen Hash]** HashResult: `NoHash`.
 
-### A2: Hash stimmt nicht ueberein
+### A2: Hash stimmt nicht überein
 
 **Trigger:** Berechneter Hash weicht vom gespeicherten Hash ab (Schritt 3)
 **Flow:**
 
 1. System markiert die Datei als `Invalid`.
-2. System meldet: "Hash-Mismatch fuer [Dateiname]: erwartet [X], berechnet [Y]."
+2. System meldet: "Hash-Mismatch für [Dateiname]: erwartet [X], berechnet [Y]."
 3. **[Option: mark_failed_on_mismatch=true]** Task-Status → `Failed`.
 
 ## Postconditions
@@ -55,20 +55,20 @@
 
 ## Business Rules
 
-### BR-POST-001: Hash-Prioritaet
+### BR-POST-001: Hash-Priorität
 
-- Wenn mehrere Hash-Typen verfuegbar: SHA1 > MD5 > CRC32 (staerkster zuerst).
+- Wenn mehrere Hash-Typen verfügbar: SHA1 > MD5 > CRC32 (stärkster zuerst).
 
 ### BR-POST-002: Server-Hash-Fallback
 
-- FEAT-Pruefung: `FEAT` → pruefte auf `MD5`, `XMD5`, `XSHA1`, `XCRC`.
+- FEAT-Prüfung: `FEAT` → prüfte auf `MD5`, `XMD5`, `XSHA1`, `XCRC`.
 - Server-Hash-Abfrage nur wenn kein lokaler Hash im Container und FTP-Verbindung noch aktiv.
 
 ## Input
 
 - `file_entry: FileEntry` — mit optionalem Hash
 - `local_path: String` — Pfad zur heruntergeladenen Datei
-- `ftp_connection: Option<FtpConnection>` — fuer Server-Hash-Fallback
+- `ftp_connection: Option<FtpConnection>` — für Server-Hash-Fallback
 
 ## Output
 

@@ -9,11 +9,11 @@ Detection uses the XML element name, then the numeric value:
 
 | ContainerVersion | SFDL Version     | Status                 |
 |------------------|------------------|------------------------|
-| 0                | ungueltig        | Fehler                 |
-| 1–5              | v1               | nicht unterstuetzt     |
+| 0                | ungültig         | Fehler                 |
+| 1–5              | v1               | nicht unterstützt      |
 | 6–9              | v2 (legacy)      | wird zu v3 konvertiert |
-| **10**           | **v3 (aktuell)** | unterstuetzt           |
-| >10              | ungueltig        | Fehler                 |
+| **10**           | **v3 (aktuell)** | unterstützt            |
+| >10              | ungültig         | Fehler                 |
 
 - **v3**: XML-Element `<ContainerVersion>` vorhanden (Wert = 10)
 - **v2**: XML-Element `<SFDLFileVersion>` vorhanden (Wert = 6–9)

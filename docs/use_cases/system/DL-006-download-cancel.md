@@ -17,14 +17,14 @@
 
 ### Variante A: Einzelne Datei abbrechen
 
-1. Actor signalisiert Abbruch fuer eine spezifische DownloadTask.
-2. System setzt ein Cancel-Flag fuer die betroffene Task.
-3. Worker erkennt das Flag beim naechsten Block-Read.
+1. Actor signalisiert Abbruch für eine spezifische DownloadTask.
+2. System setzt ein Cancel-Flag für die betroffene Task.
+3. Worker erkennt das Flag beim nächsten Block-Read.
 4. Worker bricht den FTP-Transfer ab (`ABOR`).
 5. Worker schliesst die FTP-Verbindung.
 6. Task-Status → `Cancelled`.
-7. Lokale Datei bleibt erhalten (fuer Resume).
-8. Worker nimmt naechste `Pending`-Task.
+7. Lokale Datei bleibt erhalten (für Resume).
+8. Worker nimmt nächste `Pending`-Task.
 
 ### Variante B: Alle Downloads abbrechen
 
@@ -57,24 +57,24 @@
 
 ### Failure Postconditions
 
-- Keine — der Abbruch wird immer durchgefuehrt (ggf. via hard close).
+- Keine — der Abbruch wird immer durchgeführt (ggf. via hard close).
 
 ## Business Rules
 
-### BR-DL-013: Cancel-Granularitaet
+### BR-DL-013: Cancel-Granularität
 
-- Abbruch ist pro Datei und global moeglich.
-- `Completed`-Tasks werden durch globalen Abbruch nicht rueckgaengig gemacht.
+- Abbruch ist pro Datei und global möglich.
+- `Completed`-Tasks werden durch globalen Abbruch nicht rückgängig gemacht.
 - `Failed`-Tasks behalten ihren Status.
 
 ### BR-DL-014: Dateierhaltung
 
-- Teilweise heruntergeladene Dateien werden nicht geloescht.
+- Teilweise heruntergeladene Dateien werden nicht gelöscht.
 - Bei erneutem Download derselben Datei greift DL-005 (Resume).
 
 ## Input
 
-- `task_id: Option<TaskId>` — spezifische Task oder None fuer global
+- `task_id: Option<TaskId>` — spezifische Task oder None für global
 - `session: DownloadSession`
 
 ## Output

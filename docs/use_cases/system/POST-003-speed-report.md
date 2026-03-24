@@ -17,13 +17,13 @@
 
 1. Actor fordert einen Speed-Report an.
 2. System sammelt die Statistiken der DownloadSession:
-    - Gesamtgroesse (heruntergeladene Bytes)
+    - Gesamtgrösse (heruntergeladene Bytes)
     - Gesamtdauer (Start bis Ende)
     - Durchschnittsgeschwindigkeit
-    - Anzahl Dateien (erfolgreich / fehlgeschlagen / uebersprungen)
-3. System laedt das BBCode-Template aus den Einstellungen (→ BR-POST-006).
+    - Anzahl Dateien (erfolgreich / fehlgeschlagen / übersprungen)
+3. System lädt das BBCode-Template aus den Einstellungen (→ BR-POST-006).
 4. System ersetzt die Template-Variablen durch die berechneten Werte.
-5. System gibt den gerenderten Report-Text zurueck.
+5. System gibt den gerenderten Report-Text zurück.
 
 ## Alternative Flows
 
@@ -48,9 +48,9 @@
 
 ### BR-POST-006: Template-Variablen
 
-Das Standard-Template enthaelt BBCode-formatierte Zeilen mit Tool-Name, Dateizaehler (total, OK, fehlgeschlagen), Gesamtgroesse, Dauer und Durchschnittsgeschwindigkeit.
+Das Standard-Template enthält BBCode-formatierte Zeilen mit Tool-Name, Dateizähler (total, OK, fehlgeschlagen), Gesamtgrösse, Dauer und Durchschnittsgeschwindigkeit.
 
-Verfuegbare Variablen:
+Verfügbare Variablen:
 
 - `{{username}}` — aus Einstellungen
 - `{{total_files}}`, `{{completed_files}}`, `{{failed_files}}`, `{{skipped_files}}`

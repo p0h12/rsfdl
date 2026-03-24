@@ -1,1111 +1,1517 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>rsfdl — UI Prototype</title>
-<script src="https://unpkg.com/lucide@latest"></script>
-<style>
-:root {
-  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  --font-mono: 'SF Mono', SFMono-Regular, ui-monospace, 'Cascadia Code', Menlo, monospace;
-  --border-radius-sm: 4px;
-  --border-radius-md: 8px;
-  --border-radius-lg: 12px;
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width,initial-scale=1">
+	<title>rsfdl — UI Prototype</title>
+	<script src="https://unpkg.com/lucide@latest"></script>
+	<style>
+		:root {
+			--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+			--font-mono: 'SF Mono', SFMono-Regular, ui-monospace, 'Cascadia Code', Menlo, monospace;
+			--border-radius-sm: 4px;
+			--border-radius-md: 8px;
+			--border-radius-lg: 12px;
 
-  /* Light mode */
-  --color-background-primary: #ffffff;
-  --color-background-secondary: #f7f7f5;
-  --color-background-tertiary: #f0f0ec;
-  --color-text-primary: #1a1a1a;
-  --color-text-secondary: #6b6b6b;
-  --color-text-tertiary: #999;
-  --color-border-primary: #888;
-  --color-border-secondary: #d4d4d0;
-  --color-border-tertiary: #e8e8e4;
-  --color-accent: #BA7517;
-  --color-accent-bg: rgba(186,117,23,.08);
-  --color-accent-border: rgba(186,117,23,.25);
-  --color-success: #2d8a4e;
-  --color-success-bg: rgba(45,138,78,.08);
-  --color-error: #d1242f;
-  --color-error-bg: rgba(209,36,47,.08);
-  --color-warning: #bf8700;
-  --color-warning-bg: rgba(191,135,0,.08);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.04);
-  --shadow-md: 0 2px 8px rgba(0,0,0,.06);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,.1);
-}
+			/* Light mode */
+			--color-background-primary: #ffffff;
+			--color-background-secondary: #f7f7f5;
+			--color-background-tertiary: #f0f0ec;
+			--color-text-primary: #1a1a1a;
+			--color-text-secondary: #6b6b6b;
+			--color-text-tertiary: #999;
+			--color-border-primary: #888;
+			--color-border-secondary: #d4d4d0;
+			--color-border-tertiary: #e8e8e4;
+			--color-accent: #BA7517;
+			--color-accent-bg: rgba(186, 117, 23, .08);
+			--color-accent-border: rgba(186, 117, 23, .25);
+			--color-success: #2d8a4e;
+			--color-success-bg: rgba(45, 138, 78, .08);
+			--color-error: #d1242f;
+			--color-error-bg: rgba(209, 36, 47, .08);
+			--color-warning: #bf8700;
+			--color-warning-bg: rgba(191, 135, 0, .08);
+			--shadow-sm: 0 1px 2px rgba(0, 0, 0, .04);
+			--shadow-md: 0 2px 8px rgba(0, 0, 0, .06);
+			--shadow-lg: 0 4px 16px rgba(0, 0, 0, .1);
+		}
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) {
-    --color-background-primary: #161616;
-    --color-background-secondary: #1e1e1e;
-    --color-background-tertiary: #262626;
-    --color-text-primary: #e8e8e4;
-    --color-text-secondary: #999;
-    --color-text-tertiary: #666;
-    --color-border-primary: #666;
-    --color-border-secondary: #383838;
-    --color-border-tertiary: #2a2a2a;
-    --color-accent: #d4922a;
-    --color-accent-bg: rgba(212,146,42,.1);
-    --color-accent-border: rgba(212,146,42,.3);
-    --color-success: #3fb950;
-    --color-success-bg: rgba(63,185,80,.1);
-    --color-error: #f85149;
-    --color-error-bg: rgba(248,81,73,.1);
-    --color-warning: #d29922;
-    --color-warning-bg: rgba(210,153,34,.1);
-    --shadow-sm: 0 1px 2px rgba(0,0,0,.2);
-    --shadow-md: 0 2px 8px rgba(0,0,0,.3);
-    --shadow-lg: 0 4px 16px rgba(0,0,0,.4);
-  }
-}
+		@media (prefers-color-scheme: dark) {
+			:root:not([data-theme="light"]) {
+				--color-background-primary: #161616;
+				--color-background-secondary: #1e1e1e;
+				--color-background-tertiary: #262626;
+				--color-text-primary: #e8e8e4;
+				--color-text-secondary: #999;
+				--color-text-tertiary: #666;
+				--color-border-primary: #666;
+				--color-border-secondary: #383838;
+				--color-border-tertiary: #2a2a2a;
+				--color-accent: #d4922a;
+				--color-accent-bg: rgba(212, 146, 42, .1);
+				--color-accent-border: rgba(212, 146, 42, .3);
+				--color-success: #3fb950;
+				--color-success-bg: rgba(63, 185, 80, .1);
+				--color-error: #f85149;
+				--color-error-bg: rgba(248, 81, 73, .1);
+				--color-warning: #d29922;
+				--color-warning-bg: rgba(210, 153, 34, .1);
+				--shadow-sm: 0 1px 2px rgba(0, 0, 0, .2);
+				--shadow-md: 0 2px 8px rgba(0, 0, 0, .3);
+				--shadow-lg: 0 4px 16px rgba(0, 0, 0, .4);
+			}
+		}
 
-:root[data-theme="dark"] {
-  --color-background-primary: #161616;
-  --color-background-secondary: #1e1e1e;
-  --color-background-tertiary: #262626;
-  --color-text-primary: #e8e8e4;
-  --color-text-secondary: #999;
-  --color-text-tertiary: #666;
-  --color-border-primary: #666;
-  --color-border-secondary: #383838;
-  --color-border-tertiary: #2a2a2a;
-  --color-accent: #d4922a;
-  --color-accent-bg: rgba(212,146,42,.1);
-  --color-accent-border: rgba(212,146,42,.3);
-  --color-success: #3fb950;
-  --color-success-bg: rgba(63,185,80,.1);
-  --color-error: #f85149;
-  --color-error-bg: rgba(248,81,73,.1);
-  --color-warning: #d29922;
-  --color-warning-bg: rgba(210,153,34,.1);
-  --shadow-sm: 0 1px 2px rgba(0,0,0,.2);
-  --shadow-md: 0 2px 8px rgba(0,0,0,.3);
-  --shadow-lg: 0 4px 16px rgba(0,0,0,.4);
-}
+		:root[data-theme="dark"] {
+			--color-background-primary: #161616;
+			--color-background-secondary: #1e1e1e;
+			--color-background-tertiary: #262626;
+			--color-text-primary: #e8e8e4;
+			--color-text-secondary: #999;
+			--color-text-tertiary: #666;
+			--color-border-primary: #666;
+			--color-border-secondary: #383838;
+			--color-border-tertiary: #2a2a2a;
+			--color-accent: #d4922a;
+			--color-accent-bg: rgba(212, 146, 42, .1);
+			--color-accent-border: rgba(212, 146, 42, .3);
+			--color-success: #3fb950;
+			--color-success-bg: rgba(63, 185, 80, .1);
+			--color-error: #f85149;
+			--color-error-bg: rgba(248, 81, 73, .1);
+			--color-warning: #d29922;
+			--color-warning-bg: rgba(210, 153, 34, .1);
+			--shadow-sm: 0 1px 2px rgba(0, 0, 0, .2);
+			--shadow-md: 0 2px 8px rgba(0, 0, 0, .3);
+			--shadow-lg: 0 4px 16px rgba(0, 0, 0, .4);
+		}
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+		* {
+			box-sizing: border-box;
+			margin: 0;
+			padding: 0;
+		}
 
-body {
-  font-family: var(--font-sans);
-  background: var(--color-background-secondary);
-  color: var(--color-text-primary);
-  min-height: 100vh;
-  -webkit-font-smoothing: antialiased;
-}
+		body {
+			font-family: var(--font-sans);
+			background: var(--color-background-secondary);
+			color: var(--color-text-primary);
+			min-height: 100vh;
+			-webkit-font-smoothing: antialiased;
+		}
 
-/* ── Header ── */
-.app-header {
-  background: var(--color-background-primary);
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-  padding: 0 1rem;
-  height: 52px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-}
+		/* ── Header ── */
+		.app-header {
+			background: var(--color-background-primary);
+			border-bottom: 0.5px solid var(--color-border-tertiary);
+			padding: 0 1rem;
+			height: 52px;
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			position: sticky;
+			top: 0;
+			z-index: 50;
+		}
 
-.app-logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-weight: 600;
-  font-size: 16px;
-  color: var(--color-text-primary);
-}
+		.app-logo {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			font-weight: 600;
+			font-size: 16px;
+			color: var(--color-text-primary);
+		}
 
-.logo-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--border-radius-md);
-  background: var(--color-accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #fff;
-}
+		.logo-icon {
+			width: 32px;
+			height: 32px;
+			border-radius: var(--border-radius-md);
+			background: var(--color-accent);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: #fff;
+		}
 
-.app-actions { display: flex; gap: 6px; }
+		.app-actions {
+			display: flex;
+			gap: 6px;
+		}
 
-/* ── Buttons ── */
-.btn {
-  font-family: var(--font-sans);
-  cursor: pointer;
-  border-radius: var(--border-radius-md);
-  font-size: 13px;
-  transition: opacity .12s, background .12s;
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  white-space: nowrap;
-}
-.btn-primary {
-  background: var(--color-text-primary);
-  color: var(--color-background-primary);
-  border: none;
-  padding: 8px 18px;
-  font-weight: 500;
-}
-.btn-primary:hover { opacity: .8; }
-.btn-accent {
-  background: var(--color-accent);
-  color: #fff;
-  border: none;
-  padding: 8px 18px;
-  font-weight: 500;
-}
-.btn-accent:hover { opacity: .85; }
-.btn-ghost {
-  background: none;
-  color: var(--color-text-secondary);
-  border: 0.5px solid var(--color-border-secondary);
-  padding: 7px 14px;
-}
-.btn-ghost:hover { background: var(--color-background-secondary); }
-.btn-icon {
-  background: none;
-  border: none;
-  color: var(--color-text-secondary);
-  padding: 6px;
-  cursor: pointer;
-  border-radius: var(--border-radius-sm);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background .12s, color .12s;
-}
-.btn-icon:hover { background: var(--color-background-secondary); color: var(--color-text-primary); }
-.btn-danger { color: var(--color-error); }
-.btn-danger:hover { background: var(--color-error-bg); color: var(--color-error); }
+		/* ── Buttons ── */
+		.btn {
+			font-family: var(--font-sans);
+			cursor: pointer;
+			border-radius: var(--border-radius-md);
+			font-size: 13px;
+			transition: opacity .12s, background .12s;
+			display: inline-flex;
+			align-items: center;
+			gap: 6px;
+			white-space: nowrap;
+		}
 
-.btn-sm { padding: 5px 10px; font-size: 12px; }
-.btn-lg { padding: 10px 24px; font-size: 14px; }
+		.btn-primary {
+			background: var(--color-text-primary);
+			color: var(--color-background-primary);
+			border: none;
+			padding: 8px 18px;
+			font-weight: 500;
+		}
 
-/* ── Main Layout ── */
-.main-wrap {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.25rem 1rem 4rem;
-}
+		.btn-primary:hover {
+			opacity: .8;
+		}
 
-/* ── Drop Zone (empty state) ── */
-#drop-zone {
-  border: 1.5px dashed var(--color-border-secondary);
-  border-radius: var(--border-radius-lg);
-  padding: 5rem 2rem;
-  text-align: center;
-  cursor: pointer;
-  transition: background .15s, border-color .15s;
-  background: var(--color-background-primary);
-}
-#drop-zone:hover, #drop-zone.drag-over {
-  background: var(--color-accent-bg);
-  border-color: var(--color-accent);
-}
-.dz-icon {
-  width: 56px; height: 56px;
-  margin: 0 auto 1.25rem;
-  border-radius: var(--border-radius-lg);
-  background: var(--color-background-secondary);
-  border: 0.5px solid var(--color-border-tertiary);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--color-text-secondary);
-}
-.dz-title { font-size: 18px; font-weight: 500; margin-bottom: .4rem; color: var(--color-text-primary); }
-.dz-sub { font-size: 14px; color: var(--color-text-secondary); margin-bottom: 1.25rem; }
-.dz-hint {
-  font-size: 12px; color: var(--color-text-tertiary);
-  margin-top: 1.25rem;
-  font-family: var(--font-mono);
-}
+		.btn-accent {
+			background: var(--color-accent);
+			color: #fff;
+			border: none;
+			padding: 8px 18px;
+			font-weight: 500;
+		}
 
-/* ── Full-window drag overlay ── */
-#drag-overlay {
-  display: none;
-  position: fixed; inset: 0;
-  z-index: 999;
-  background: rgba(0,0,0,.45);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
-  align-items: center;
-  justify-content: center;
-  pointer-events: none;
-}
-#drag-overlay.active { display: flex; }
-.drag-overlay-inner {
-  background: var(--color-background-primary);
-  border: 2px dashed var(--color-accent);
-  border-radius: var(--border-radius-lg);
-  padding: 3rem 4rem;
-  text-align: center;
-  box-shadow: var(--shadow-lg);
-}
-.drag-overlay-inner .dz-icon { margin: 0 auto 1rem; }
+		.btn-accent:hover {
+			opacity: .85;
+		}
 
-/* ── Container List ── */
-#container-list { display: none; }
-.container-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 1rem;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.container-toolbar-left {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-.container-count {
-  font-size: 13px;
-  color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-}
+		.btn-ghost {
+			background: none;
+			color: var(--color-text-secondary);
+			border: 0.5px solid var(--color-border-secondary);
+			padding: 7px 14px;
+		}
 
-/* ── SFDL Container Card ── */
-.sfdl-card {
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
-  border-radius: var(--border-radius-lg);
-  margin-bottom: 12px;
-  overflow: hidden;
-  box-shadow: var(--shadow-sm);
-  transition: border-color .15s, box-shadow .15s;
-}
-.sfdl-card.dragging {
-  opacity: .5;
-  border-color: var(--color-accent);
-}
-.sfdl-card.drag-target {
-  border-color: var(--color-accent);
-  box-shadow: 0 0 0 2px var(--color-accent-bg);
-}
+		.btn-ghost:hover {
+			background: var(--color-background-secondary);
+		}
 
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 14px 16px;
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-  cursor: pointer;
-  user-select: none;
-}
-.drag-handle {
-  cursor: grab;
-  color: var(--color-text-tertiary);
-  padding: 2px;
-  flex-shrink: 0;
-  touch-action: none;
-}
-.drag-handle:active { cursor: grabbing; }
-.card-icon {
-  width: 36px; height: 36px;
-  border-radius: var(--border-radius-md);
-  display: flex; align-items: center; justify-content: center;
-  flex-shrink: 0;
-}
-.card-icon.encrypted { background: var(--color-warning-bg); color: var(--color-warning); }
-.card-icon.decrypted { background: var(--color-accent-bg); color: var(--color-accent); }
-.card-icon.open { background: var(--color-success-bg); color: var(--color-success); }
-.card-info { flex: 1; min-width: 0; }
-.card-name {
-  font-size: 14px; font-weight: 500;
-  color: var(--color-text-primary);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.card-meta {
-  font-size: 12px; color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-  margin-top: 2px;
-  display: flex; align-items: center; gap: 8px;
-  flex-wrap: wrap;
-}
-.card-badge {
-  font-size: 10px; font-weight: 500;
-  padding: 2px 7px;
-  border-radius: 4px;
-  text-transform: uppercase;
-  letter-spacing: .04em;
-}
-.badge-encrypted { background: var(--color-warning-bg); color: var(--color-warning); border: 0.5px solid rgba(191,135,0,.2); }
-.badge-v2 { background: var(--color-background-secondary); color: var(--color-text-secondary); border: 0.5px solid var(--color-border-tertiary); }
-.badge-v3 { background: var(--color-accent-bg); color: var(--color-accent); border: 0.5px solid var(--color-accent-border); }
-.badge-downloading { background: var(--color-success-bg); color: var(--color-success); border: 0.5px solid rgba(45,138,78,.2); }
-.card-chevron {
-  color: var(--color-text-tertiary);
-  transition: transform .15s;
-  flex-shrink: 0;
-}
-.card-chevron.open { transform: rotate(180deg); }
-.card-actions-head {
-  display: flex;
-  gap: 4px;
-  flex-shrink: 0;
-}
+		.btn-icon {
+			background: none;
+			border: none;
+			color: var(--color-text-secondary);
+			padding: 6px;
+			cursor: pointer;
+			border-radius: var(--border-radius-sm);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: background .12s, color .12s;
+		}
 
-/* ── Card Body ── */
-.card-body { display: none; }
-.card-body.open { display: block; }
+		.btn-icon:hover {
+			background: var(--color-background-secondary);
+			color: var(--color-text-primary);
+		}
 
-/* ── Password Section ── */
-.pw-section {
-  padding: 1.25rem 1rem;
-  text-align: center;
-}
-.pw-inner {
-  max-width: 360px;
-  margin: 0 auto;
-}
-.pw-icon {
-  width: 48px; height: 48px;
-  margin: 0 auto .75rem;
-  border-radius: 50%;
-  background: var(--color-warning-bg);
-  display: flex; align-items: center; justify-content: center;
-  color: var(--color-warning);
-}
-.pw-title { font-size: 15px; font-weight: 500; margin-bottom: .3rem; }
-.pw-sub { font-size: 13px; color: var(--color-text-secondary); margin-bottom: 1rem; }
-.pw-row { display: flex; gap: 8px; margin-bottom: 8px; }
-.pw-input-wrap {
-  flex: 1;
-  position: relative;
-}
-.pw-input {
-  width: 100%;
-  padding: 9px 36px 9px 12px;
-  font-size: 13px;
-  font-family: var(--font-mono);
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: var(--border-radius-md);
-  background: var(--color-background-secondary);
-  color: var(--color-text-primary);
-  outline: none;
-}
-.pw-input:focus { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent-bg); }
-.pw-toggle {
-  position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
-  background: none; border: none; cursor: pointer;
-  color: var(--color-text-tertiary); padding: 4px;
-  display: flex; align-items: center;
-}
-.pw-error {
-  font-size: 12px;
-  color: var(--color-error);
-  margin-top: 4px;
-  display: none;
-}
-.pw-error.show { display: block; }
+		.btn-danger {
+			color: var(--color-error);
+		}
 
-/* ── Info Banner ── */
-.info-banner {
-  padding: 14px 16px;
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
-  gap: 12px;
-}
-.info-item {}
-.info-label {
-  font-size: 10px;
-  font-weight: 500;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--color-text-tertiary);
-  margin-bottom: 3px;
-}
-.info-value {
-  font-size: 13px;
-  color: var(--color-text-primary);
-  font-family: var(--font-mono);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+		.btn-danger:hover {
+			background: var(--color-error-bg);
+			color: var(--color-error);
+		}
 
-/* ── File Tree ── */
-.file-section { padding: 0; }
-.file-toolbar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 10px 16px;
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.file-toolbar-left {
-  display: flex; align-items: center; gap: 8px;
-}
-.file-stats {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-}
+		.btn-sm {
+			padding: 5px 10px;
+			font-size: 12px;
+		}
 
-.pkg-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 16px;
-  background: var(--color-background-secondary);
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-  cursor: pointer;
-  user-select: none;
-  font-size: 13px;
-  font-weight: 500;
-}
-.pkg-header:hover { background: var(--color-background-tertiary); }
-.pkg-count {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  color: var(--color-text-tertiary);
-  font-weight: 400;
-}
+		.btn-lg {
+			padding: 10px 24px;
+			font-size: 14px;
+		}
 
-.file-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 7px 16px 7px 40px;
-  font-size: 13px;
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-  transition: background .1s;
-}
-.file-item:hover { background: var(--color-background-secondary); }
-.file-item:last-child { border-bottom: none; }
-.file-item.excluded {
-  opacity: .45;
-  text-decoration: line-through;
-}
-.file-check {
-  width: 16px; height: 16px;
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: 4px;
-  display: flex; align-items: center; justify-content: center;
-  background: var(--color-background-secondary);
-  cursor: pointer;
-  flex-shrink: 0;
-  transition: background .1s, border-color .1s;
-}
-.file-check.on {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-.file-check.partial {
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-  opacity: .6;
-}
-.file-icon { color: var(--color-text-tertiary); flex-shrink: 0; }
-.file-name {
-  flex: 1; min-width: 0;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  color: var(--color-text-primary);
-}
-.file-size {
-  font-size: 11px;
-  font-family: var(--font-mono);
-  color: var(--color-text-tertiary);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
+		/* ── Main Layout ── */
+		.main-wrap {
+			max-width: 900px;
+			margin: 0 auto;
+			padding: 1.25rem 1rem 4rem;
+		}
 
-/* ── Download Actions ── */
-.dl-actions {
-  padding: 12px 16px;
-  border-top: 0.5px solid var(--color-border-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-.dl-summary {
-  font-size: 12px;
-  color: var(--color-text-secondary);
-  font-family: var(--font-mono);
-}
+		/* ── Drop Zone (empty state) ── */
+		#drop-zone {
+			border: 1.5px dashed var(--color-border-secondary);
+			border-radius: var(--border-radius-lg);
+			padding: 5rem 2rem;
+			text-align: center;
+			cursor: pointer;
+			transition: background .15s, border-color .15s;
+			background: var(--color-background-primary);
+		}
 
-/* ── Progress Section ── */
-.progress-section {
-  padding: 12px 16px;
-  border-top: 0.5px solid var(--color-border-tertiary);
-}
-.progress-header {
-  display: flex; align-items: center; justify-content: space-between;
-  margin-bottom: 10px;
-}
-.progress-title { font-size: 13px; font-weight: 500; }
-.progress-stats {
-  font-size: 12px;
-  font-family: var(--font-mono);
-  color: var(--color-text-secondary);
-  display: flex; gap: 12px;
-}
-.progress-bar-wrap {
-  height: 6px;
-  background: var(--color-background-tertiary);
-  border-radius: 3px;
-  overflow: hidden;
-  margin-bottom: 10px;
-}
-.progress-bar {
-  height: 100%;
-  background: var(--color-accent);
-  border-radius: 3px;
-  transition: width .3s ease;
-}
-.progress-bar.complete { background: var(--color-success); }
-.progress-bar.error { background: var(--color-error); }
+		#drop-zone:hover, #drop-zone.drag-over {
+			background: var(--color-accent-bg);
+			border-color: var(--color-accent);
+		}
 
-.progress-files { }
-.pf-item {
-  display: flex; align-items: center; gap: 8px;
-  padding: 6px 0;
-  font-size: 12px;
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-}
-.pf-item:last-child { border-bottom: none; }
-.pf-status { flex-shrink: 0; }
-.pf-status.pending { color: var(--color-text-tertiary); }
-.pf-status.running { color: var(--color-accent); }
-.pf-status.done { color: var(--color-success); }
-.pf-status.failed { color: var(--color-error); }
-.pf-status.skipped { color: var(--color-text-tertiary); }
-.pf-name {
-  flex: 1; min-width: 0;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-  font-family: var(--font-mono);
-}
-.pf-progress {
-  font-family: var(--font-mono);
-  color: var(--color-text-secondary);
-  white-space: nowrap;
-  flex-shrink: 0;
-}
-.pf-bar-mini {
-  width: 60px; height: 3px;
-  background: var(--color-background-tertiary);
-  border-radius: 2px;
-  overflow: hidden;
-  flex-shrink: 0;
-}
-.pf-bar-mini-fill {
-  height: 100%;
-  background: var(--color-accent);
-  border-radius: 2px;
-  transition: width .3s;
-}
+		.dz-icon {
+			width: 56px;
+			height: 56px;
+			margin: 0 auto 1.25rem;
+			border-radius: var(--border-radius-lg);
+			background: var(--color-background-secondary);
+			border: 0.5px solid var(--color-border-tertiary);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--color-text-secondary);
+		}
 
-/* ── Result Banner ── */
-.result-banner {
-  margin: 12px 16px;
-  padding: 14px 16px;
-  border-radius: var(--border-radius-md);
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-.result-banner.success { background: var(--color-success-bg); border: 0.5px solid rgba(45,138,78,.2); color: var(--color-success); }
-.result-banner.warning { background: var(--color-warning-bg); border: 0.5px solid rgba(191,135,0,.2); color: var(--color-warning); }
-.result-banner.error { background: var(--color-error-bg); border: 0.5px solid rgba(209,36,47,.2); color: var(--color-error); }
-.result-text { font-size: 13px; font-weight: 500; }
+		.dz-title {
+			font-size: 18px;
+			font-weight: 500;
+			margin-bottom: .4rem;
+			color: var(--color-text-primary);
+		}
 
-/* ── Settings View (replaces main content) ── */
-#settings-view {
-  display: none;
-}
-#settings-view.open {
-  display: block;
-}
-.settings-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin-bottom: 1.25rem;
-}
-.settings-title { font-size: 18px; font-weight: 600; }
-.settings-card {
-  background: var(--color-background-primary);
-  border: 0.5px solid var(--color-border-tertiary);
-  border-radius: var(--border-radius-lg);
-  padding: 20px;
-  margin-bottom: 12px;
-  box-shadow: var(--shadow-sm);
-}
-.settings-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
-  margin-top: 1.25rem;
-  padding-bottom: 2rem;
-}
+		.dz-sub {
+			font-size: 14px;
+			color: var(--color-text-secondary);
+			margin-bottom: 1.25rem;
+		}
 
-/* ── Settings Groups ── */
-.settings-group {
-  margin-bottom: 1.5rem;
-}
-.settings-group:last-child { margin-bottom: 0; }
-.sg-title {
-  font-size: 11px;
-  font-weight: 500;
-  letter-spacing: .06em;
-  text-transform: uppercase;
-  color: var(--color-text-secondary);
-  margin-bottom: 12px;
-  padding-bottom: 6px;
-  border-bottom: 0.5px solid var(--color-border-tertiary);
-}
-.sg-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  gap: 12px;
-}
-.sg-label {
-  font-size: 13px;
-  color: var(--color-text-primary);
-  flex: 1;
-}
-.sg-label-sub {
-  font-size: 11px;
-  color: var(--color-text-tertiary);
-  margin-top: 2px;
-}
-.sg-input {
-  padding: 7px 10px;
-  font-size: 13px;
-  font-family: var(--font-mono);
-  border: 0.5px solid var(--color-border-secondary);
-  border-radius: var(--border-radius-md);
-  background: var(--color-background-secondary);
-  color: var(--color-text-primary);
-  outline: none;
-  width: 160px;
-}
-.sg-input:focus { border-color: var(--color-accent); box-shadow: 0 0 0 2px var(--color-accent-bg); }
-.sg-input-sm { width: 80px; text-align: right; }
-.sg-input-full { width: 100%; }
+		.dz-hint {
+			font-size: 12px;
+			color: var(--color-text-tertiary);
+			margin-top: 1.25rem;
+			font-family: var(--font-mono);
+		}
 
-.sg-toggle {
-  width: 38px; height: 22px;
-  border-radius: 11px;
-  background: var(--color-border-secondary);
-  border: none;
-  cursor: pointer;
-  position: relative;
-  transition: background .15s;
-  flex-shrink: 0;
-}
-.sg-toggle.on { background: var(--color-accent); }
-.sg-toggle::after {
-  content: '';
-  position: absolute;
-  top: 2px; left: 2px;
-  width: 18px; height: 18px;
-  border-radius: 50%;
-  background: #fff;
-  transition: transform .15s;
-  box-shadow: 0 1px 2px rgba(0,0,0,.15);
-}
-.sg-toggle.on::after { transform: translateX(16px); }
+		/* ── Full-window drag overlay ── */
+		#drag-overlay {
+			display: none;
+			position: fixed;
+			inset: 0;
+			z-index: 999;
+			background: rgba(0, 0, 0, .45);
+			backdrop-filter: blur(4px);
+			-webkit-backdrop-filter: blur(4px);
+			align-items: center;
+			justify-content: center;
+			pointer-events: none;
+		}
 
-.tag-list {
-  display: flex; flex-wrap: wrap; gap: 6px;
-  margin-top: 6px;
-}
-.tag {
-  display: flex; align-items: center; gap: 4px;
-  font-size: 12px; font-family: var(--font-mono);
-  padding: 4px 8px;
-  border-radius: var(--border-radius-sm);
-  background: var(--color-background-secondary);
-  border: 0.5px solid var(--color-border-tertiary);
-  color: var(--color-text-secondary);
-}
-.tag-del {
-  background: none; border: none; cursor: pointer;
-  color: var(--color-text-tertiary); font-size: 14px; line-height: 1;
-  padding: 0 2px;
-}
-.tag-del:hover { color: var(--color-error); }
+		#drag-overlay.active {
+			display: flex;
+		}
 
-/* ── Responsive ── */
-@media (max-width: 640px) {
-  .main-wrap { padding: .75rem .5rem 3rem; }
-  #drop-zone { padding: 3rem 1rem; }
-  .dz-title { font-size: 16px; }
-  .info-banner { grid-template-columns: 1fr 1fr; }
-  .file-item { padding-left: 28px; }
-  .dl-actions { flex-direction: column; align-items: stretch; }
-  .card-header { padding: 12px; }
-  .card-actions-head { display: none; }
-  .sg-input { width: 120px; }
-  .progress-stats { flex-direction: column; gap: 2px; }
-}
+		.drag-overlay-inner {
+			background: var(--color-background-primary);
+			border: 2px dashed var(--color-accent);
+			border-radius: var(--border-radius-lg);
+			padding: 3rem 4rem;
+			text-align: center;
+			box-shadow: var(--shadow-lg);
+		}
 
-/* ── Animations ── */
-@keyframes fadeIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
-.sfdl-card { animation: fadeIn .2s ease; }
-@keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: .5; } }
-.pf-status.running i { animation: pulse 1.5s ease-in-out infinite; }
-@keyframes spin { to { transform: rotate(360deg); } }
-.spinner { animation: spin .8s linear infinite; }
+		.drag-overlay-inner .dz-icon {
+			margin: 0 auto 1rem;
+		}
 
-/* ── Theme Toggle ── */
-.theme-toggle {
-  display: flex;
-  align-items: center;
-  background: var(--color-background-secondary);
-  border: 0.5px solid var(--color-border-tertiary);
-  border-radius: var(--border-radius-md);
-  padding: 2px;
-  gap: 0;
-}
-.theme-toggle button {
-  background: none;
-  border: none;
-  cursor: pointer;
-  padding: 5px 7px;
-  border-radius: 6px;
-  color: var(--color-text-tertiary);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: background .12s, color .12s;
-}
-.theme-toggle button:hover { color: var(--color-text-secondary); }
-.theme-toggle button.active {
-  background: var(--color-background-primary);
-  color: var(--color-text-primary);
-  box-shadow: var(--shadow-sm);
-}
-</style>
+		/* ── Container List ── */
+		#container-list {
+			display: none;
+		}
+
+		.container-toolbar {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 1rem;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+
+		.container-toolbar-left {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.container-count {
+			font-size: 13px;
+			color: var(--color-text-secondary);
+			font-family: var(--font-mono);
+		}
+
+		/* ── SFDL Container Card ── */
+		.sfdl-card {
+			background: var(--color-background-primary);
+			border: 0.5px solid var(--color-border-tertiary);
+			border-radius: var(--border-radius-lg);
+			margin-bottom: 12px;
+			overflow: hidden;
+			box-shadow: var(--shadow-sm);
+			transition: border-color .15s, box-shadow .15s;
+		}
+
+		.sfdl-card.dragging {
+			opacity: .5;
+			border-color: var(--color-accent);
+		}
+
+		.sfdl-card.drag-target {
+			border-color: var(--color-accent);
+			box-shadow: 0 0 0 2px var(--color-accent-bg);
+		}
+
+		.card-header {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			padding: 14px 16px;
+			border-bottom: 0.5px solid var(--color-border-tertiary);
+			cursor: pointer;
+			user-select: none;
+		}
+
+		.drag-handle {
+			cursor: grab;
+			color: var(--color-text-tertiary);
+			padding: 2px;
+			flex-shrink: 0;
+			touch-action: none;
+		}
+
+		.drag-handle:active {
+			cursor: grabbing;
+		}
+
+		.card-icon {
+			width: 36px;
+			height: 36px;
+			border-radius: var(--border-radius-md);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			flex-shrink: 0;
+		}
+
+		.card-icon.encrypted {
+			background: var(--color-warning-bg);
+			color: var(--color-warning);
+		}
+
+		.card-icon.decrypted {
+			background: var(--color-accent-bg);
+			color: var(--color-accent);
+		}
+
+		.card-icon.open {
+			background: var(--color-success-bg);
+			color: var(--color-success);
+		}
+
+		.card-info {
+			flex: 1;
+			min-width: 0;
+		}
+
+		.card-name {
+			font-size: 14px;
+			font-weight: 500;
+			color: var(--color-text-primary);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		.card-meta {
+			font-size: 12px;
+			color: var(--color-text-secondary);
+			font-family: var(--font-mono);
+			margin-top: 2px;
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+
+		.card-badge {
+			font-size: 10px;
+			font-weight: 500;
+			padding: 2px 7px;
+			border-radius: 4px;
+			text-transform: uppercase;
+			letter-spacing: .04em;
+		}
+
+		.badge-encrypted {
+			background: var(--color-warning-bg);
+			color: var(--color-warning);
+			border: 0.5px solid rgba(191, 135, 0, .2);
+		}
+
+		.badge-v2 {
+			background: var(--color-background-secondary);
+			color: var(--color-text-secondary);
+			border: 0.5px solid var(--color-border-tertiary);
+		}
+
+		.badge-v3 {
+			background: var(--color-accent-bg);
+			color: var(--color-accent);
+			border: 0.5px solid var(--color-accent-border);
+		}
+
+		.badge-downloading {
+			background: var(--color-success-bg);
+			color: var(--color-success);
+			border: 0.5px solid rgba(45, 138, 78, .2);
+		}
+
+		.card-chevron {
+			color: var(--color-text-tertiary);
+			transition: transform .15s;
+			flex-shrink: 0;
+		}
+
+		.card-chevron.open {
+			transform: rotate(180deg);
+		}
+
+		.card-actions-head {
+			display: flex;
+			gap: 4px;
+			flex-shrink: 0;
+		}
+
+		/* ── Card Body ── */
+		.card-body {
+			display: none;
+		}
+
+		.card-body.open {
+			display: block;
+		}
+
+		/* ── Password Section ── */
+		.pw-section {
+			padding: 1.25rem 1rem;
+			text-align: center;
+		}
+
+		.pw-inner {
+			max-width: 360px;
+			margin: 0 auto;
+		}
+
+		.pw-icon {
+			width: 48px;
+			height: 48px;
+			margin: 0 auto .75rem;
+			border-radius: 50%;
+			background: var(--color-warning-bg);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			color: var(--color-warning);
+		}
+
+		.pw-title {
+			font-size: 15px;
+			font-weight: 500;
+			margin-bottom: .3rem;
+		}
+
+		.pw-sub {
+			font-size: 13px;
+			color: var(--color-text-secondary);
+			margin-bottom: 1rem;
+		}
+
+		.pw-row {
+			display: flex;
+			gap: 8px;
+			margin-bottom: 8px;
+		}
+
+		.pw-input-wrap {
+			flex: 1;
+			position: relative;
+		}
+
+		.pw-input {
+			width: 100%;
+			padding: 9px 36px 9px 12px;
+			font-size: 13px;
+			font-family: var(--font-mono);
+			border: 0.5px solid var(--color-border-secondary);
+			border-radius: var(--border-radius-md);
+			background: var(--color-background-secondary);
+			color: var(--color-text-primary);
+			outline: none;
+		}
+
+		.pw-input:focus {
+			border-color: var(--color-accent);
+			box-shadow: 0 0 0 2px var(--color-accent-bg);
+		}
+
+		.pw-toggle {
+			position: absolute;
+			right: 4px;
+			top: 50%;
+			transform: translateY(-50%);
+			background: none;
+			border: none;
+			cursor: pointer;
+			color: var(--color-text-tertiary);
+			padding: 4px;
+			display: flex;
+			align-items: center;
+		}
+
+		.pw-error {
+			font-size: 12px;
+			color: var(--color-error);
+			margin-top: 4px;
+			display: none;
+		}
+
+		.pw-error.show {
+			display: block;
+		}
+
+		/* ── Info Banner ── */
+		.info-banner {
+			padding: 14px 16px;
+			border-bottom: 0.5px solid var(--color-border-tertiary);
+			display: grid;
+			grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+			gap: 12px;
+		}
+
+		.info-item {
+		}
+
+		.info-label {
+			font-size: 10px;
+			font-weight: 500;
+			letter-spacing: .06em;
+			text-transform: uppercase;
+			color: var(--color-text-tertiary);
+			margin-bottom: 3px;
+		}
+
+		.info-value {
+			font-size: 13px;
+			color: var(--color-text-primary);
+			font-family: var(--font-mono);
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+		}
+
+		/* ── File Tree ── */
+		.file-section {
+			padding: 0;
+		}
+
+		.file-toolbar {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			padding: 10px 16px;
+			border-bottom: 0.5px solid var(--color-border-tertiary);
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+
+		.file-toolbar-left {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+		}
+
+		.file-stats {
+			font-size: 12px;
+			color: var(--color-text-secondary);
+			font-family: var(--font-mono);
+		}
+
+		.pkg-header {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 10px 16px;
+			background: var(--color-background-secondary);
+			border-bottom: 0.5px solid var(--color-border-tertiary);
+			cursor: pointer;
+			user-select: none;
+			font-size: 13px;
+			font-weight: 500;
+		}
+
+		.pkg-header:hover {
+			background: var(--color-background-tertiary);
+		}
+
+		.pkg-count {
+			font-size: 11px;
+			font-family: var(--font-mono);
+			color: var(--color-text-tertiary);
+			font-weight: 400;
+		}
+
+		.file-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 7px 16px 7px 40px;
+			font-size: 13px;
+			border-bottom: 0.5px solid var(--color-border-tertiary);
+			transition: background .1s;
+		}
+
+		.file-item:hover {
+			background: var(--color-background-secondary);
+		}
+
+		.file-item:last-child {
+			border-bottom: none;
+		}
+
+		.file-item.excluded {
+			opacity: .45;
+			text-decoration: line-through;
+		}
+
+		.file-check {
+			width: 16px;
+			height: 16px;
+			border: 0.5px solid var(--color-border-secondary);
+			border-radius: 4px;
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			background: var(--color-background-secondary);
+			cursor: pointer;
+			flex-shrink: 0;
+			transition: background .1s, border-color .1s;
+		}
+
+		.file-check.on {
+			background: var(--color-accent);
+			border-color: var(--color-accent);
+		}
+
+		.file-check.partial {
+			background: var(--color-accent);
+			border-color: var(--color-accent);
+			opacity: .6;
+		}
+
+		.file-icon {
+			color: var(--color-text-tertiary);
+			flex-shrink: 0;
+		}
+
+		.file-name {
+			flex: 1;
+			min-width: 0;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			color: var(--color-text-primary);
+		}
+
+		.file-size {
+			font-size: 11px;
+			font-family: var(--font-mono);
+			color: var(--color-text-tertiary);
+			white-space: nowrap;
+			flex-shrink: 0;
+		}
+
+		/* ── Download Actions ── */
+		.dl-actions {
+			padding: 12px 16px;
+			border-top: 0.5px solid var(--color-border-tertiary);
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			gap: 8px;
+			flex-wrap: wrap;
+		}
+
+		.dl-summary {
+			font-size: 12px;
+			color: var(--color-text-secondary);
+			font-family: var(--font-mono);
+		}
+
+		/* ── Progress Section ── */
+		.progress-section {
+			padding: 12px 16px;
+			border-top: 0.5px solid var(--color-border-tertiary);
+		}
+
+		.progress-header {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 10px;
+		}
+
+		.progress-title {
+			font-size: 13px;
+			font-weight: 500;
+		}
+
+		.progress-stats {
+			font-size: 12px;
+			font-family: var(--font-mono);
+			color: var(--color-text-secondary);
+			display: flex;
+			gap: 12px;
+		}
+
+		.progress-bar-wrap {
+			height: 6px;
+			background: var(--color-background-tertiary);
+			border-radius: 3px;
+			overflow: hidden;
+			margin-bottom: 10px;
+		}
+
+		.progress-bar {
+			height: 100%;
+			background: var(--color-accent);
+			border-radius: 3px;
+			transition: width .3s ease;
+		}
+
+		.progress-bar.complete {
+			background: var(--color-success);
+		}
+
+		.progress-bar.error {
+			background: var(--color-error);
+		}
+
+		.progress-files {
+		}
+
+		.pf-item {
+			display: flex;
+			align-items: center;
+			gap: 8px;
+			padding: 6px 0;
+			font-size: 12px;
+			border-bottom: 0.5px solid var(--color-border-tertiary);
+		}
+
+		.pf-item:last-child {
+			border-bottom: none;
+		}
+
+		.pf-status {
+			flex-shrink: 0;
+		}
+
+		.pf-status.pending {
+			color: var(--color-text-tertiary);
+		}
+
+		.pf-status.running {
+			color: var(--color-accent);
+		}
+
+		.pf-status.done {
+			color: var(--color-success);
+		}
+
+		.pf-status.failed {
+			color: var(--color-error);
+		}
+
+		.pf-status.skipped {
+			color: var(--color-text-tertiary);
+		}
+
+		.pf-name {
+			flex: 1;
+			min-width: 0;
+			white-space: nowrap;
+			overflow: hidden;
+			text-overflow: ellipsis;
+			font-family: var(--font-mono);
+		}
+
+		.pf-progress {
+			font-family: var(--font-mono);
+			color: var(--color-text-secondary);
+			white-space: nowrap;
+			flex-shrink: 0;
+		}
+
+		.pf-bar-mini {
+			width: 60px;
+			height: 3px;
+			background: var(--color-background-tertiary);
+			border-radius: 2px;
+			overflow: hidden;
+			flex-shrink: 0;
+		}
+
+		.pf-bar-mini-fill {
+			height: 100%;
+			background: var(--color-accent);
+			border-radius: 2px;
+			transition: width .3s;
+		}
+
+		/* ── Result Banner ── */
+		.result-banner {
+			margin: 12px 16px;
+			padding: 14px 16px;
+			border-radius: var(--border-radius-md);
+			display: flex;
+			align-items: center;
+			gap: 12px;
+		}
+
+		.result-banner.success {
+			background: var(--color-success-bg);
+			border: 0.5px solid rgba(45, 138, 78, .2);
+			color: var(--color-success);
+		}
+
+		.result-banner.warning {
+			background: var(--color-warning-bg);
+			border: 0.5px solid rgba(191, 135, 0, .2);
+			color: var(--color-warning);
+		}
+
+		.result-banner.error {
+			background: var(--color-error-bg);
+			border: 0.5px solid rgba(209, 36, 47, .2);
+			color: var(--color-error);
+		}
+
+		.result-text {
+			font-size: 13px;
+			font-weight: 500;
+		}
+
+		/* ── Settings View (replaces main content) ── */
+		#settings-view {
+			display: none;
+		}
+
+		#settings-view.open {
+			display: block;
+		}
+
+		.settings-header {
+			display: flex;
+			align-items: center;
+			gap: 10px;
+			margin-bottom: 1.25rem;
+		}
+
+		.settings-title {
+			font-size: 18px;
+			font-weight: 600;
+		}
+
+		.settings-card {
+			background: var(--color-background-primary);
+			border: 0.5px solid var(--color-border-tertiary);
+			border-radius: var(--border-radius-lg);
+			padding: 20px;
+			margin-bottom: 12px;
+			box-shadow: var(--shadow-sm);
+		}
+
+		.settings-footer {
+			display: flex;
+			justify-content: flex-end;
+			gap: 8px;
+			margin-top: 1.25rem;
+			padding-bottom: 2rem;
+		}
+
+		/* ── Settings Groups ── */
+		.settings-group {
+			margin-bottom: 1.5rem;
+		}
+
+		.settings-group:last-child {
+			margin-bottom: 0;
+		}
+
+		.sg-title {
+			font-size: 11px;
+			font-weight: 500;
+			letter-spacing: .06em;
+			text-transform: uppercase;
+			color: var(--color-text-secondary);
+			margin-bottom: 12px;
+			padding-bottom: 6px;
+			border-bottom: 0.5px solid var(--color-border-tertiary);
+		}
+
+		.sg-row {
+			display: flex;
+			align-items: center;
+			justify-content: space-between;
+			margin-bottom: 10px;
+			gap: 12px;
+		}
+
+		.sg-label {
+			font-size: 13px;
+			color: var(--color-text-primary);
+			flex: 1;
+		}
+
+		.sg-label-sub {
+			font-size: 11px;
+			color: var(--color-text-tertiary);
+			margin-top: 2px;
+		}
+
+		.sg-input {
+			padding: 7px 10px;
+			font-size: 13px;
+			font-family: var(--font-mono);
+			border: 0.5px solid var(--color-border-secondary);
+			border-radius: var(--border-radius-md);
+			background: var(--color-background-secondary);
+			color: var(--color-text-primary);
+			outline: none;
+			width: 160px;
+		}
+
+		.sg-input:focus {
+			border-color: var(--color-accent);
+			box-shadow: 0 0 0 2px var(--color-accent-bg);
+		}
+
+		.sg-input-sm {
+			width: 80px;
+			text-align: right;
+		}
+
+		.sg-input-full {
+			width: 100%;
+		}
+
+		.sg-toggle {
+			width: 38px;
+			height: 22px;
+			border-radius: 11px;
+			background: var(--color-border-secondary);
+			border: none;
+			cursor: pointer;
+			position: relative;
+			transition: background .15s;
+			flex-shrink: 0;
+		}
+
+		.sg-toggle.on {
+			background: var(--color-accent);
+		}
+
+		.sg-toggle::after {
+			content: '';
+			position: absolute;
+			top: 2px;
+			left: 2px;
+			width: 18px;
+			height: 18px;
+			border-radius: 50%;
+			background: #fff;
+			transition: transform .15s;
+			box-shadow: 0 1px 2px rgba(0, 0, 0, .15);
+		}
+
+		.sg-toggle.on::after {
+			transform: translateX(16px);
+		}
+
+		.tag-list {
+			display: flex;
+			flex-wrap: wrap;
+			gap: 6px;
+			margin-top: 6px;
+		}
+
+		.tag {
+			display: flex;
+			align-items: center;
+			gap: 4px;
+			font-size: 12px;
+			font-family: var(--font-mono);
+			padding: 4px 8px;
+			border-radius: var(--border-radius-sm);
+			background: var(--color-background-secondary);
+			border: 0.5px solid var(--color-border-tertiary);
+			color: var(--color-text-secondary);
+		}
+
+		.tag-del {
+			background: none;
+			border: none;
+			cursor: pointer;
+			color: var(--color-text-tertiary);
+			font-size: 14px;
+			line-height: 1;
+			padding: 0 2px;
+		}
+
+		.tag-del:hover {
+			color: var(--color-error);
+		}
+
+		/* ── Responsive ── */
+		@media (max-width: 640px) {
+			.main-wrap {
+				padding: .75rem .5rem 3rem;
+			}
+
+			#drop-zone {
+				padding: 3rem 1rem;
+			}
+
+			.dz-title {
+				font-size: 16px;
+			}
+
+			.info-banner {
+				grid-template-columns: 1fr 1fr;
+			}
+
+			.file-item {
+				padding-left: 28px;
+			}
+
+			.dl-actions {
+				flex-direction: column;
+				align-items: stretch;
+			}
+
+			.card-header {
+				padding: 12px;
+			}
+
+			.card-actions-head {
+				display: none;
+			}
+
+			.sg-input {
+				width: 120px;
+			}
+
+			.progress-stats {
+				flex-direction: column;
+				gap: 2px;
+			}
+		}
+
+		/* ── Animations ── */
+		@keyframes fadeIn {
+			from {
+				opacity: 0;
+				transform: translateY(6px);
+			}
+			to {
+				opacity: 1;
+				transform: translateY(0);
+			}
+		}
+
+		.sfdl-card {
+			animation: fadeIn .2s ease;
+		}
+
+		@keyframes pulse {
+			0%, 100% {
+				opacity: 1;
+			}
+			50% {
+				opacity: .5;
+			}
+		}
+
+		.pf-status.running i {
+			animation: pulse 1.5s ease-in-out infinite;
+		}
+
+		@keyframes spin {
+			to {
+				transform: rotate(360deg);
+			}
+		}
+
+		.spinner {
+			animation: spin .8s linear infinite;
+		}
+
+		/* ── Theme Toggle ── */
+		.theme-toggle {
+			display: flex;
+			align-items: center;
+			background: var(--color-background-secondary);
+			border: 0.5px solid var(--color-border-tertiary);
+			border-radius: var(--border-radius-md);
+			padding: 2px;
+			gap: 0;
+		}
+
+		.theme-toggle button {
+			background: none;
+			border: none;
+			cursor: pointer;
+			padding: 5px 7px;
+			border-radius: 6px;
+			color: var(--color-text-tertiary);
+			display: flex;
+			align-items: center;
+			justify-content: center;
+			transition: background .12s, color .12s;
+		}
+
+		.theme-toggle button:hover {
+			color: var(--color-text-secondary);
+		}
+
+		.theme-toggle button.active {
+			background: var(--color-background-primary);
+			color: var(--color-text-primary);
+			box-shadow: var(--shadow-sm);
+		}
+	</style>
 </head>
 <body>
 
 <!-- ── Full-window drag overlay ── -->
 <div id="drag-overlay">
-  <div class="drag-overlay-inner">
-    <div class="dz-icon"><i data-lucide="file-down" style="width:24px;height:24px"></i></div>
-    <p class="dz-title">SFDL-Datei ablegen</p>
-    <p class="dz-sub" style="margin:0">Dateien hier loslassen zum Laden</p>
-  </div>
+	<div class="drag-overlay-inner">
+		<div class="dz-icon"><i data-lucide="file-down" style="width:24px;height:24px"></i></div>
+		<p class="dz-title">SFDL-Datei ablegen</p>
+		<p class="dz-sub" style="margin:0">Dateien hier loslassen zum Laden</p>
+	</div>
 </div>
 
 <!-- ── Header ── -->
 <header class="app-header">
-  <div class="app-logo">
-    <div class="logo-icon"><i data-lucide="arrow-down-to-line" style="width:18px;height:18px"></i></div>
-    <span>rsfdl</span>
-  </div>
-  <div class="app-actions">
-    <button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input').click()">
-      <i data-lucide="file-plus" style="width:15px;height:15px"></i> Oeffnen
-    </button>
-    <div class="theme-toggle" id="theme-toggle">
-      <button onclick="setTheme('light')" title="Hell" data-theme-btn="light">
-        <i data-lucide="sun" style="width:15px;height:15px"></i>
-      </button>
-      <button onclick="setTheme('system')" title="System" data-theme-btn="system" class="active">
-        <i data-lucide="monitor" style="width:15px;height:15px"></i>
-      </button>
-      <button onclick="setTheme('dark')" title="Dunkel" data-theme-btn="dark">
-        <i data-lucide="moon" style="width:15px;height:15px"></i>
-      </button>
-    </div>
-    <button class="btn-icon" title="Einstellungen" onclick="openSettings()">
-      <i data-lucide="settings" style="width:18px;height:18px"></i>
-    </button>
-  </div>
+	<div class="app-logo">
+		<div class="logo-icon"><i data-lucide="arrow-down-to-line" style="width:18px;height:18px"></i></div>
+		<span>rsfdl</span>
+	</div>
+	<div class="app-actions">
+		<button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input').click()">
+			<i data-lucide="file-plus" style="width:15px;height:15px"></i> Öffnen
+		</button>
+		<div class="theme-toggle" id="theme-toggle">
+			<button onclick="setTheme('light')" title="Hell" data-theme-btn="light">
+				<i data-lucide="sun" style="width:15px;height:15px"></i>
+			</button>
+			<button onclick="setTheme('system')" title="System" data-theme-btn="system" class="active">
+				<i data-lucide="monitor" style="width:15px;height:15px"></i>
+			</button>
+			<button onclick="setTheme('dark')" title="Dunkel" data-theme-btn="dark">
+				<i data-lucide="moon" style="width:15px;height:15px"></i>
+			</button>
+		</div>
+		<button class="btn-icon" title="Einstellungen" onclick="openSettings()">
+			<i data-lucide="settings" style="width:18px;height:18px"></i>
+		</button>
+	</div>
 </header>
 
 <!-- ── Main Content ── -->
 <main class="main-wrap">
-  <input type="file" id="file-input" accept=".sfdl" multiple style="display:none" onchange="filesChosen(this)">
+	<input type="file" id="file-input" accept=".sfdl" multiple style="display:none" onchange="filesChosen(this)">
 
-  <!-- Empty state / drop zone -->
-  <div id="drop-zone" onclick="document.getElementById('file-input').click()">
-    <div class="dz-icon"><i data-lucide="file-down" style="width:26px;height:26px"></i></div>
-    <p class="dz-title">SFDL-Container laden</p>
-    <p class="dz-sub">Dateien per Drag-and-Drop hier ablegen</p>
-    <button class="btn btn-primary btn-lg" onclick="event.stopPropagation();document.getElementById('file-input').click()">
-      <i data-lucide="folder-open" style="width:16px;height:16px"></i>
-      Datei auswaehlen
-    </button>
-    <p class="dz-hint">.sfdl (v2 / v3)</p>
-  </div>
+	<!-- Empty state / drop zone -->
+	<div id="drop-zone" onclick="document.getElementById('file-input').click()">
+		<div class="dz-icon"><i data-lucide="file-down" style="width:26px;height:26px"></i></div>
+		<p class="dz-title">SFDL-Container laden</p>
+		<p class="dz-sub">Dateien per Drag-and-Drop hier ablegen</p>
+		<button class="btn btn-primary btn-lg" onclick="event.stopPropagation();document.getElementById('file-input').click()">
+			<i data-lucide="folder-open" style="width:16px;height:16px"></i>
+			Datei auswählen
+		</button>
+		<p class="dz-hint">.sfdl (v2 / v3)</p>
+	</div>
 
-  <!-- Container list (shown after files loaded) -->
-  <div id="container-list">
-    <div class="container-toolbar">
-      <div class="container-toolbar-left">
-        <span class="container-count" id="container-count">0 Container</span>
-      </div>
-      <div style="display:flex;gap:6px">
-        <button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input').click()">
-          <i data-lucide="plus" style="width:14px;height:14px"></i> Hinzufuegen
-        </button>
-        <button class="btn btn-ghost btn-sm btn-danger" onclick="clearAll()">
-          <i data-lucide="trash-2" style="width:14px;height:14px"></i> Alle entfernen
-        </button>
-      </div>
-    </div>
-    <div id="cards-wrap"></div>
-  </div>
+	<!-- Container list (shown after files loaded) -->
+	<div id="container-list">
+		<div class="container-toolbar">
+			<div class="container-toolbar-left">
+				<span class="container-count" id="container-count">0 Container</span>
+			</div>
+			<div style="display:flex;gap:6px">
+				<button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input').click()">
+					<i data-lucide="plus" style="width:14px;height:14px"></i> Hinzufügen
+				</button>
+				<button class="btn btn-ghost btn-sm btn-danger" onclick="clearAll()">
+					<i data-lucide="trash-2" style="width:14px;height:14px"></i> Alle entfernen
+				</button>
+			</div>
+		</div>
+		<div id="cards-wrap"></div>
+	</div>
 </main>
 
-  <!-- Settings view (replaces main content) -->
-  <div id="settings-view">
-    <div class="settings-header">
-      <button class="btn-icon" onclick="closeSettings()">
-        <i data-lucide="arrow-left" style="width:18px;height:18px"></i>
-      </button>
-      <span class="settings-title">Einstellungen</span>
-    </div>
+<!-- Settings view (replaces main content) -->
+<div id="settings-view">
+	<div class="settings-header">
+		<button class="btn-icon" onclick="closeSettings()">
+			<i data-lucide="arrow-left" style="width:18px;height:18px"></i>
+		</button>
+		<span class="settings-title">Einstellungen</span>
+	</div>
 
-    <!-- Allgemein -->
-    <div class="settings-card">
-      <div class="sg-title">Allgemein</div>
-      <div class="sg-row">
-        <div class="sg-label">Download-Verzeichnis<div class="sg-label-sub">Zielordner fuer Downloads</div></div>
-      </div>
-      <div class="sg-row" style="margin-top:-4px">
-        <input class="sg-input sg-input-full" type="text" value="~/Downloads/rsfdl">
-      </div>
-      <div class="sg-row">
-        <div class="sg-label">Max. parallele Downloads</div>
-        <input class="sg-input sg-input-sm" type="number" value="3" min="1" max="20">
-      </div>
-      <div class="sg-row">
-        <div class="sg-label">Max. Geschwindigkeit (KB/s)<div class="sg-label-sub">0 = unbegrenzt</div></div>
-        <input class="sg-input sg-input-sm" type="number" value="0" min="0">
-      </div>
-    </div>
+	<!-- Allgemein -->
+	<div class="settings-card">
+		<div class="sg-title">Allgemein</div>
+		<div class="sg-row">
+			<div class="sg-label">Download-Verzeichnis
+				<div class="sg-label-sub">Zielordner für Downloads</div>
+			</div>
+		</div>
+		<div class="sg-row" style="margin-top:-4px">
+			<input class="sg-input sg-input-full" type="text" value="~/Downloads/rsfdl">
+		</div>
+		<div class="sg-row">
+			<div class="sg-label">Max. parallele Downloads</div>
+			<input class="sg-input sg-input-sm" type="number" value="3" min="1" max="20">
+		</div>
+		<div class="sg-row">
+			<div class="sg-label">Max. Geschwindigkeit (KB/s)
+				<div class="sg-label-sub">0 = unbegrenzt</div>
+			</div>
+			<input class="sg-input sg-input-sm" type="number" value="0" min="0">
+		</div>
+	</div>
 
-    <!-- Download-Verhalten -->
-    <div class="settings-card">
-      <div class="sg-title">Download-Verhalten</div>
-      <div class="sg-row">
-        <div class="sg-label">Max. Wiederholungen</div>
-        <input class="sg-input sg-input-sm" type="number" value="3" min="0" max="50">
-      </div>
-      <div class="sg-row">
-        <div class="sg-label">Retry-Wartezeit (Sek.)</div>
-        <input class="sg-input sg-input-sm" type="number" value="10" min="1" max="3600">
-      </div>
-      <div class="sg-row">
-        <div class="sg-label">Downloads fortsetzen<div class="sg-label-sub">Abgebrochene Downloads weiterfuehren</div></div>
-        <button class="sg-toggle on" onclick="this.classList.toggle('on')"></button>
-      </div>
-      <div class="sg-row">
-        <div class="sg-label">Paket-Unterordner erstellen</div>
-        <button class="sg-toggle on" onclick="this.classList.toggle('on')"></button>
-      </div>
-      <div class="sg-row">
-        <div class="sg-label">Strikte Speicherplatzpruefung</div>
-        <button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
-      </div>
-    </div>
+	<!-- Download-Verhalten -->
+	<div class="settings-card">
+		<div class="sg-title">Download-Verhalten</div>
+		<div class="sg-row">
+			<div class="sg-label">Max. Wiederholungen</div>
+			<input class="sg-input sg-input-sm" type="number" value="3" min="0" max="50">
+		</div>
+		<div class="sg-row">
+			<div class="sg-label">Retry-Wartezeit (Sek.)</div>
+			<input class="sg-input sg-input-sm" type="number" value="10" min="1" max="3600">
+		</div>
+		<div class="sg-row">
+			<div class="sg-label">Downloads fortsetzen
+				<div class="sg-label-sub">Abgebrochene Downloads weiterführen</div>
+			</div>
+			<button class="sg-toggle on" onclick="this.classList.toggle('on')"></button>
+		</div>
+		<div class="sg-row">
+			<div class="sg-label">Paket-Unterordner erstellen</div>
+			<button class="sg-toggle on" onclick="this.classList.toggle('on')"></button>
+		</div>
+		<div class="sg-row">
+			<div class="sg-label">Strikte Speicherplatzprüfung</div>
+			<button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
+		</div>
+	</div>
 
-    <!-- Post-Processing -->
-    <div class="settings-card">
-      <div class="sg-title">Nachbearbeitung</div>
-      <div class="sg-row">
-        <div class="sg-label">Auto-Extraktion<div class="sg-label-sub">Archive nach Download entpacken</div></div>
-        <button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
-      </div>
-      <div class="sg-row">
-        <div class="sg-label">Archive nach Extraktion loeschen</div>
-        <button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
-      </div>
-    </div>
+	<!-- Post-Processing -->
+	<div class="settings-card">
+		<div class="sg-title">Nachbearbeitung</div>
+		<div class="sg-row">
+			<div class="sg-label">Auto-Extraktion
+				<div class="sg-label-sub">Archive nach Download entpacken</div>
+			</div>
+			<button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
+		</div>
+		<div class="sg-row">
+			<div class="sg-label">Archive nach Extraktion löschen</div>
+			<button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
+		</div>
+	</div>
 
-    <!-- Ausschlussmuster -->
-    <div class="settings-card">
-      <div class="sg-title">Ausschlussmuster</div>
-      <div class="tag-list" id="exclusion-tags">
-        <span class="tag">*.nfo <button class="tag-del">&times;</button></span>
-        <span class="tag">*.jpg <button class="tag-del">&times;</button></span>
-        <span class="tag">*.png <button class="tag-del">&times;</button></span>
-        <span class="tag">*.txt <button class="tag-del">&times;</button></span>
-        <span class="tag">*sample* <button class="tag-del">&times;</button></span>
-      </div>
-      <div class="sg-row" style="margin-top:8px">
-        <input class="sg-input sg-input-full" type="text" placeholder="Neues Muster hinzufuegen..." style="flex:1">
-        <button class="btn btn-ghost btn-sm"><i data-lucide="plus" style="width:14px;height:14px"></i></button>
-      </div>
-    </div>
+	<!-- Ausschlussmuster -->
+	<div class="settings-card">
+		<div class="sg-title">Ausschlussmuster</div>
+		<div class="tag-list" id="exclusion-tags">
+			<span class="tag">*.nfo <button class="tag-del">&times;</button></span>
+			<span class="tag">*.jpg <button class="tag-del">&times;</button></span>
+			<span class="tag">*.png <button class="tag-del">&times;</button></span>
+			<span class="tag">*.txt <button class="tag-del">&times;</button></span>
+			<span class="tag">*sample* <button class="tag-del">&times;</button></span>
+		</div>
+		<div class="sg-row" style="margin-top:8px">
+			<input class="sg-input sg-input-full" type="text" placeholder="Neues Muster hinzufügen..." style="flex:1">
+			<button class="btn btn-ghost btn-sm"><i data-lucide="plus" style="width:14px;height:14px"></i></button>
+		</div>
+	</div>
 
-    <!-- Passwoerter -->
-    <div class="settings-card">
-      <div class="sg-title">Auto-Passwoerter</div>
-      <div class="tag-list" id="pw-tags">
-        <span class="tag">&bull;&bull;&bull;&bull;&bull;&bull; <button class="tag-del">&times;</button></span>
-        <span class="tag">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull; <button class="tag-del">&times;</button></span>
-      </div>
-      <div class="sg-row" style="margin-top:8px">
-        <input class="sg-input sg-input-full" type="password" placeholder="Neues Passwort..." style="flex:1">
-        <button class="btn btn-ghost btn-sm"><i data-lucide="plus" style="width:14px;height:14px"></i></button>
-      </div>
-    </div>
+	<!-- Passwörter -->
+	<div class="settings-card">
+		<div class="sg-title">Auto-Passwörter</div>
+		<div class="tag-list" id="pw-tags">
+			<span class="tag">&bull;&bull;&bull;&bull;&bull;&bull; <button class="tag-del">&times;</button></span>
+			<span class="tag">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull; <button class="tag-del">&times;</button></span>
+		</div>
+		<div class="sg-row" style="margin-top:8px">
+			<input class="sg-input sg-input-full" type="password" placeholder="Neues Passwort..." style="flex:1">
+			<button class="btn btn-ghost btn-sm"><i data-lucide="plus" style="width:14px;height:14px"></i></button>
+		</div>
+	</div>
 
-    <!-- Speed Report -->
-    <div class="settings-card">
-      <div class="sg-title">Speed Report</div>
-      <div class="sg-row">
-        <div class="sg-label">Benutzername</div>
-        <input class="sg-input" type="text" placeholder="Forum-Username">
-      </div>
-    </div>
+	<!-- Speed Report -->
+	<div class="settings-card">
+		<div class="sg-title">Speed Report</div>
+		<div class="sg-row">
+			<div class="sg-label">Benutzername</div>
+			<input class="sg-input" type="text" placeholder="Forum-Username">
+		</div>
+	</div>
 
-    <div class="settings-footer">
-      <button class="btn btn-ghost" onclick="closeSettings()">Abbrechen</button>
-      <button class="btn btn-accent" onclick="closeSettings()">Speichern</button>
-    </div>
-  </div>
+	<div class="settings-footer">
+		<button class="btn btn-ghost" onclick="closeSettings()">Abbrechen</button>
+		<button class="btn btn-accent" onclick="closeSettings()">Speichern</button>
+	</div>
+</div>
 
 <script>
-/* ── State ── */
-let containers = [];
-let draggedCardIdx = null;
-let nextId = 1;
+	/* ── State ── */
+	let containers = [];
+	let draggedCardIdx = null;
+	let nextId = 1;
 
-/* ── Demo Data ── */
-const DEMO_CONTAINERS = [
-  {
-    name: 'Movie.Collection.2025.German.DL.1080p.BluRay.x264',
-    encrypted: true,
-    version: 'v3',
-    needsPassword: true,
-    decrypted: false,
-    description: 'Movie Collection 2025',
-    host: null,
-    packages: [],
-    expanded: true,
-    downloading: false,
-    progress: 0,
-  },
-  {
-    name: 'Linux.Distros.Pack.2025',
-    encrypted: false,
-    version: 'v3',
-    needsPassword: false,
-    decrypted: true,
-    description: 'Various Linux ISOs',
-    host: 'ftp.example.com',
-    packages: [
-      {
-        name: 'Ubuntu',
-        expanded: true,
-        files: [
-          { name: 'ubuntu-24.04-desktop-amd64.iso', size: '4.7 GB', selected: true },
-          { name: 'ubuntu-24.04-server-amd64.iso', size: '2.1 GB', selected: true },
-          { name: 'SHA256SUMS.txt', size: '1.2 KB', selected: false, excluded: true },
-          { name: 'info.nfo', size: '0.4 KB', selected: false, excluded: true },
-        ]
-      },
-      {
-        name: 'Fedora',
-        expanded: true,
-        files: [
-          { name: 'Fedora-Workstation-Live-x86_64-41.iso', size: '2.3 GB', selected: true },
-          { name: 'Fedora-Server-dvd-x86_64-41.iso', size: '2.8 GB', selected: true },
-        ]
-      }
-    ],
-    expanded: true,
-    downloading: false,
-    progress: 0,
-  },
-  {
-    name: 'Documentary.Series.S01.Complete.720p',
-    encrypted: false,
-    version: 'v2',
-    needsPassword: false,
-    decrypted: true,
-    description: 'Documentary series complete season 1',
-    host: 'ftp2.example.com',
-    packages: [
-      {
-        name: 'Season 01',
-        expanded: false,
-        files: [
-          { name: 'S01E01.The.Beginning.720p.mkv', size: '1.4 GB', selected: true },
-          { name: 'S01E02.The.Journey.720p.mkv', size: '1.3 GB', selected: true },
-          { name: 'S01E03.The.Discovery.720p.mkv', size: '1.5 GB', selected: true },
-          { name: 'S01E04.The.Return.720p.mkv', size: '1.4 GB', selected: true },
-          { name: 'S01E05.The.Finale.720p.mkv', size: '1.6 GB', selected: true },
-          { name: 'cover.jpg', size: '320 KB', selected: false, excluded: true },
-          { name: 'sample.mkv', size: '45 MB', selected: false, excluded: true },
-        ]
-      }
-    ],
-    expanded: false,
-    downloading: false,
-    downloadDone: false,
-    progress: 0,
-  }
-];
+	/* ── Demo Data ── */
+	const DEMO_CONTAINERS = [
+		{
+			name: 'Movie.Collection.2025.German.DL.1080p.BluRay.x264',
+			encrypted: true,
+			version: 'v3',
+			needsPassword: true,
+			decrypted: false,
+			description: 'Movie Collection 2025',
+			host: null,
+			packages: [],
+			expanded: true,
+			downloading: false,
+			progress: 0,
+		},
+		{
+			name: 'Linux.Distros.Pack.2025',
+			encrypted: false,
+			version: 'v3',
+			needsPassword: false,
+			decrypted: true,
+			description: 'Various Linux ISOs',
+			host: 'ftp.example.com',
+			packages: [
+				{
+					name: 'Ubuntu',
+					expanded: true,
+					files: [
+						{name: 'ubuntu-24.04-desktop-amd64.iso', size: '4.7 GB', selected: true},
+						{name: 'ubuntu-24.04-server-amd64.iso', size: '2.1 GB', selected: true},
+						{name: 'SHA256SUMS.txt', size: '1.2 KB', selected: false, excluded: true},
+						{name: 'info.nfo', size: '0.4 KB', selected: false, excluded: true},
+					]
+				},
+				{
+					name: 'Fedora',
+					expanded: true,
+					files: [
+						{name: 'Fedora-Workstation-Live-x86_64-41.iso', size: '2.3 GB', selected: true},
+						{name: 'Fedora-Server-dvd-x86_64-41.iso', size: '2.8 GB', selected: true},
+					]
+				}
+			],
+			expanded: true,
+			downloading: false,
+			progress: 0,
+		},
+		{
+			name: 'Documentary.Series.S01.Complete.720p',
+			encrypted: false,
+			version: 'v2',
+			needsPassword: false,
+			decrypted: true,
+			description: 'Documentary series complete season 1',
+			host: 'ftp2.example.com',
+			packages: [
+				{
+					name: 'Season 01',
+					expanded: false,
+					files: [
+						{name: 'S01E01.The.Beginning.720p.mkv', size: '1.4 GB', selected: true},
+						{name: 'S01E02.The.Journey.720p.mkv', size: '1.3 GB', selected: true},
+						{name: 'S01E03.The.Discovery.720p.mkv', size: '1.5 GB', selected: true},
+						{name: 'S01E04.The.Return.720p.mkv', size: '1.4 GB', selected: true},
+						{name: 'S01E05.The.Finale.720p.mkv', size: '1.6 GB', selected: true},
+						{name: 'cover.jpg', size: '320 KB', selected: false, excluded: true},
+						{name: 'sample.mkv', size: '45 MB', selected: false, excluded: true},
+					]
+				}
+			],
+			expanded: false,
+			downloading: false,
+			downloadDone: false,
+			progress: 0,
+		}
+	];
 
-/* ── Render ── */
-function render() {
-  const dz = document.getElementById('drop-zone');
-  const cl = document.getElementById('container-list');
-  const wrap = document.getElementById('cards-wrap');
+	/* ── Render ── */
+	function render() {
+		const dz = document.getElementById('drop-zone');
+		const cl = document.getElementById('container-list');
+		const wrap = document.getElementById('cards-wrap');
 
-  if (containers.length === 0) {
-    dz.style.display = '';
-    cl.style.display = 'none';
-    return;
-  }
+		if (containers.length === 0) {
+			dz.style.display = '';
+			cl.style.display = 'none';
+			return;
+		}
 
-  dz.style.display = 'none';
-  cl.style.display = '';
-  document.getElementById('container-count').textContent = containers.length + ' Container';
+		dz.style.display = 'none';
+		cl.style.display = '';
+		document.getElementById('container-count').textContent = containers.length + ' Container';
 
-  wrap.innerHTML = containers.map((c, i) => renderCard(c, i)).join('');
-  lucide.createIcons();
-  initCardDrag();
-}
+		wrap.innerHTML = containers.map((c, i) => renderCard(c, i)).join('');
+		lucide.createIcons();
+		initCardDrag();
+	}
 
-function renderCard(c, idx) {
-  const stateIcon = c.needsPassword && !c.decrypted ? 'encrypted' :
-                    c.decrypted ? 'open' : 'decrypted';
+	function renderCard(c, idx) {
+		const stateIcon = c.needsPassword && !c.decrypted ? 'encrypted' :
+				c.decrypted ? 'open' : 'decrypted';
 
-  const badges = [];
-  if (c.encrypted) badges.push(`<span class="card-badge badge-encrypted">Encrypted</span>`);
-  badges.push(`<span class="card-badge badge-${c.version}">${c.version.toUpperCase()}</span>`);
-  if (c.downloading) badges.push(`<span class="card-badge badge-downloading">Downloading</span>`);
+		const badges = [];
+		if (c.encrypted) badges.push(`<span class="card-badge badge-encrypted">Encrypted</span>`);
+		badges.push(`<span class="card-badge badge-${c.version}">${c.version.toUpperCase()}</span>`);
+		if (c.downloading) badges.push(`<span class="card-badge badge-downloading">Downloading</span>`);
 
-  let metaInfo = '';
-  if (c.host) metaInfo = c.host;
-  else if (c.needsPassword && !c.decrypted) metaInfo = 'Passwort erforderlich';
-  else metaInfo = c.description || '';
+		let metaInfo = '';
+		if (c.host) metaInfo = c.host;
+		else if (c.needsPassword && !c.decrypted) metaInfo = 'Passwort erforderlich';
+		else metaInfo = c.description || '';
 
-  const chevronClass = c.expanded ? 'card-chevron open' : 'card-chevron';
+		const chevronClass = c.expanded ? 'card-chevron open' : 'card-chevron';
 
-  let body = '';
-  if (c.needsPassword && !c.decrypted) {
-    body = renderPasswordSection(idx);
-  } else if (c.downloadDone) {
-    body = renderResultSection(c, idx);
-  } else if (c.downloading) {
-    body = renderProgressSection(c, idx);
-  } else if (c.packages.length > 0) {
-    body = renderFileSection(c, idx);
-  }
+		let body = '';
+		if (c.needsPassword && !c.decrypted) {
+			body = renderPasswordSection(idx);
+		} else if (c.downloadDone) {
+			body = renderResultSection(c, idx);
+		} else if (c.downloading) {
+			body = renderProgressSection(c, idx);
+		} else if (c.packages.length > 0) {
+			body = renderFileSection(c, idx);
+		}
 
-  return `<div class="sfdl-card" data-idx="${idx}" draggable="false">
+		return `<div class="sfdl-card" data-idx="${idx}" draggable="false">
     <div class="card-header" onclick="toggleCard(${idx})">
       <div class="drag-handle" draggable="true" ondragstart="cardDragStart(event,${idx})" ondragend="cardDragEnd(event)" onclick="event.stopPropagation()">
         <i data-lucide="grip-vertical" style="width:16px;height:16px"></i>
@@ -1130,49 +1536,49 @@ function renderCard(c, idx) {
       ${body}
     </div>
   </div>`;
-}
+	}
 
-function renderPasswordSection(idx) {
-  return `<div class="pw-section">
+	function renderPasswordSection(idx) {
+		return `<div class="pw-section">
     <div class="pw-inner">
       <div class="pw-icon"><i data-lucide="key-round" style="width:22px;height:22px"></i></div>
       <div class="pw-title">Passwort erforderlich</div>
-      <div class="pw-sub">Dieser Container ist verschluesselt. Bitte Passwort eingeben.</div>
+      <div class="pw-sub">Dieser Container ist verschlüsselt. Bitte Passwort eingeben.</div>
       <div class="pw-row">
         <div class="pw-input-wrap">
           <input class="pw-input" type="password" placeholder="Passwort" id="pw-${idx}" onkeydown="if(event.key==='Enter')decryptCard(${idx})">
           <button class="pw-toggle" onclick="togglePwVis(${idx})"><i data-lucide="eye" style="width:14px;height:14px"></i></button>
         </div>
         <button class="btn btn-accent" onclick="decryptCard(${idx})">
-          <i data-lucide="unlock" style="width:14px;height:14px"></i> Entschluesseln
+          <i data-lucide="unlock" style="width:14px;height:14px"></i> Entschlüsseln
         </button>
       </div>
       <div class="pw-error" id="pw-err-${idx}">Falsches Passwort. Bitte erneut versuchen.</div>
     </div>
   </div>`;
-}
+	}
 
-function renderFileSection(c, idx) {
-  const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
-  const allFiles = c.packages.reduce((s, p) => s + p.files.length, 0);
+	function renderFileSection(c, idx) {
+		const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
+		const allFiles = c.packages.reduce((s, p) => s + p.files.length, 0);
 
-  let info = '';
-  if (c.host) {
-    info = `<div class="info-banner">
+		let info = '';
+		if (c.host) {
+			info = `<div class="info-banner">
       <div class="info-item"><div class="info-label">Server</div><div class="info-value">${c.host}</div></div>
       <div class="info-item"><div class="info-label">Beschreibung</div><div class="info-value">${c.description || '-'}</div></div>
       <div class="info-item"><div class="info-label">Pakete</div><div class="info-value">${c.packages.length}</div></div>
       <div class="info-item"><div class="info-label">Dateien</div><div class="info-value">${allFiles}</div></div>
     </div>`;
-  }
+		}
 
-  const pkgs = c.packages.map((pkg, pi) => {
-    const selCount = pkg.files.filter(f => f.selected).length;
-    const allSel = selCount === pkg.files.length;
-    const someSel = selCount > 0 && !allSel;
-    const chkClass = allSel ? 'file-check on' : someSel ? 'file-check partial' : 'file-check';
+		const pkgs = c.packages.map((pkg, pi) => {
+			const selCount = pkg.files.filter(f => f.selected).length;
+			const allSel = selCount === pkg.files.length;
+			const someSel = selCount > 0 && !allSel;
+			const chkClass = allSel ? 'file-check on' : someSel ? 'file-check partial' : 'file-check';
 
-    const files = pkg.expanded ? pkg.files.map((f, fi) => `
+			const files = pkg.expanded ? pkg.files.map((f, fi) => `
       <div class="file-item ${f.excluded ? 'excluded' : ''}">
         <div class="${f.selected ? 'file-check on' : 'file-check'}" onclick="toggleFile(${idx},${pi},${fi})">
           ${f.selected ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><polyline points="1,4 3.5,6.5 9,1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
@@ -1183,7 +1589,7 @@ function renderFileSection(c, idx) {
       </div>
     `).join('') : '';
 
-    return `
+			return `
       <div class="pkg-header" onclick="togglePkg(${idx},${pi})">
         <div class="${chkClass}" onclick="event.stopPropagation();togglePkgSel(${idx},${pi})">
           ${allSel || someSel ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><polyline points="1,4 3.5,6.5 9,1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
@@ -1195,16 +1601,16 @@ function renderFileSection(c, idx) {
       </div>
       ${files}
     `;
-  }).join('');
+		}).join('');
 
-  return `${info}
+		return `${info}
     <div class="file-section">
       <div class="file-toolbar">
         <div class="file-toolbar-left">
           <button class="btn btn-ghost btn-sm" onclick="selectAll(${idx},true)">Alle</button>
           <button class="btn btn-ghost btn-sm" onclick="selectAll(${idx},false)">Keine</button>
         </div>
-        <div class="file-stats">${totalFiles} von ${allFiles} ausgewaehlt</div>
+        <div class="file-stats">${totalFiles} von ${allFiles} ausgewählt</div>
       </div>
       ${pkgs}
     </div>
@@ -1214,43 +1620,51 @@ function renderFileSection(c, idx) {
         <i data-lucide="download" style="width:15px;height:15px"></i> Download starten
       </button>
     </div>`;
-}
+	}
 
-function renderProgressSection(c, idx) {
-  const pct = c.progress || 0;
-  const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
-  const doneFiles = Math.floor(totalFiles * pct / 100);
+	function renderProgressSection(c, idx) {
+		const pct = c.progress || 0;
+		const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
+		const doneFiles = Math.floor(totalFiles * pct / 100);
 
-  const speeds = ['2.4 MB/s', '3.1 MB/s', '1.8 MB/s', '2.9 MB/s'];
-  const speed = speeds[idx % speeds.length];
+		const speeds = ['2.4 MB/s', '3.1 MB/s', '1.8 MB/s', '2.9 MB/s'];
+		const speed = speeds[idx % speeds.length];
 
-  let fileRows = '';
-  let fileIdx = 0;
-  for (const pkg of c.packages) {
-    for (const f of pkg.files) {
-      if (!f.selected) continue;
-      let status, statusIcon, fpct, label;
-      if (fileIdx < doneFiles) {
-        status = 'done'; statusIcon = 'check-circle'; fpct = 100; label = f.size;
-      } else if (fileIdx === doneFiles && pct < 100) {
-        status = 'running'; statusIcon = 'loader'; fpct = Math.round((pct % (100/totalFiles)) * totalFiles);
-        label = `${Math.round(parseFloat(f.size) * fpct / 100 * 10) / 10} / ${f.size}`;
-      } else {
-        status = 'pending'; statusIcon = 'circle'; fpct = 0; label = 'Wartend';
-      }
-      fileRows += `<div class="pf-item">
-        <span class="pf-status ${status}"><i data-lucide="${statusIcon}" style="width:14px;height:14px" ${status==='running'?'class="spinner"':''}></i></span>
+		let fileRows = '';
+		let fileIdx = 0;
+		for (const pkg of c.packages) {
+			for (const f of pkg.files) {
+				if (!f.selected) continue;
+				let status, statusIcon, fpct, label;
+				if (fileIdx < doneFiles) {
+					status = 'done';
+					statusIcon = 'check-circle';
+					fpct = 100;
+					label = f.size;
+				} else if (fileIdx === doneFiles && pct < 100) {
+					status = 'running';
+					statusIcon = 'loader';
+					fpct = Math.round((pct % (100 / totalFiles)) * totalFiles);
+					label = `${Math.round(parseFloat(f.size) * fpct / 100 * 10) / 10} / ${f.size}`;
+				} else {
+					status = 'pending';
+					statusIcon = 'circle';
+					fpct = 0;
+					label = 'Wartend';
+				}
+				fileRows += `<div class="pf-item">
+        <span class="pf-status ${status}"><i data-lucide="${statusIcon}" style="width:14px;height:14px" ${status === 'running' ? 'class="spinner"' : ''}></i></span>
         <span class="pf-name">${f.name}</span>
         <span class="pf-progress">${label}</span>
         <div class="pf-bar-mini"><div class="pf-bar-mini-fill" style="width:${fpct}%"></div></div>
       </div>`;
-      fileIdx++;
-    }
-  }
+				fileIdx++;
+			}
+		}
 
-  return `<div class="progress-section">
+		return `<div class="progress-section">
     <div class="progress-header">
-      <span class="progress-title">Download laeuft...</span>
+      <span class="progress-title">Download läuft...</span>
       <div class="progress-stats">
         <span>${doneFiles}/${totalFiles} Dateien</span>
         <span>${speed}</span>
@@ -1268,12 +1682,12 @@ function renderProgressSection(c, idx) {
       </button>
     </div>
   </div>`;
-}
+	}
 
-function renderResultSection(c, idx) {
-  const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
+	function renderResultSection(c, idx) {
+		const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
 
-  return `<div class="result-banner success">
+		return `<div class="result-banner success">
     <i data-lucide="check-circle" style="width:20px;height:20px"></i>
     <span class="result-text">${totalFiles} Dateien erfolgreich heruntergeladen</span>
   </div>
@@ -1285,303 +1699,309 @@ function renderResultSection(c, idx) {
   </div>
   <div class="dl-actions">
     <button class="btn btn-ghost" onclick="resetCard(${idx})">
-      <i data-lucide="rotate-ccw" style="width:14px;height:14px"></i> Zurueck
+      <i data-lucide="rotate-ccw" style="width:14px;height:14px"></i> Zurück
     </button>
     <div style="display:flex;gap:6px">
       <button class="btn btn-ghost" onclick="copySpeedReport(${idx})">
         <i data-lucide="clipboard-copy" style="width:14px;height:14px"></i> Speed Report
       </button>
       <button class="btn btn-accent">
-        <i data-lucide="folder-open" style="width:14px;height:14px"></i> Ordner oeffnen
+        <i data-lucide="folder-open" style="width:14px;height:14px"></i> Ordner öffnen
       </button>
     </div>
   </div>`;
-}
+	}
 
-/* ── Helpers ── */
-function getFileIcon(name) {
-  const ext = name.split('.').pop().toLowerCase();
-  const map = {
-    'iso': 'disc', 'img': 'disc',
-    'mkv': 'film', 'avi': 'film', 'mp4': 'film', 'mov': 'film',
-    'rar': 'archive', 'zip': 'archive', '7z': 'archive', 'tar': 'archive', 'gz': 'archive',
-    'nfo': 'file-text', 'txt': 'file-text', 'md': 'file-text',
-    'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'bmp': 'image',
-    'mp3': 'music', 'flac': 'music', 'wav': 'music', 'ogg': 'music',
-    'srt': 'subtitles', 'sub': 'subtitles',
-  };
-  return map[ext] || 'file';
-}
+	/* ── Helpers ── */
+	function getFileIcon(name) {
+		const ext = name.split('.').pop().toLowerCase();
+		const map = {
+			'iso': 'disc', 'img': 'disc',
+			'mkv': 'film', 'avi': 'film', 'mp4': 'film', 'mov': 'film',
+			'rar': 'archive', 'zip': 'archive', '7z': 'archive', 'tar': 'archive', 'gz': 'archive',
+			'nfo': 'file-text', 'txt': 'file-text', 'md': 'file-text',
+			'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'bmp': 'image',
+			'mp3': 'music', 'flac': 'music', 'wav': 'music', 'ogg': 'music',
+			'srt': 'subtitles', 'sub': 'subtitles',
+		};
+		return map[ext] || 'file';
+	}
 
-/* ── Interactions ── */
-function toggleCard(idx) {
-  containers[idx].expanded = !containers[idx].expanded;
-  render();
-}
+	/* ── Interactions ── */
+	function toggleCard(idx) {
+		containers[idx].expanded = !containers[idx].expanded;
+		render();
+	}
 
-function togglePkg(idx, pi) {
-  containers[idx].packages[pi].expanded = !containers[idx].packages[pi].expanded;
-  render();
-}
+	function togglePkg(idx, pi) {
+		containers[idx].packages[pi].expanded = !containers[idx].packages[pi].expanded;
+		render();
+	}
 
-function toggleFile(idx, pi, fi) {
-  const f = containers[idx].packages[pi].files[fi];
-  f.selected = !f.selected;
-  if (f.selected) f.excluded = false;
-  render();
-}
+	function toggleFile(idx, pi, fi) {
+		const f = containers[idx].packages[pi].files[fi];
+		f.selected = !f.selected;
+		if (f.selected) f.excluded = false;
+		render();
+	}
 
-function togglePkgSel(idx, pi) {
-  const pkg = containers[idx].packages[pi];
-  const allSel = pkg.files.every(f => f.selected);
-  pkg.files.forEach(f => { f.selected = !allSel; if (!allSel) f.excluded = false; });
-  render();
-}
+	function togglePkgSel(idx, pi) {
+		const pkg = containers[idx].packages[pi];
+		const allSel = pkg.files.every(f => f.selected);
+		pkg.files.forEach(f => {
+			f.selected = !allSel;
+			if (!allSel) f.excluded = false;
+		});
+		render();
+	}
 
-function selectAll(idx, val) {
-  containers[idx].packages.forEach(p => p.files.forEach(f => { f.selected = val; if (val) f.excluded = false; }));
-  render();
-}
+	function selectAll(idx, val) {
+		containers[idx].packages.forEach(p => p.files.forEach(f => {
+			f.selected = val;
+			if (val) f.excluded = false;
+		}));
+		render();
+	}
 
-function removeCard(idx) {
-  containers.splice(idx, 1);
-  render();
-}
+	function removeCard(idx) {
+		containers.splice(idx, 1);
+		render();
+	}
 
-function clearAll() {
-  containers = [];
-  render();
-}
+	function clearAll() {
+		containers = [];
+		render();
+	}
 
-function decryptCard(idx) {
-  const pw = document.getElementById('pw-' + idx);
-  if (!pw) return;
-  if (pw.value.length === 0) {
-    document.getElementById('pw-err-' + idx).classList.add('show');
-    return;
-  }
-  // Simulate decryption success
-  const c = containers[idx];
-  c.decrypted = true;
-  c.needsPassword = false;
-  c.host = 'ftp.example.com';
-  c.packages = [{
-    name: c.name,
-    expanded: true,
-    files: [
-      { name: 'Movie.Part1.rar', size: '4.0 GB', selected: true },
-      { name: 'Movie.Part2.rar', size: '4.0 GB', selected: true },
-      { name: 'Movie.Part3.rar', size: '3.2 GB', selected: true },
-      { name: 'cover.jpg', size: '180 KB', selected: false, excluded: true },
-      { name: 'info.nfo', size: '0.8 KB', selected: false, excluded: true },
-    ]
-  }];
-  render();
-}
+	function decryptCard(idx) {
+		const pw = document.getElementById('pw-' + idx);
+		if (!pw) return;
+		if (pw.value.length === 0) {
+			document.getElementById('pw-err-' + idx).classList.add('show');
+			return;
+		}
+		// Simulate decryption success
+		const c = containers[idx];
+		c.decrypted = true;
+		c.needsPassword = false;
+		c.host = 'ftp.example.com';
+		c.packages = [{
+			name: c.name,
+			expanded: true,
+			files: [
+				{name: 'Movie.Part1.rar', size: '4.0 GB', selected: true},
+				{name: 'Movie.Part2.rar', size: '4.0 GB', selected: true},
+				{name: 'Movie.Part3.rar', size: '3.2 GB', selected: true},
+				{name: 'cover.jpg', size: '180 KB', selected: false, excluded: true},
+				{name: 'info.nfo', size: '0.8 KB', selected: false, excluded: true},
+			]
+		}];
+		render();
+	}
 
-function togglePwVis(idx) {
-  const inp = document.getElementById('pw-' + idx);
-  inp.type = inp.type === 'password' ? 'text' : 'password';
-}
+	function togglePwVis(idx) {
+		const inp = document.getElementById('pw-' + idx);
+		inp.type = inp.type === 'password' ? 'text' : 'password';
+	}
 
-function startDownload(idx) {
-  const c = containers[idx];
-  c.downloading = true;
-  c.progress = 0;
-  render();
+	function startDownload(idx) {
+		const c = containers[idx];
+		c.downloading = true;
+		c.progress = 0;
+		render();
 
-  // Simulate progress
-  const iv = setInterval(() => {
-    c.progress = Math.min(100, c.progress + Math.random() * 4 + 1);
-    render();
-    if (c.progress >= 100) {
-      clearInterval(iv);
-      c.downloading = false;
-      c.downloadDone = true;
-      render();
-    }
-  }, 400);
-  c._interval = iv;
-}
+		// Simulate progress
+		const iv = setInterval(() => {
+			c.progress = Math.min(100, c.progress + Math.random() * 4 + 1);
+			render();
+			if (c.progress >= 100) {
+				clearInterval(iv);
+				c.downloading = false;
+				c.downloadDone = true;
+				render();
+			}
+		}, 400);
+		c._interval = iv;
+	}
 
-function cancelDownload(idx) {
-  const c = containers[idx];
-  if (c._interval) clearInterval(c._interval);
-  c.downloading = false;
-  c.progress = 0;
-  render();
-}
+	function cancelDownload(idx) {
+		const c = containers[idx];
+		if (c._interval) clearInterval(c._interval);
+		c.downloading = false;
+		c.progress = 0;
+		render();
+	}
 
-function resetCard(idx) {
-  const c = containers[idx];
-  c.downloadDone = false;
-  c.progress = 0;
-  render();
-}
+	function resetCard(idx) {
+		const c = containers[idx];
+		c.downloadDone = false;
+		c.progress = 0;
+		render();
+	}
 
-function copySpeedReport(idx) {
-  alert('Speed Report in Zwischenablage kopiert!');
-}
+	function copySpeedReport(idx) {
+		alert('Speed Report in Zwischenablage kopiert!');
+	}
 
-/* ── File Load ── */
-function filesChosen(input) {
-  if (input.files.length > 0) {
-    for (const f of input.files) {
-      addContainer(f.name);
-    }
-    render();
-    input.value = '';
-  }
-}
+	/* ── File Load ── */
+	function filesChosen(input) {
+		if (input.files.length > 0) {
+			for (const f of input.files) {
+				addContainer(f.name);
+			}
+			render();
+			input.value = '';
+		}
+	}
 
-function addContainer(filename) {
-  containers.push({
-    name: filename.replace(/\.sfdl$/i, ''),
-    encrypted: Math.random() > 0.5,
-    version: Math.random() > 0.3 ? 'v3' : 'v2',
-    needsPassword: Math.random() > 0.5,
-    decrypted: false,
-    description: 'Container ' + nextId,
-    host: null,
-    packages: [],
-    expanded: true,
-    downloading: false,
-    progress: 0,
-  });
-  // If not encrypted, simulate content
-  const c = containers[containers.length - 1];
-  if (!c.needsPassword) {
-    c.decrypted = true;
-    c.host = 'ftp' + nextId + '.example.com';
-    c.packages = [{
-      name: 'Package 1',
-      expanded: true,
-      files: [
-        { name: 'file_01.rar', size: '2.1 GB', selected: true },
-        { name: 'file_02.rar', size: '2.1 GB', selected: true },
-        { name: 'info.nfo', size: '0.5 KB', selected: false, excluded: true },
-      ]
-    }];
-  }
-  nextId++;
-}
+	function addContainer(filename) {
+		containers.push({
+			name: filename.replace(/\.sfdl$/i, ''),
+			encrypted: Math.random() > 0.5,
+			version: Math.random() > 0.3 ? 'v3' : 'v2',
+			needsPassword: Math.random() > 0.5,
+			decrypted: false,
+			description: 'Container ' + nextId,
+			host: null,
+			packages: [],
+			expanded: true,
+			downloading: false,
+			progress: 0,
+		});
+		// If not encrypted, simulate content
+		const c = containers[containers.length - 1];
+		if (!c.needsPassword) {
+			c.decrypted = true;
+			c.host = 'ftp' + nextId + '.example.com';
+			c.packages = [{
+				name: 'Package 1',
+				expanded: true,
+				files: [
+					{name: 'file_01.rar', size: '2.1 GB', selected: true},
+					{name: 'file_02.rar', size: '2.1 GB', selected: true},
+					{name: 'info.nfo', size: '0.5 KB', selected: false, excluded: true},
+				]
+			}];
+		}
+		nextId++;
+	}
 
-/* ── Card Drag & Drop (Reorder) ── */
-function initCardDrag() {
-  const wrap = document.getElementById('cards-wrap');
-  if (!wrap) return;
-  const cards = wrap.querySelectorAll('.sfdl-card');
-  cards.forEach(card => {
-    card.addEventListener('dragover', e => {
-      e.preventDefault();
-      card.classList.add('drag-target');
-    });
-    card.addEventListener('dragleave', () => {
-      card.classList.remove('drag-target');
-    });
-    card.addEventListener('drop', e => {
-      e.preventDefault();
-      card.classList.remove('drag-target');
-      const toIdx = parseInt(card.dataset.idx);
-      if (draggedCardIdx !== null && draggedCardIdx !== toIdx) {
-        const [moved] = containers.splice(draggedCardIdx, 1);
-        containers.splice(toIdx, 0, moved);
-        render();
-      }
-    });
-  });
-}
+	/* ── Card Drag & Drop (Reorder) ── */
+	function initCardDrag() {
+		const wrap = document.getElementById('cards-wrap');
+		if (!wrap) return;
+		const cards = wrap.querySelectorAll('.sfdl-card');
+		cards.forEach(card => {
+			card.addEventListener('dragover', e => {
+				e.preventDefault();
+				card.classList.add('drag-target');
+			});
+			card.addEventListener('dragleave', () => {
+				card.classList.remove('drag-target');
+			});
+			card.addEventListener('drop', e => {
+				e.preventDefault();
+				card.classList.remove('drag-target');
+				const toIdx = parseInt(card.dataset.idx);
+				if (draggedCardIdx !== null && draggedCardIdx !== toIdx) {
+					const [moved] = containers.splice(draggedCardIdx, 1);
+					containers.splice(toIdx, 0, moved);
+					render();
+				}
+			});
+		});
+	}
 
-function cardDragStart(e, idx) {
-  draggedCardIdx = idx;
-  e.dataTransfer.effectAllowed = 'move';
-  setTimeout(() => {
-    const card = document.querySelectorAll('.sfdl-card')[idx];
-    if (card) card.classList.add('dragging');
-  }, 0);
-}
+	function cardDragStart(e, idx) {
+		draggedCardIdx = idx;
+		e.dataTransfer.effectAllowed = 'move';
+		setTimeout(() => {
+			const card = document.querySelectorAll('.sfdl-card')[idx];
+			if (card) card.classList.add('dragging');
+		}, 0);
+	}
 
-function cardDragEnd(e) {
-  draggedCardIdx = null;
-  document.querySelectorAll('.sfdl-card').forEach(c => c.classList.remove('dragging', 'drag-target'));
-}
+	function cardDragEnd(e) {
+		draggedCardIdx = null;
+		document.querySelectorAll('.sfdl-card').forEach(c => c.classList.remove('dragging', 'drag-target'));
+	}
 
-/* ── Full-window Drag & Drop ── */
-let dragCounter = 0;
-document.addEventListener('dragenter', e => {
-  e.preventDefault();
-  dragCounter++;
-  document.getElementById('drag-overlay').classList.add('active');
-});
-document.addEventListener('dragleave', e => {
-  e.preventDefault();
-  dragCounter--;
-  if (dragCounter <= 0) {
-    dragCounter = 0;
-    document.getElementById('drag-overlay').classList.remove('active');
-  }
-});
-document.addEventListener('dragover', e => e.preventDefault());
-document.addEventListener('drop', e => {
-  e.preventDefault();
-  dragCounter = 0;
-  document.getElementById('drag-overlay').classList.remove('active');
-  if (e.dataTransfer.files.length > 0) {
-    for (const f of e.dataTransfer.files) {
-      if (f.name.endsWith('.sfdl')) {
-        addContainer(f.name);
-      }
-    }
-    render();
-  }
-});
+	/* ── Full-window Drag & Drop ── */
+	let dragCounter = 0;
+	document.addEventListener('dragenter', e => {
+		e.preventDefault();
+		dragCounter++;
+		document.getElementById('drag-overlay').classList.add('active');
+	});
+	document.addEventListener('dragleave', e => {
+		e.preventDefault();
+		dragCounter--;
+		if (dragCounter <= 0) {
+			dragCounter = 0;
+			document.getElementById('drag-overlay').classList.remove('active');
+		}
+	});
+	document.addEventListener('dragover', e => e.preventDefault());
+	document.addEventListener('drop', e => {
+		e.preventDefault();
+		dragCounter = 0;
+		document.getElementById('drag-overlay').classList.remove('active');
+		if (e.dataTransfer.files.length > 0) {
+			for (const f of e.dataTransfer.files) {
+				if (f.name.endsWith('.sfdl')) {
+					addContainer(f.name);
+				}
+			}
+			render();
+		}
+	});
 
-/* ── Settings View ── */
-function openSettings() {
-  document.getElementById('drop-zone').style.display = 'none';
-  document.getElementById('container-list').style.display = 'none';
-  document.getElementById('settings-view').classList.add('open');
-  window.scrollTo(0, 0);
-}
+	/* ── Settings View ── */
+	function openSettings() {
+		document.getElementById('drop-zone').style.display = 'none';
+		document.getElementById('container-list').style.display = 'none';
+		document.getElementById('settings-view').classList.add('open');
+		window.scrollTo(0, 0);
+	}
 
-function closeSettings() {
-  document.getElementById('settings-view').classList.remove('open');
-  render();
-}
+	function closeSettings() {
+		document.getElementById('settings-view').classList.remove('open');
+		render();
+	}
 
-/* ── Init with demo data ── */
-function loadDemo() {
-  containers = JSON.parse(JSON.stringify(DEMO_CONTAINERS));
-  render();
-}
+	/* ── Init with demo data ── */
+	function loadDemo() {
+		containers = JSON.parse(JSON.stringify(DEMO_CONTAINERS));
+		render();
+	}
 
-// Start with demo data
-loadDemo();
+	// Start with demo data
+	loadDemo();
 
-/* ── Theme Toggle ── */
-function setTheme(mode) {
-  localStorage.setItem('rsfdl-theme', mode);
-  applyTheme(mode);
-}
+	/* ── Theme Toggle ── */
+	function setTheme(mode) {
+		localStorage.setItem('rsfdl-theme', mode);
+		applyTheme(mode);
+	}
 
-function applyTheme(mode) {
-  const root = document.documentElement;
-  root.removeAttribute('data-theme');
-  if (mode === 'light') root.setAttribute('data-theme', 'light');
-  else if (mode === 'dark') root.setAttribute('data-theme', 'dark');
-  // 'system' = no attribute, CSS media query handles it
+	function applyTheme(mode) {
+		const root = document.documentElement;
+		root.removeAttribute('data-theme');
+		if (mode === 'light') root.setAttribute('data-theme', 'light');
+		else if (mode === 'dark') root.setAttribute('data-theme', 'dark');
+		// 'system' = no attribute, CSS media query handles it
 
-  document.querySelectorAll('#theme-toggle button').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.themeBtn === mode);
-  });
-}
+		document.querySelectorAll('#theme-toggle button').forEach(btn => {
+			btn.classList.toggle('active', btn.dataset.themeBtn === mode);
+		});
+	}
 
-// Restore saved theme
-const savedTheme = localStorage.getItem('rsfdl-theme') || 'system';
-applyTheme(savedTheme);
+	// Restore saved theme
+	const savedTheme = localStorage.getItem('rsfdl-theme') || 'system';
+	applyTheme(savedTheme);
 
-// Init Lucide icons
-lucide.createIcons();
+	// Init Lucide icons
+	lucide.createIcons();
 </script>
 </body>
 </html>

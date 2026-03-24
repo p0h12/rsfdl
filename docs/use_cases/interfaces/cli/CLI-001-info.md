@@ -23,24 +23,24 @@
 | Parameter         | Pflicht | Standard | Beschreibung                                 |
 |-------------------|---------|----------|----------------------------------------------|
 | `<datei.sfdl>`    | ja      | —        | Pfad zur SFDL-Datei                          |
-| `--password <pw>` | nein    | CFG      | Passwort fuer verschluesselte Container      |
+| `--password <pw>` | nein    | CFG      | Passwort für verschlüsselte Container        |
 | `--json`          | nein    | false    | Ausgabe als JSON statt menschenlesbarem Text |
 
 ## Main Success Scenario
 
 1. Benutzer ruft `rsfdl info <datei.sfdl>` auf.
-2. System oeffnet und parst die SFDL-Datei (-> SFDL-001).
+2. System öffnet und parst die SFDL-Datei (-> SFDL-001).
 3. System gibt Container-Metadaten auf stdout aus.
 
 ## Alternative Flows
 
-### A1: Container verschluesselt
+### A1: Container verschlüsselt
 
 **Trigger:** Container hat Encrypted=true (Schritt 2)
 **Flow:**
 
-1. System ermittelt das Passwort und entschluesselt den Container (-> include CLI-004).
-2. Use Case faehrt mit Schritt 3 fort.
+1. System ermittelt das Passwort und entschlüsselt den Container (-> include CLI-004).
+2. Use Case fährt mit Schritt 3 fort.
 
 ### A2: Datei nicht gefunden
 
@@ -50,7 +50,7 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 1.
 
-### A3: Ungueltiges SFDL-Format
+### A3: Ungültiges SFDL-Format
 
 **Trigger:** Datei kann nicht geparst werden (Schritt 2)
 **Flow:**
@@ -74,22 +74,22 @@
 
 Standard-Ausgabe als key-value-Text. Mit `--json`: JSON-Objekt auf stdout.
 
-Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Parameter-Prioritaet (BR-CLI-006), Exit-Codes (BR-CLI-007).
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Parameter-Priorität (BR-CLI-006), Exit-Codes (BR-CLI-007).
 
 ## Ausgabe (Standard)
 
 Key-value-Paare auf stdout, eines pro Zeile:
 
-| Feld       | Beschreibung                                                  |
-|------------|---------------------------------------------------------------|
-| Container  | Beschreibung / Release-Name                                   |
-| Uploader   | Uploader-Name                                                 |
-| Host       | Hostname:Port (Protokoll)                                     |
-| Version    | v2 oder v3                                                    |
-| Encrypted  | no / yes (auto-decrypted) / yes (not decrypted)               |
-| Packages   | Anzahl Pakete                                                 |
-| Files      | Anzahl Dateien                                                |
-| Size       | Gesamtgroesse (menschenlesbar)                                |
+| Feld      | Beschreibung                                    |
+|-----------|-------------------------------------------------|
+| Container | Beschreibung / Release-Name                     |
+| Uploader  | Uploader-Name                                   |
+| Host      | Hostname:Port (Protokoll)                       |
+| Version   | v2 oder v3                                      |
+| Encrypted | no / yes (auto-decrypted) / yes (not decrypted) |
+| Packages  | Anzahl Pakete                                   |
+| Files     | Anzahl Dateien                                  |
+| Size      | Gesamtgrösse (menschenlesbar)                   |
 
 ## Ausgabe (JSON)
 
@@ -102,10 +102,10 @@ JSON-Objekt auf stdout mit folgenden Feldern:
 | host        | string  | FTP-Hostname                       |
 | port        | number  | FTP-Port                           |
 | protocol    | string  | Protokoll (z.B. "FTP")             |
-| encrypted   | boolean | Ob der Container verschluesselt war |
+| encrypted   | boolean | Ob der Container verschlüsselt war |
 | packages    | number  | Anzahl Pakete                      |
 | total_files | number  | Anzahl Dateien                     |
-| total_bytes | number  | Gesamtgroesse in Bytes             |
+| total_bytes | number  | Gesamtgrösse in Bytes              |
 
 ## Exit-Codes
 
@@ -113,6 +113,6 @@ JSON-Objekt auf stdout mit folgenden Feldern:
 |------|------------------------------------------|
 | 0    | Erfolg                                   |
 | 1    | Datei nicht gefunden / nicht lesbar      |
-| 2    | Ungueltiges SFDL-Format                  |
+| 2    | Ungültiges SFDL-Format                   |
 | 3    | Passwort erforderlich (nicht-interaktiv) |
 | 4    | Falsches Passwort                        |

@@ -16,11 +16,11 @@
 
 ## Main Success Scenario
 
-1. System laedt die Ausschlussmuster aus den Einstellungen (CFG-001).
-2. Fuer jeden FileEntry prueft das System den Dateinamen gegen alle Muster:
-    - System fuehrt einen case-insensitiven Glob-Match des Dateinamens gegen jedes Muster durch.
+1. System lädt die Ausschlussmuster aus den Einstellungen (CFG-001).
+2. Für jeden FileEntry prüft das System den Dateinamen gegen alle Muster:
+    - System führt einen case-insensitiven Glob-Match des Dateinamens gegen jedes Muster durch.
     - Wenn mindestens ein Muster passt: FileEntry wird als `excluded=true` markiert.
-3. System gibt die markierte Liste zurueck.
+3. System gibt die markierte Liste zurück.
 
 ## Alternative Flows
 
@@ -47,7 +47,7 @@
 
 ### BR-DL-003: Glob-Syntax
 
-- Unterstuetzte Wildcards: `*` (beliebig viele Zeichen), `?` (ein Zeichen)
+- Unterstützte Wildcards: `*` (beliebig viele Zeichen), `?` (ein Zeichen)
 - Matching ist case-insensitiv
 - Muster werden nur auf den Dateinamen angewendet, nicht auf den Pfad
 
@@ -55,11 +55,11 @@
 
 - Default-Muster (bei Erstinstallation): `*.nfo`, `*.jpg`, `*.png`, `*.txt`, `*sample*`
 - Da Matching case-insensitiv ist, deckt `*sample*` auch `*Sample*` ab.
-- Actor kann Muster hinzufuegen und entfernen (CFG-001).
+- Actor kann Muster hinzufügen und entfernen (CFG-001).
 
-### BR-DL-005: CLI-Ueberschreibung
+### BR-DL-005: CLI-Überschreibung
 
-- CLI-Parameter `--exclude <pattern>` fuegt Muster zusaetzlich zu den gespeicherten Mustern hinzu
+- CLI-Parameter `--exclude <pattern>` fügt Muster zusätzlich zu den gespeicherten Mustern hinzu
 - CLI-Parameter `--no-exclude` deaktiviert alle Ausschlussmuster (auch gespeicherte)
 
 ## Input

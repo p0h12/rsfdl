@@ -5,7 +5,7 @@
 **Use Case ID:** CR-002
 **Use Case Name:** FTP-Verzeichnis auflisten
 **Primary Actor:** System
-**Goal:** Alle Dateien eines FTP-Verzeichnisses rekursiv als FileItems erfassen, um eine FileList fuer den Container zu erstellen.
+**Goal:** Alle Dateien eines FTP-Verzeichnisses rekursiv als FileItems erfassen, um eine FileList für den Container zu erstellen.
 **Requirements:** FR-21
 **Status:** Stable
 
@@ -19,13 +19,13 @@
 1. System verbindet sich zum FTP-Server mit den Credentials aus dem Container.
 2. System navigiert zum angegebenen Verzeichnis.
 3. System listet das Verzeichnis rekursiv auf.
-4. Fuer jede Datei erfasst das System:
+4. Für jede Datei erfasst das System:
     - `file_name`: Dateiname
-    - `full_path`: Vollstaendiger Pfad auf dem Server
-    - `file_size`: Dateigroesse in Bytes
-5. System loest die Verzeichnisstruktur auf (`directory_root`, `directory_path`).
+    - `full_path`: Vollständiger Pfad auf dem Server
+    - `file_size`: Dateigrösse in Bytes
+5. System löst die Verzeichnisstruktur auf (`directory_root`, `directory_path`).
 6. System zeigt Fortschritt an (Anzahl gefundene Dateien).
-7. System gibt die Dateiliste als FileItems an CR-001 zurueck.
+7. System gibt die Dateiliste als FileItems an CR-001 zurück.
 
 ## Alternative Flows
 
@@ -58,10 +58,10 @@
 
 ### A4: Leeres Verzeichnis
 
-**Trigger:** Verzeichnis enthaelt keine Dateien (Schritt 3)
+**Trigger:** Verzeichnis enthält keine Dateien (Schritt 3)
 **Flow:**
 
-1. Verzeichnis enthaelt keine Dateien.
+1. Verzeichnis enthält keine Dateien.
 2. System meldet: "Keine Dateien gefunden in [Pfad]."
 3. Use Case endet mit Fehler.
 
@@ -80,8 +80,8 @@
 
 ### BR-CR-003: Rekursive Auflistung
 
-- Unterverzeichnisse werden vollstaendig rekursiv durchlaufen.
-- Verzeichniseintraege selbst werden nicht als FileItems erfasst, nur Dateien.
+- Unterverzeichnisse werden vollständig rekursiv durchlaufen.
+- Verzeichniseinträge selbst werden nicht als FileItems erfasst, nur Dateien.
 
 ### BR-CR-004: Verbindungsmanagement
 

@@ -1,30 +1,30 @@
-# Use Case: Container verschluesseln
+# Use Case: Container verschlüsseln
 
 ## Overview
 
 **Use Case ID:** CR-004
-**Use Case Name:** Container verschluesseln
+**Use Case Name:** Container verschlüsseln
 **Primary Actor:** System
-**Goal:** Alle sensitiven Felder eines Containers mit AES-128-CBC verschluesseln.
+**Goal:** Alle sensitiven Felder eines Containers mit AES-128-CBC verschlüsseln.
 **Requirements:** FR-23
 **Status:** Stable
 
 ## Preconditions
 
-- Ein vollstaendig aufgebauter Container mit Klartextwerten liegt vor.
-- Ein Passwort ist verfuegbar.
-- Wird von CR-001 aufgerufen, wenn ein Verschluesselungspasswort angegeben wurde.
+- Ein vollständig aufgebauter Container mit Klartextwerten liegt vor.
+- Ein Passwort ist verfügbar.
+- Wird von CR-001 aufgerufen, wenn ein Verschlüsselungspasswort angegeben wurde.
 
 ## Main Success Scenario
 
-1. System leitet den AES-Schluessel aus dem Passwort ab (-> BR-SFDL-003).
-2. Fuer jedes zu verschluesselnde Feld:
-   2a. System generiert einen kryptographisch zufaelligen IV.
-   2b. System verschluesselt den Klartextwert mit AES-128-CBC.
+1. System leitet den AES-Schlüssel aus dem Passwort ab (-> BR-SFDL-003).
+2. Für jedes zu verschlüsselnde Feld:
+   2a. System generiert einen kryptographisch zufälligen IV.
+   2b. System verschlüsselt den Klartextwert mit AES-128-CBC.
    2c. System kodiert das Ergebnis als Base64.
-3. System ersetzt die Klartextwerte im Container durch die verschluesselten Werte.
+3. System ersetzt die Klartextwerte im Container durch die verschlüsselten Werte.
 4. System setzt `Encrypted=true` im Container.
-5. System gibt den verschluesselten Container an CR-001 zurueck.
+5. System gibt den verschlüsselten Container an CR-001 zurück.
 
 ## Alternative Flows
 
@@ -41,43 +41,43 @@
 
 ### Success Postconditions
 
-- Alle sensitiven Felder sind AES-128-CBC-verschluesselt.
+- Alle sensitiven Felder sind AES-128-CBC-verschlüsselt.
 - Container-Flag `Encrypted=true` ist gesetzt.
 
 ### Failure Postconditions
 
-- Container bleibt unverschluesselt.
+- Container bleibt unverschlüsselt.
 - Fehlermeldung mit Ursache liegt vor.
 
 ## Business Rules
 
-### BR-CR-007: Verschluesselte Felder
+### BR-CR-007: Verschlüsselte Felder
 
-Folgende Felder werden verschluesselt:
+Folgende Felder werden verschlüsselt:
 
 - Host, Username, Password
 - Dateinamen, Pfade, Beschreibung
 
-Folgende Felder bleiben unverschluesselt:
+Folgende Felder bleiben unverschlüsselt:
 
 - Port, FileSize, HashType
 
-### BR-CR-008: Schluesselableitung
+### BR-CR-008: Schlüsselableitung
 
-- Identischer Algorithmus wie bei der Entschluesselung (BR-SFDL-003):
+- Identischer Algorithmus wie bei der Entschlüsselung (BR-SFDL-003):
     - AES-128-CBC, MD5-Key-Derivation, PKCS7-Padding
-- Round-Trip mit SFDL-002: Verschluesselter Container muss mit demselben Passwort entschluesselt werden koennen.
+- Round-Trip mit SFDL-002: Verschlüsselter Container muss mit demselben Passwort entschlüsselt werden können.
 
 ### BR-CR-009: IV-Generierung
 
-- Jedes Feld erhaelt einen eigenen kryptographisch zufaelligen IV.
-- Der IV wird nicht separat gespeichert -- er ist als Praefix im verschluesselten Wert enthalten (SFDL-Konvention).
+- Jedes Feld erhält einen eigenen kryptographisch zufälligen IV.
+- Der IV wird nicht separat gespeichert -- er ist als Präfix im verschlüsselten Wert enthalten (SFDL-Konvention).
 
 ## Input
 
-- `container`: Unverschluesselter Container
+- `container`: Unverschlüsselter Container
 - `password`: Klartext-Passwort
 
 ## Output
 
-- `Container` mit verschluesselten Feldern und `Encrypted=true`
+- `Container` mit verschlüsselten Feldern und `Encrypted=true`
