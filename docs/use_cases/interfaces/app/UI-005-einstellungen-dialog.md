@@ -99,7 +99,7 @@
 
 ### BR-UI-013: Inline-Validierung
 
-Eingabefelder begrenzen Werte gemaess BR-CFG-003:
+Eingabefelder begrenzen Werte gemaess BR-CFG-002:
 
 - Max. parallele Downloads: Spinner (1-20), Werte werden auf gueltigen Bereich geclamp't.
 - Max. Geschwindigkeit: Eingabefeld (KB/s), >= 0, 0 = unbegrenzt.

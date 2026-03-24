@@ -94,7 +94,7 @@
 ### BR-CLI-016: Ausgabeformat
 
 - `config show` gibt key=value-Format auf stdout aus.
-- Passwoerter werden maskiert: nur `(N entries)` angezeigt (-> CFG-001, BR-CFG-005).
+- Passwoerter werden maskiert: nur `(N entries)` angezeigt (-> CFG-001, BR-CFG-003).
 - Warnings und Fehler gehen auf stderr.
 
 Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Exit-Codes (BR-CLI-007).

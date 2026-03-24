@@ -16,7 +16,7 @@
 
 1. System prueft die Umgebungsvariable `RSFDL_CONFIG`.
 2. Variable ist nicht gesetzt.
-3. System ermittelt den Plattform-Standardpfad (-> BR-CFG-005).
+3. System ermittelt den Plattform-Standardpfad (-> BR-CFG-004).
 4. System gibt den Pfad zurueck.
 
 ## Alternative Flows
@@ -41,13 +41,13 @@
 
 ## Business Rules
 
-### BR-CFG-005: Plattform-Standardpfade
+### BR-CFG-004: Plattform-Standardpfade
 
 - Linux: `~/.config/rsfdl/settings.toml`
 - macOS: `~/Library/Application Support/rsfdl/settings.toml`
 - Windows: `%APPDATA%\rsfdl\settings.toml`
 
-### BR-CFG-006: Umgebungsvariable
+### BR-CFG-005: Umgebungsvariable
 
 - `RSFDL_CONFIG` ueberschreibt den Plattform-Standardpfad.
 - Wird von CLI und Desktop-App respektiert.

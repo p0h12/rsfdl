@@ -20,20 +20,20 @@
 1. System erhaelt den Konfigurationspfad (-> CFG-002).
 2. System prüft, ob die Konfigurationsdatei existiert.
 3. System liest und parst die TOML-Datei.
-4. System validiert die Werte (-> BR-CFG-003).
+4. System validiert die Werte (-> BR-CFG-002).
 5. System erstellt ein Settings-Objekt und gibt es zurück.
 
 ### Variante B: Einstellungen ändern
 
 1. Actor ändert einen oder mehrere Einstellungswerte.
-2. System validiert die neuen Werte (-> BR-CFG-003).
+2. System validiert die neuen Werte (-> BR-CFG-002).
 3. System aktualisiert das Settings-Objekt im Speicher.
 4. System schreibt die aktualisierte TOML-Datei auf Disk.
 
 ### Variante C: Einstellungen zurücksetzen
 
 1. Actor fordert einen Reset auf Standardwerte an.
-2. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-002).
+2. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-001).
 3. System schreibt die Standardwerte auf Disk.
 
 ## Alternative Flows
@@ -43,7 +43,7 @@
 **Trigger:** Datei existiert nicht (Variante A, Schritt 2)
 **Flow:**
 
-1. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-002).
+1. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-001).
 2. System schreibt die Standardwerte als neue Datei auf Disk.
 3. Use Case endet erfolgreich mit Standardwerten.
 
@@ -54,7 +54,7 @@
 
 1. System meldet: "Konfigurationsdatei beschädigt. Standardwerte werden verwendet."
 2. System benennt die beschädigte Datei als `.bak` um.
-3. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-002).
+3. System erstellt ein Settings-Objekt mit Standardwerten (-> BR-CFG-001).
 4. Use Case endet erfolgreich mit Standardwerten.
 
 ### A3: Validierung beim Laden fehlgeschlagen
@@ -62,7 +62,7 @@
 **Trigger:** Einzelne Werte liegen ausserhalb der gültigen Bereiche (Variante A, Schritt 4)
 **Flow:**
 
-1. System ersetzt ungültige Werte durch die jeweiligen Standardwerte (-> BR-CFG-002).
+1. System ersetzt ungueltige Werte durch die jeweiligen Standardwerte (-> BR-CFG-001).
 2. System meldet: "Ungültige Werte korrigiert: [Feldliste]."
 3. Use Case fährt mit Schritt 5 fort.
 
