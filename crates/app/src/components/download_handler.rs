@@ -189,8 +189,11 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 						start_download(state, next_id);
 					}
 				}
-				// Extraction events (deferred)
-				ProgressEvent::ExtractionStarted { .. }
+				// Verification & extraction events (deferred)
+				ProgressEvent::HashVerified { .. }
+				| ProgressEvent::HashMismatch { .. }
+				| ProgressEvent::HashNoHash { .. }
+				| ProgressEvent::ExtractionStarted { .. }
 				| ProgressEvent::ExtractionProgress { .. }
 				| ProgressEvent::ExtractionCompleted { .. }
 				| ProgressEvent::ExtractionFailed { .. }

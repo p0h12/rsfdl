@@ -24,6 +24,12 @@ pub enum ProgressEvent {
 	},
 	/// A file download was cancelled.
 	Cancelled { item_id: Uuid },
+	/// POST-001: Hash verification passed.
+	HashVerified { item_id: Uuid, hash_type: String, hash: String },
+	/// POST-001: Hash verification failed (mismatch).
+	HashMismatch { item_id: Uuid, hash_type: String, expected: String, actual: String },
+	/// POST-001: No hash available for verification.
+	HashNoHash { item_id: Uuid },
 	/// All downloads finished.
 	AllDone {
 		total_files: u32,

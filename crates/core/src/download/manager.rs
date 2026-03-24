@@ -12,7 +12,8 @@ use crate::download::throttle::Throttle;
 use crate::error::DownloadError;
 use crate::ftp::client::FtpClient;
 use crate::settings::Settings;
-use crate::sfdl::models::SfdlContainer;
+use crate::sfdl::models::{HashType, SfdlContainer};
+use crate::verification::{self, VerificationOutcome};
 
 /// Result summary after all downloads complete.
 pub struct DownloadResult {
@@ -300,18 +301,21 @@ impl DownloadManager {
 						.await;
 					throttle_handle.finish();
 
-					client.disconnect().await;
-
 					match result {
 						Ok(_) => {
+							// POST-001: Hash verification after successful download
+							let verification = verify_downloaded_file(&item, &mut client, &tx).await;
+							client.disconnect().await;
 							let _ = tx.send(ProgressEvent::Completed { item_id: item.id });
-							return DownloadStatus::Completed;
+							return if verification { DownloadStatus::Completed } else { DownloadStatus::Failed };
 						}
 						Err(DownloadError::Cancelled) => {
+							client.disconnect().await;
 							let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
 							return DownloadStatus::Cancelled;
 						}
 						Err(e) => {
+							client.disconnect().await;
 							if e.is_retryable() && attempt < max_retries {
 								attempt += 1;
 								let delay = calculate_retry_delay(retry_delay, attempt, e.is_server_full());
@@ -371,6 +375,91 @@ impl DownloadManager {
 			cancelled,
 			skipped,
 		})
+	}
+}
+
+/// POST-001: Verify a downloaded file's hash.
+///
+/// 1. If the container has a hash → verify locally.
+/// 2. If no container hash → query server via FEAT/XMD5/XSHA1/XCRC (A1 fallback).
+/// 3. If no hash available at all → NoHash.
+///
+/// Returns `true` if verification passed or no hash was available,
+/// `false` if hash mismatch (sends HashMismatch + Failed events).
+async fn verify_downloaded_file(item: &DownloadItem, client: &mut FtpClient, tx: &mpsc::UnboundedSender<ProgressEvent>) -> bool {
+	let fi = &item.file_item;
+	let has_container_hash = fi.hash_type != HashType::None && !fi.file_hash.is_empty();
+
+	if has_container_hash {
+		// Main success scenario: verify against container hash
+		match verification::verify_file(&item.local_path, fi.hash_type, &fi.file_hash).await {
+			Ok(v) => return emit_verification_result(item.id, &v, tx),
+			Err(e) => {
+				tracing::warn!(item_id = %item.id, "Hash verification IO error: {e}");
+				return true; // IO error during verification is not a download failure
+			}
+		}
+	}
+
+	// A1: No container hash → try server-side hash fallback
+	let caps = client.hash_capabilities().await;
+	let server_hash_type = verification::select_strongest_hash(caps.supports_sha1, caps.supports_md5, caps.supports_crc);
+
+	let Some(hash_type) = server_hash_type else {
+		// No hash capability → NoHash
+		let _ = tx.send(ProgressEvent::HashNoHash { item_id: item.id });
+		return true;
+	};
+
+	let Some(server_hash) = client.server_hash(&fi.full_path, hash_type).await else {
+		let _ = tx.send(ProgressEvent::HashNoHash { item_id: item.id });
+		return true;
+	};
+
+	match verification::verify_file_with_server_hash(&item.local_path, hash_type, &server_hash).await {
+		Ok(v) => emit_verification_result(item.id, &v, tx),
+		Err(e) => {
+			tracing::warn!(item_id = %item.id, "Server hash verification IO error: {e}");
+			true
+		}
+	}
+}
+
+/// Emit the appropriate ProgressEvent for a verification result.
+/// Returns true if Valid or NoHash, false if Invalid.
+fn emit_verification_result(item_id: Uuid, v: &verification::HashVerification, tx: &mpsc::UnboundedSender<ProgressEvent>) -> bool {
+	match v.outcome {
+		VerificationOutcome::Valid => {
+			let _ = tx.send(ProgressEvent::HashVerified {
+				item_id,
+				hash_type: format!("{:?}", v.hash_type),
+				hash: v.actual.clone(),
+			});
+			true
+		}
+		VerificationOutcome::Invalid => {
+			tracing::warn!(
+				item_id = %item_id,
+				expected = %v.expected,
+				actual = %v.actual,
+				"Hash mismatch for downloaded file"
+			);
+			let _ = tx.send(ProgressEvent::HashMismatch {
+				item_id,
+				hash_type: format!("{:?}", v.hash_type),
+				expected: v.expected.clone(),
+				actual: v.actual.clone(),
+			});
+			let _ = tx.send(ProgressEvent::Failed {
+				item_id,
+				error: format!("Hash mismatch ({:?}): expected {}, got {}", v.hash_type, v.expected, v.actual),
+			});
+			false
+		}
+		VerificationOutcome::NoHash => {
+			let _ = tx.send(ProgressEvent::HashNoHash { item_id });
+			true
+		}
 	}
 }
 

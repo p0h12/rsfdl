@@ -10,7 +10,7 @@ use uuid::Uuid;
 
 use crate::download::progress::ProgressEvent;
 use crate::error::{DownloadError, FtpError};
-use crate::sfdl::models::{Connection, SslProtocol};
+use crate::sfdl::models::{Connection, HashType, SslProtocol};
 
 /// Entry from an FTP directory listing.
 #[derive(Debug, Clone)]
@@ -166,8 +166,64 @@ impl FtpClient {
 		Ok(total_written)
 	}
 
+	/// POST-001 / BR-POST-002: Query server FEAT capabilities.
+	///
+	/// Returns which hash commands the server supports (XMD5, XSHA1, XCRC).
+	pub async fn hash_capabilities(&mut self) -> HashCapabilities {
+		let features = match self.stream.feat().await {
+			Ok(f) => f,
+			Err(e) => {
+				tracing::debug!("FEAT command failed: {e}");
+				return HashCapabilities::default();
+			}
+		};
+
+		HashCapabilities {
+			supports_md5: features.contains_key("MD5") || features.contains_key("XMD5"),
+			supports_sha1: features.contains_key("XSHA1") || features.contains_key("SHA1"),
+			supports_crc: features.contains_key("XCRC") || features.contains_key("CRC"),
+		}
+	}
+
+	/// POST-001 / A1: Query a server-side hash for a remote file.
+	///
+	/// Sends XMD5, XSHA1, or XCRC command depending on hash_type.
+	/// Returns the hex hash string on success, or None if the server rejects the command.
+	pub async fn server_hash(&mut self, remote_path: &str, hash_type: HashType) -> Option<String> {
+		let command = match hash_type {
+			HashType::MD5 => format!("XMD5 {remote_path}"),
+			HashType::SHA1 => format!("XSHA1 {remote_path}"),
+			HashType::CRC => format!("XCRC {remote_path}"),
+			HashType::None => return None,
+		};
+
+		let expected = &[suppaftp::Status::RequestedFileActionOk, suppaftp::Status::CommandOk];
+
+		match self.stream.custom_command(&command, expected).await {
+			Ok(resp) => {
+				let body = String::from_utf8_lossy(&resp.body);
+				let hash = body.trim().to_string();
+				// Some servers return "hash path", extract just the hash
+				let hash = hash.split_whitespace().next().unwrap_or("").to_string();
+				if hash.is_empty() { None } else { Some(hash) }
+			}
+			Err(e) => {
+				tracing::debug!("Server hash command failed: {e}");
+				None
+			}
+		}
+	}
+
 	/// Gracefully disconnect.
 	pub async fn disconnect(mut self) {
 		let _ = self.stream.quit().await;
 	}
+}
+
+/// POST-001 / BR-POST-002: Server hash capabilities from FEAT.
+#[derive(Debug, Clone, Default)]
+pub struct HashCapabilities {
+	pub supports_md5: bool,
+	pub supports_sha1: bool,
+	pub supports_crc: bool,
 }

@@ -8,6 +8,7 @@ pub mod ftp;
 pub mod selection;
 pub mod settings;
 pub mod sfdl;
+pub mod verification;
 
 pub fn format_bytes(bytes: u64) -> String {
 	const KB: u64 = 1024;

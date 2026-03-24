@@ -239,7 +239,10 @@ pub async fn run(
 					final_result = Some((total_files, completed, failed, cancelled, skipped));
 					break;
 				}
-				ProgressEvent::ExtractionStarted { .. }
+				ProgressEvent::HashVerified { .. }
+				| ProgressEvent::HashMismatch { .. }
+				| ProgressEvent::HashNoHash { .. }
+				| ProgressEvent::ExtractionStarted { .. }
 				| ProgressEvent::ExtractionProgress { .. }
 				| ProgressEvent::ExtractionCompleted { .. }
 				| ProgressEvent::ExtractionFailed { .. }
