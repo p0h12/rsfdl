@@ -55,12 +55,49 @@
 
 ## Alternative Flows
 
-### A1: Passwort erforderlich
+### A1: Passwort erforderlich (nicht-interaktiv)
 
-**Trigger:** Container verschluesselt, kein Passwort passt (Schritt 2)
-**Flow:** Wie CLI-001 A1/A5.
+**Trigger:** Container ist verschluesselt, kein Passwort passt, kein interaktives Terminal (Schritt 2)
+**Flow:**
 
-### A2: Nicht genug Speicherplatz
+1. System gibt Fehlermeldung auf stderr aus.
+2. Exit-Code 3.
+
+### A2: Falsches Passwort
+
+**Trigger:** `--password` angegeben, aber falsches Passwort (Schritt 2)
+**Flow:**
+
+1. System gibt Fehlermeldung auf stderr aus.
+2. Exit-Code 4.
+
+### A3: Datei nicht gefunden
+
+**Trigger:** SFDL-Datei existiert nicht (Schritt 2)
+**Flow:**
+
+1. System gibt Fehlermeldung auf stderr aus.
+2. Exit-Code 1.
+
+### A4: Ungueltiges SFDL-Format
+
+**Trigger:** Datei kann nicht geparst werden (Schritt 2)
+**Flow:**
+
+1. System gibt Fehlermeldung auf stderr aus.
+2. Exit-Code 2.
+
+### A5: Interaktiver Passwort-Prompt
+
+**Trigger:** Container ist verschluesselt, kein Passwort passt, stderr ist ein Terminal (Schritt 2)
+**Flow:**
+
+1. System zeigt Passwort-Prompt auf stdin.
+2. Benutzer gibt Passwort ein.
+3. System entschluesselt den Container.
+4. Use Case faehrt mit Schritt 3 fort.
+
+### A6: Nicht genug Speicherplatz
 
 **Trigger:** `--strict-disk-check` aktiv und zu wenig Platz (Schritt 6)
 **Flow:**
@@ -68,7 +105,7 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 6.
 
-### A3: Teilweise fehlgeschlagen
+### A7: Teilweise fehlgeschlagen
 
 **Trigger:** Einige Dateien schlagen nach Retries fehl (Schritt 7)
 **Flow:**
@@ -76,7 +113,7 @@
 1. System listet fehlgeschlagene Dateien in der Zusammenfassung.
 2. Exit-Code 10.
 
-### A4: Alle Downloads fehlgeschlagen
+### A8: Alle Downloads fehlgeschlagen
 
 **Trigger:** Keine Datei konnte heruntergeladen werden (Schritt 7)
 **Flow:**
@@ -84,7 +121,7 @@
 1. System listet alle Fehler in der Zusammenfassung.
 2. Exit-Code 11.
 
-### A5: Abbruch durch Signal
+### A9: Abbruch durch Signal
 
 **Trigger:** Benutzer sendet SIGINT (Ctrl+C) oder SIGTERM (Schritt 7)
 **Flow:**
@@ -93,7 +130,7 @@
 2. SIGINT innerhalb 2s erneut: Sofortiger Abbruch.
 3. Exit-Code 12.
 
-### A6: CLI-Parameter ueberschreiben Settings
+### A10: CLI-Parameter ueberschreiben Settings
 
 **Trigger:** Benutzer gibt `--threads`, `--retries`, etc. an (Schritt 1)
 **Flow:**
