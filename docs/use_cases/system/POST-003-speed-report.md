@@ -5,7 +5,7 @@
 **Use Case ID:** POST-003
 **Use Case Name:** Speed-Report generieren
 **Primary Actor:** Benutzer
-**Goal:** Nach Abschluss einer Download-Session einen formatierten BBCode-Report generieren.
+**Goal:** Nach Abschluss einer Download-Session einen formatierten Report generieren.
 **Requirements:** FR-18
 **Status:** Tested
 
@@ -15,56 +15,82 @@
 
 ## Main Success Scenario
 
-1. Actor fordert einen Speed-Report an.
-2. System sammelt die Statistiken der DownloadSession:
+1. Download-Session ist abgeschlossen.
+2. System sammelt die Statistiken der Session:
+    - Container-Name und Uploader
     - Gesamtgrösse (heruntergeladene Bytes)
     - Gesamtdauer (Start bis Ende)
     - Durchschnittsgeschwindigkeit
-    - Anzahl Dateien (erfolgreich / fehlgeschlagen / übersprungen)
-3. System lädt das BBCode-Template aus den Einstellungen (→ BR-POST-006).
+    - Anzahl Dateien (total / erfolgreich / fehlgeschlagen / übersprungen)
+    - Max. Threads
+3. System lädt das Template aus den Einstellungen (`speedreport_template`) (→ BR-POST-006).
 4. System ersetzt die Template-Variablen durch die berechneten Werte.
-5. System gibt den gerenderten Report-Text zurück.
+5. System schreibt den Report als `speedreport.txt` ins Download-Verzeichnis.
 
 ## Alternative Flows
 
-### A1: Kein Template konfiguriert
+### A1: Leeres Template
 
-**Trigger:** Kein benutzerdefiniertes Template vorhanden (Schritt 3)
+**Trigger:** `speedreport_template` ist leer (Schritt 3)
 **Flow:**
 
 1. System verwendet das Standard-Template (→ BR-POST-006).
+
+### A2: Speed-Report deaktiviert
+
+**Trigger:** CLI-Flag `--no-speedreport` gesetzt
+**Flow:**
+
+1. Kein Report wird generiert.
 
 ## Postconditions
 
 ### Success Postconditions
 
-- Ein formatierter BBCode-Report liegt als String vor.
+- `speedreport.txt` liegt im Download-Verzeichnis.
 
 ### Failure Postconditions
 
-- Keine — der Report kann immer generiert werden (Fallback auf Standard-Template).
+- Schreibfehler wird als Warnung gemeldet. Download-Erfolg wird nicht beeinflusst.
 
 ## Business Rules
 
 ### BR-POST-006: Template-Variablen
 
-Das Standard-Template enthält BBCode-formatierte Zeilen mit Tool-Name, Dateizähler (total, OK, fehlgeschlagen), Gesamtgrösse, Dauer und Durchschnittsgeschwindigkeit.
+Standard-Template:
+
+```
+rsfdl v{{version}} speed report
+
+SFDL: {{container_name}}
+Uploader: {{uploader}}
+{{total_size_formatted}} in {{duration}} heruntergeladen - ⌀Speed: {{avg_speed_formatted}}
+{{total_files}} Dateien ({{completed_files}}✓ {{failed_files}}✗ {{skipped_files}}⊘)
+
+Besten Dank!
+```
 
 Verfügbare Variablen:
 
-- `{{username}}` — aus Einstellungen
-- `{{total_files}}`, `{{completed_files}}`, `{{failed_files}}`, `{{skipped_files}}`
-- `{{total_size_mb}}`, `{{total_size_gb}}`
-- `{{duration}}` — formatiert als `HH:MM:SS`
-- `{{avg_speed_mbps}}`, `{{avg_speed_kbps}}`
-- `{{max_threads}}`
+- `{{version}}` — Programm-Version (compile-time)
+- `{{uploader}}` — Uploader aus dem Container
 - `{{container_name}}` — Beschreibung aus dem Container
+- `{{total_files}}`, `{{completed_files}}`, `{{failed_files}}`, `{{skipped_files}}`
+- `{{total_size_formatted}}` — auto-formatiert (z.B. "5.0 GiB", "286.1 MiB")
+- `{{total_size_mb}}`, `{{total_size_gb}}` — numerisch mit 2 Dezimalstellen
+- `{{duration}}` — formatiert als `HH:MM:SS`
+- `{{avg_speed_formatted}}` — auto-formatiert (z.B. "11.68 MiB/s", "512.00 KiB/s")
+- `{{avg_speed_mbps}}`, `{{avg_speed_kbps}}` — numerisch mit 2 Dezimalstellen
+- `{{max_threads}}`
+
+Das Standard-Template wird als Default in `settings.speedreport_template` gesetzt und ist in der `settings.toml` sichtbar und editierbar.
 
 ## Input
 
-- `session: DownloadSession` — abgeschlossene Session
-- `template: String` — BBCode-Template
+- `stats: SessionStats` — Statistiken der abgeschlossenen Session
+- `template: String` — Template aus Einstellungen (`speedreport_template`)
 
 ## Output
 
-- `report: String` — gerenderter BBCode-Text
+- `speedreport.txt` im Download-Verzeichnis
+- `report: String` — gerenderter Report-Text (API)

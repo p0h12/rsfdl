@@ -50,7 +50,7 @@ enum Commands {
 		/// Max concurrent downloads
 		#[arg(short, long)]
 		threads: Option<u32>,
-		/// Max download speed in KB/s (0 = unlimited)
+		/// Max download speed in KiB/s (0 = unlimited)
 		#[arg(long)]
 		max_speed: Option<u32>,
 		/// Max retry attempts per file
@@ -68,6 +68,9 @@ enum Commands {
 		/// Delete archives after successful extraction
 		#[arg(long)]
 		delete_archives: bool,
+		/// Disable speed report generation
+		#[arg(long)]
+		no_speedreport: bool,
 		/// Exclude files matching glob pattern (can be repeated)
 		#[arg(long)]
 		exclude: Vec<String>,
@@ -130,6 +133,7 @@ async fn main() {
 			strict_disk_check,
 			extract,
 			delete_archives,
+			no_speedreport,
 			exclude,
 			no_exclude,
 			quiet,
@@ -146,6 +150,7 @@ async fn main() {
 				strict_disk_check,
 				extract,
 				delete_archives,
+				no_speedreport,
 				&exclude,
 				no_exclude,
 				quiet,

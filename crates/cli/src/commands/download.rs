@@ -2,7 +2,7 @@
 
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::time::Instant;
+use std::time::{Duration, Instant};
 
 use indicatif::{MultiProgress, ProgressBar, ProgressStyle};
 use tokio::sync::mpsc;
@@ -34,6 +34,7 @@ pub async fn run(
 	strict_disk_check: bool,
 	extract: bool,
 	delete_archives: bool,
+	no_speedreport: bool,
 	cli_exclude: &[String],
 	no_exclude: bool,
 	quiet: bool,
@@ -95,9 +96,11 @@ pub async fn run(
 	}
 	rsfdl_core::container::filter_container(&mut container, &selection);
 
-	// Count files
+	// Count files and capture metadata for speed report
 	let file_count: usize = container.packages.iter().map(|p| p.file_list.len()).sum();
 	let total_bytes: u64 = container.packages.iter().flat_map(|p| p.file_list.iter()).map(|f| f.file_size).sum();
+	let container_name = container.description.clone();
+	let uploader = container.uploader.clone();
 
 	if !quiet {
 		eprintln!("Connecting to {}:{}...", container.connection.host, container.connection.port);
@@ -264,6 +267,11 @@ pub async fn run(
 			run_extraction(&settings, quiet).await;
 		}
 
+		// POST-003: Speed report
+		if !no_speedreport {
+			write_speedreport(&settings, &container_name, &uploader, total_files, completed, failed, skipped, total_bytes, elapsed);
+		}
+
 		// Determine exit code per BR-CLI-007
 		let exit_code = if cancelled > 0 {
 			EXIT_SIGNAL_ABORT // A7: Signal abort
@@ -296,6 +304,40 @@ pub async fn run(
 			eprintln!("Error: {}", e);
 			std::process::exit(1);
 		}
+	}
+}
+
+/// POST-003: Generate speed report and write to download directory.
+#[allow(clippy::too_many_arguments)]
+fn write_speedreport(
+	settings: &rsfdl_core::settings::Settings,
+	container_name: &str,
+	uploader: &str,
+	total_files: u32,
+	completed: u32,
+	failed: u32,
+	skipped: u32,
+	total_bytes: u64,
+	duration: Duration,
+) {
+	let stats = rsfdl_core::speedreport::SessionStats {
+		total_files,
+		completed_files: completed,
+		failed_files: failed,
+		skipped_files: skipped,
+		total_bytes,
+		duration,
+		max_threads: settings.max_threads,
+		container_name: container_name.to_string(),
+		uploader: uploader.to_string(),
+	};
+
+	let report = rsfdl_core::speedreport::generate(&stats, &settings.speedreport_template);
+	let report_path = settings.download_directory.join("speedreport.txt");
+
+	match std::fs::write(&report_path, &report) {
+		Ok(()) => eprintln!("Speed report: {}", report_path.display()),
+		Err(e) => eprintln!("Warning: failed to write speed report: {}", e),
 	}
 }
 

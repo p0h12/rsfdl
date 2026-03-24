@@ -45,7 +45,7 @@ impl Default for Settings {
 			ftp_timeout_seconds: 30,
 			exclusion_patterns: vec!["*.nfo".into(), "*.jpg".into(), "*.png".into(), "*.txt".into(), "*sample*".into()],
 			auto_passwords: Vec::new(),
-			speedreport_template: String::new(),
+			speedreport_template: crate::speedreport::DEFAULT_TEMPLATE.to_string(),
 		}
 	}
 }
@@ -230,8 +230,8 @@ pub fn format_settings(path: &Path, settings: &Settings) -> String {
 		writeln!(out, "exclusion_patterns           = {}", settings.exclusion_patterns.join(", ")).unwrap();
 	}
 	writeln!(out, "auto_passwords               = ({} entries)", settings.auto_passwords.len()).unwrap();
-	if settings.speedreport_template.is_empty() {
-		writeln!(out, "speedreport_template         = (none)").unwrap();
+	if settings.speedreport_template == crate::speedreport::DEFAULT_TEMPLATE || settings.speedreport_template.is_empty() {
+		writeln!(out, "speedreport_template         = (default)").unwrap();
 	} else {
 		writeln!(out, "speedreport_template         = (custom)").unwrap();
 	}
@@ -261,7 +261,7 @@ mod tests {
 		assert_eq!(s.ftp_timeout_seconds, 30);
 		assert_eq!(s.exclusion_patterns, vec!["*.nfo", "*.jpg", "*.png", "*.txt", "*sample*"]);
 		assert!(s.auto_passwords.is_empty());
-		assert!(s.speedreport_template.is_empty());
+		assert_eq!(s.speedreport_template, crate::speedreport::DEFAULT_TEMPLATE);
 	}
 
 	// -------------------------------------------------------
@@ -637,7 +637,7 @@ mod tests {
 		let s = Settings::default();
 		let output = format_settings(path, &s);
 		assert!(output.contains("speedreport_template"));
-		assert!(output.contains("(none)"));
+		assert!(output.contains("(default)"));
 
 		let s2 = Settings {
 			speedreport_template: "custom template".into(),

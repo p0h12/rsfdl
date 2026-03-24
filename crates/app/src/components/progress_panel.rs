@@ -228,7 +228,7 @@ mod tests {
 			error: None,
 		};
 		let text = status_text(&fs);
-		assert!(text.contains("KB")); // 512 KB / 1.0 MB
+		assert!(text.contains("KiB")); // 512.0 KiB / 1.0 MiB
 	}
 
 	/// UI-003 | Status text for completed.
