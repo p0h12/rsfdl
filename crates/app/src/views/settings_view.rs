@@ -280,7 +280,7 @@ fn TagList(tags: Vec<String>, on_add: EventHandler<String>, on_remove: EventHand
 
 fn save_settings(mut state: AppState) {
 	let settings = state.settings.read().clone();
-	let path = rsfdl_core::settings::default_settings_path();
+	let path = rsfdl_core::settings::config_path();
 
 	if let Err(e) = rsfdl_core::settings::save(&path, &settings) {
 		state.error_message.set(Some(format!("Failed to save settings: {e}")));

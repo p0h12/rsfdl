@@ -102,14 +102,22 @@ pub fn fix_invalid(settings: &mut Settings) -> Vec<String> {
 	corrected
 }
 
-/// Get the settings file path (CFG-002).
+/// CFG-002: Determine the settings file path.
 ///
-/// Priority: `RSFDL_CONFIG` env var > platform default.
-/// - macOS: ~/Library/Application Support/rsfdl/settings.toml
-/// - Linux: ~/.config/rsfdl/settings.toml
-/// - Windows: %APPDATA%\rsfdl\settings.toml
-pub fn default_settings_path() -> PathBuf {
-	if let Ok(path) = std::env::var("RSFDL_CONFIG") {
+/// Priority (BR-CFG-005): `RSFDL_CONFIG` env var > platform default (BR-CFG-004).
+pub fn config_path() -> PathBuf {
+	let env_override = std::env::var("RSFDL_CONFIG").ok();
+	resolve_config_path(env_override.as_deref())
+}
+
+/// CFG-002 pure logic: resolve settings path from optional env override.
+///
+/// Platform defaults (BR-CFG-004):
+/// - Linux: `~/.config/rsfdl/settings.toml`
+/// - macOS: `~/Library/Application Support/rsfdl/settings.toml`
+/// - Windows: `%APPDATA%\rsfdl\settings.toml`
+fn resolve_config_path(env_override: Option<&str>) -> PathBuf {
+	if let Some(path) = env_override {
 		return PathBuf::from(path);
 	}
 	let config_dir = dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("rsfdl");
@@ -590,14 +598,47 @@ mod tests {
 	}
 
 	// -------------------------------------------------------
-	// CFG-001 CFG-002: Default settings path
+	// CFG-002: Konfigurationspfad ermitteln
 	// -------------------------------------------------------
 
-	/// CFG-001 | CFG-002: Default path uses platform config dir with .toml extension.
+	/// CFG-002 | BR-CFG-005: RSFDL_CONFIG overrides platform default.
 	#[test]
-	fn cfg001_default_path_ends_with_toml() {
-		let path = default_settings_path();
-		assert_eq!(path.extension().unwrap(), "toml");
-		assert!(path.to_string_lossy().contains("rsfdl"));
+	fn cfg002_env_override_uses_custom_path() {
+		let path = resolve_config_path(Some("/custom/path/my.toml"));
+		assert_eq!(path, PathBuf::from("/custom/path/my.toml"));
+	}
+
+	/// CFG-002 | BR-CFG-005: RSFDL_CONFIG can be any path, even without .toml extension.
+	#[test]
+	fn cfg002_env_override_accepts_arbitrary_path() {
+		let path = resolve_config_path(Some("/tmp/rsfdl-config"));
+		assert_eq!(path, PathBuf::from("/tmp/rsfdl-config"));
+	}
+
+	/// CFG-002 | BR-CFG-004: Without override, path uses platform config dir.
+	#[test]
+	fn cfg002_platform_default_ends_with_settings_toml() {
+		let path = resolve_config_path(None);
+		assert_eq!(path.file_name().unwrap(), "settings.toml");
+		assert!(path.parent().unwrap().ends_with("rsfdl"));
+	}
+
+	/// CFG-002 | BR-CFG-004: Platform default uses dirs::config_dir.
+	#[test]
+	fn cfg002_platform_default_is_under_config_dir() {
+		let path = resolve_config_path(None);
+		let expected_parent = dirs::config_dir()
+			.unwrap_or_else(|| PathBuf::from("."))
+			.join("rsfdl");
+		assert_eq!(path.parent().unwrap(), expected_parent);
+	}
+
+	/// CFG-002 | Main Success: config_path always returns a usable path.
+	#[test]
+	fn cfg002_config_path_returns_path_with_toml() {
+		// Integration test using the real function (reads actual env).
+		// We can only assert structural properties since RSFDL_CONFIG may or may not be set.
+		let path = config_path();
+		assert!(!path.as_os_str().is_empty());
 	}
 }

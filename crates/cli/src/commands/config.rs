@@ -1,7 +1,7 @@
-use rsfdl_core::settings::{self, Settings, default_settings_path, format_settings};
+use rsfdl_core::settings::{self, Settings, config_path, format_settings};
 
 pub fn run_show() {
-	let path = default_settings_path();
+	let path = config_path();
 	let result = settings::load(&path);
 	for w in &result.warnings {
 		eprintln!("Warning: {w}");
@@ -10,11 +10,11 @@ pub fn run_show() {
 }
 
 pub fn run_path() {
-	println!("{}", default_settings_path().display());
+	println!("{}", config_path().display());
 }
 
 pub fn run_edit() -> std::io::Result<()> {
-	let path = default_settings_path();
+	let path = config_path();
 
 	if !path.exists() {
 		settings::save(&path, &Settings::default()).map_err(|e| std::io::Error::other(e.to_string()))?;

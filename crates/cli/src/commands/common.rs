@@ -27,7 +27,7 @@ pub use rsfdl_core::container::DecryptionStatus as DecryptOutcome;
 /// 3. If encrypted: resolve password and decrypt (CLI-004)
 pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(SfdlContainer, Settings, DecryptOutcome), String> {
 	// Load settings (path from RSFDL_CONFIG env or platform default)
-	let settings_path = settings::default_settings_path();
+	let settings_path = settings::config_path();
 	let result = settings::load(&settings_path);
 	for w in &result.warnings {
 		eprintln!("Warning: {w}");

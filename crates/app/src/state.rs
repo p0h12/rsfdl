@@ -244,7 +244,7 @@ impl AppState {
 	}
 
 	fn load_settings_from_file() -> Settings {
-		let path = rsfdl_core::settings::default_settings_path();
+		let path = rsfdl_core::settings::config_path();
 		rsfdl_core::settings::load(&path).settings
 	}
 
