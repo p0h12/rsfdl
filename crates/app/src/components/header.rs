@@ -1,6 +1,7 @@
 use dioxus::prelude::*;
 
-use rsfdl_core::container::{compute_file_selection, load_sfdl, DecryptionStatus};
+use rsfdl_core::container::{load_sfdl, DecryptionStatus};
+use rsfdl_core::selection::FileSelection;
 
 use crate::icons;
 use crate::state::{AppState, AppView, ContainerPhase, Theme};
@@ -162,10 +163,10 @@ pub async fn resolve_bulk_folders_for(mut state: AppState, container_id: u32) {
 	match rsfdl_core::container::resolve_bulk_folders(&mut container, timeout).await {
 		Ok(()) => {
 			let patterns = state.settings.read().exclusion_patterns.clone();
-			let selection = compute_file_selection(&container, &patterns);
+			let selection = FileSelection::new(&container, &patterns);
 			state.with_container_mut(container_id, |cs| {
 				cs.container = container;
-				cs.selected_files = selection;
+				cs.selection = selection;
 				cs.phase = ContainerPhase::Ready;
 			});
 		}
@@ -191,10 +192,10 @@ pub fn try_decrypt_container(mut state: AppState, container_id: u32, password: &
 	match rsfdl_core::container::decrypt_with_password(&mut container, password) {
 		Ok(()) => {
 			let patterns = state.settings.read().exclusion_patterns.clone();
-			let selection = compute_file_selection(&container, &patterns);
+			let selection = FileSelection::new(&container, &patterns);
 			state.with_container_mut(container_id, |cs| {
 				cs.container = container;
-				cs.selected_files = selection;
+				cs.selection = selection;
 				cs.phase = ContainerPhase::Ready;
 				cs.password_error = None;
 			});

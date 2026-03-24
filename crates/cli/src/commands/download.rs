@@ -34,7 +34,7 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], dest: Option<&str>, 
 	all_patterns.extend_from_slice(cli_exclude);
 
 	let selection = rsfdl_core::container::compute_file_selection(&container, &all_patterns);
-	let excluded_count = selection.iter().filter(|&&keep| !keep).count();
+	let excluded_count = selection.total_count() - selection.selected_count();
 	if excluded_count > 0 {
 		eprintln!("Excluded {} file(s) matching patterns", excluded_count);
 	}

@@ -13,9 +13,10 @@ pub fn FileList(container_id: ContainerId) -> Element {
 	};
 
 	let files = cs.all_files();
-	let selected = cs.selected_files.clone();
-	let total = files.len();
-	let selected_count = selected.iter().filter(|&&s| s).count();
+	let total = cs.selection.total_count();
+	let selected_count = cs.selection.selected_count();
+	// Snapshot selection state for rendering
+	let selected_snapshot: Vec<bool> = cs.selection.as_slice().to_vec();
 	drop(containers);
 
 	let cid = container_id;
@@ -32,7 +33,7 @@ pub fn FileList(container_id: ContainerId) -> Element {
 											class: "btn btn-ghost btn-sm",
 											onclick: move |_| {
 													state.with_container_mut(cid, |cs| {
-															cs.selected_files.iter_mut().for_each(|s| *s = true);
+															cs.selection.select_all();
 													});
 											},
 											"Alle"
@@ -41,7 +42,7 @@ pub fn FileList(container_id: ContainerId) -> Element {
 											class: "btn btn-ghost btn-sm",
 											onclick: move |_| {
 													state.with_container_mut(cid2, |cs| {
-															cs.selected_files.iter_mut().for_each(|s| *s = false);
+															cs.selection.deselect_all();
 													});
 											},
 											"Keine"
@@ -56,7 +57,7 @@ pub fn FileList(container_id: ContainerId) -> Element {
 					// File rows
 					for (idx, file) in files.iter().enumerate() {
 							{
-									let is_selected = selected.get(idx).copied().unwrap_or(false);
+									let is_selected = selected_snapshot.get(idx).copied().unwrap_or(false);
 									let name = file.file_name.clone();
 									let size = format_bytes(file.file_size);
 									let cid3 = container_id;
@@ -76,9 +77,7 @@ pub fn FileList(container_id: ContainerId) -> Element {
 															},
 															onclick: move |_| {
 																	state.with_container_mut(cid3, |cs| {
-																			if let Some(s) = cs.selected_files.get_mut(idx) {
-																					*s = !*s;
-																			}
+																			cs.selection.toggle_file(idx);
 																	});
 															},
 															if is_selected {

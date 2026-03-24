@@ -7,6 +7,7 @@ use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
+use rsfdl_core::selection::FileSelection;
 use rsfdl_core::settings::Settings;
 use rsfdl_core::sfdl::models::SfdlContainer;
 
@@ -132,7 +133,7 @@ pub struct ContainerState {
 	pub password_error: Option<String>,
 
 	// File selection (when phase >= Ready)
-	pub selected_files: Vec<bool>,
+	pub selection: FileSelection,
 
 	// Download state (when phase == Downloading or Done)
 	pub file_states: HashMap<Uuid, FileDownloadState>,
@@ -150,18 +151,17 @@ impl ContainerState {
 
 	/// Total size of all files in bytes.
 	pub fn total_size(&self) -> u64 {
-		self.container.packages.iter().flat_map(|p| p.file_list.iter()).map(|f| f.file_size).sum()
+		self.selection.total_size()
 	}
 
 	/// Sum of sizes of only selected files.
 	pub fn selected_size(&self) -> u64 {
-		let files = self.all_files();
-		files.iter().enumerate().filter(|(i, _)| self.selected_files.get(*i).copied().unwrap_or(false)).map(|(_, f)| f.file_size).sum()
+		self.selection.selected_size()
 	}
 
 	/// Count of selected files.
 	pub fn selected_count(&self) -> usize {
-		self.selected_files.iter().filter(|&&s| s).count()
+		self.selection.selected_count()
 	}
 
 	/// Reset download-related state to allow re-downloading.
@@ -258,7 +258,7 @@ impl AppState {
 		self.next_id.set(id + 1);
 
 		let patterns = self.settings.read().exclusion_patterns.clone();
-		let selected = rsfdl_core::container::compute_file_selection(&container, &patterns);
+		let selection = FileSelection::new(&container, &patterns);
 
 		let cs = ContainerState {
 			id,
@@ -267,7 +267,7 @@ impl AppState {
 			phase,
 			expanded: true,
 			password_error: None,
-			selected_files: selected,
+			selection,
 			file_states: HashMap::new(),
 			cancel_token: None,
 			file_cancel_tx: None,

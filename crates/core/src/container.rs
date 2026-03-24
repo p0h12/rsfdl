@@ -1,5 +1,5 @@
-use crate::filter::is_excluded;
 use crate::ftp::listing::resolve_container_bulk_folders;
+use crate::selection::FileSelection;
 use crate::sfdl::crypto::{decrypt_container, try_passwords, validate_password};
 use crate::sfdl::models::SfdlContainer;
 use crate::sfdl::parser::parse_sfdl;
@@ -64,10 +64,9 @@ pub fn decrypt_with_password(container: &mut SfdlContainer, password: &str) -> R
 
 /// DL-001 + DL-002: Compute file selection with exclusion patterns.
 ///
-/// Returns a `Vec<bool>` aligned with the flattened file list across all packages.
-/// `true` = file is selected (not excluded), `false` = file is excluded.
-pub fn compute_file_selection(container: &SfdlContainer, patterns: &[String]) -> Vec<bool> {
-	container.packages.iter().flat_map(|p| &p.file_list).map(|f| !is_excluded(&f.file_name, patterns)).collect()
+/// Convenience wrapper around [`FileSelection::new`].
+pub fn compute_file_selection(container: &SfdlContainer, patterns: &[String]) -> FileSelection {
+	FileSelection::new(container, patterns)
 }
 
 /// SFDL-003: Resolve BulkFolders via FTP and merge results into the container.
@@ -104,10 +103,9 @@ pub async fn resolve_bulk_folders(container: &mut SfdlContainer, timeout: u32) -
 
 /// Filter a container to only keep selected files.
 ///
-/// The `selected` slice must be aligned with the flattened file list across all packages
-/// (same order as [`compute_file_selection`] returns). Files where `selected[i]` is `false`
-/// are removed from the container.
-pub fn filter_container(container: &mut SfdlContainer, selected: &[bool]) {
+/// Removes files where the corresponding entry in the selection is `false`.
+pub fn filter_container(container: &mut SfdlContainer, selection: &FileSelection) {
+	let selected = selection.as_slice();
 	let mut idx = 0;
 	for package in &mut container.packages {
 		package.file_list.retain(|_| {
@@ -147,7 +145,7 @@ mod tests {
 		let patterns = vec!["*.nfo".into(), "*.jpg".into()];
 
 		let selection = compute_file_selection(&container, &patterns);
-		assert_eq!(selection, vec![true, false, false]);
+		assert_eq!(selection.as_slice(), &[true, false, false]);
 	}
 
 	/// DL-001 | BR-DL-001: Empty patterns mean all files are selected.
@@ -155,16 +153,17 @@ mod tests {
 	fn dl001_compute_selection_empty_patterns() {
 		let container = make_container_with_files(&["movie.rar", "info.nfo"]);
 		let selection = compute_file_selection(&container, &[]);
-		assert_eq!(selection, vec![true, true]);
+		assert_eq!(selection.as_slice(), &[true, true]);
 	}
 
 	/// DL-001 | Main Success: filter_container removes unselected files.
 	#[test]
 	fn dl001_filter_container_removes_unselected() {
 		let mut container = make_container_with_files(&["a.rar", "b.nfo", "c.jpg"]);
-		let selected = vec![true, false, true];
+		let patterns = vec!["*.nfo".into()];
+		let selection = compute_file_selection(&container, &patterns);
 
-		filter_container(&mut container, &selected);
+		filter_container(&mut container, &selection);
 
 		let names: Vec<&str> = container.packages[0].file_list.iter().map(|f| f.file_name.as_str()).collect();
 		assert_eq!(names, vec!["a.rar", "c.jpg"]);

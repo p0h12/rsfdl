@@ -4,6 +4,7 @@ pub mod error;
 pub mod extraction;
 pub mod filter;
 pub mod ftp;
+pub mod selection;
 pub mod settings;
 pub mod sfdl;
 

@@ -19,8 +19,7 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 		};
 
 		let mut container = cs.container.clone();
-		let selected = cs.selected_files.clone();
-		rsfdl_core::container::filter_container(&mut container, &selected);
+		rsfdl_core::container::filter_container(&mut container, &cs.selection);
 
 		let has_files = container.packages.iter().any(|p| !p.file_list.is_empty() || !p.bulk_folder_list.is_empty());
 		if !has_files {
