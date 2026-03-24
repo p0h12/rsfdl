@@ -26,6 +26,7 @@ pub struct DownloadManager {
 	container: SfdlContainer,
 	dest_dir: PathBuf,
 	max_threads: u32,
+	strict_disk_check: bool,
 	resume_downloads: bool,
 	create_package_subfolder: bool,
 	ftp_timeout_seconds: u32,
@@ -45,6 +46,7 @@ impl DownloadManager {
 				container,
 				dest_dir: settings.download_directory.clone(),
 				max_threads: settings.max_threads,
+				strict_disk_check: settings.strict_disk_check,
 				resume_downloads: true,
 				create_package_subfolder: true,
 				ftp_timeout_seconds: settings.ftp_timeout_seconds,
@@ -119,7 +121,28 @@ impl DownloadManager {
 			}
 		}
 
-		// 3. Create per-file cancellation tokens
+		// 3. DL-003: Check disk space
+		if !to_download.is_empty() {
+			let space_items: Vec<(u64, u64)> = to_download
+				.iter()
+				.map(|item| {
+					let local_size = item.local_path.metadata().map(|m| m.len()).unwrap_or(0);
+					(item.file_item.file_size, local_size)
+				})
+				.collect();
+
+			let space_result = crate::diskspace::check(&self.dest_dir, &space_items, self.strict_disk_check)?;
+
+			if !space_result.sufficient {
+				tracing::warn!(
+					required_bytes = space_result.required_bytes,
+					available_bytes = space_result.available_bytes,
+					"Insufficient disk space (non-strict mode, continuing)"
+				);
+			}
+		}
+
+		// 4. DL-006: Create per-file cancellation tokens
 		let file_tokens: Arc<Mutex<HashMap<Uuid, CancellationToken>>> = Arc::new(Mutex::new(HashMap::new()));
 
 		// Spawn per-file cancel listener
@@ -143,7 +166,7 @@ impl DownloadManager {
 			}
 		});
 
-		// 4. Parallel downloads with semaphore
+		// 5. Parallel downloads with semaphore
 		let semaphore = Arc::new(Semaphore::new(self.max_threads as usize));
 		let conn = Arc::new(self.container.connection.clone());
 		let cancel = self.cancel_token.clone();
@@ -253,7 +276,7 @@ impl DownloadManager {
 			handles.push(handle);
 		}
 
-		// 5. Await all handles
+		// 6. Await all handles
 		let mut completed = 0u32;
 		let mut failed = 0u32;
 		let mut cancelled = 0u32;
