@@ -419,15 +419,17 @@ mod tests {
 	const ENCRYPTED_BULKFOLDER_V3: &str = include_str!("../../tests/fixtures/encrypted_bulkfolder_v3.sfdl");
 	const INVALID: &str = include_str!("../../tests/fixtures/invalid.sfdl");
 
-	// --- AT-01: Unverschlüsselte v3-Datei parsen ---
+	// --- SFDL-001: Parse SFDL file ---
 
+	/// SFDL-001 | BR-SFDL-001: Detect v3 container version.
 	#[test]
-	fn detect_version_v3() {
+	fn sfdl001_detect_version_v3() {
 		assert_eq!(detect_version(UNENCRYPTED_V3).unwrap(), SfdlVersion::V3);
 	}
 
+	/// SFDL-001 | Main Success: Parse unencrypted v3 container with all fields.
 	#[test]
-	fn parse_unencrypted_v3() {
+	fn sfdl001_parse_unencrypted_v3() {
 		let container = parse_sfdl(UNENCRYPTED_V3).unwrap();
 
 		assert_eq!(container.container_version, 10);
@@ -471,15 +473,15 @@ mod tests {
 		assert_eq!(f2.file_hash, "");
 	}
 
-	// --- AT-02: Unverschlüsselte v2-Datei parsen ---
-
+	/// SFDL-001 | BR-SFDL-002: Detect v2 container version.
 	#[test]
-	fn detect_version_v2() {
+	fn sfdl001_detect_version_v2() {
 		assert_eq!(detect_version(UNENCRYPTED_V2).unwrap(), SfdlVersion::V2);
 	}
 
+	/// SFDL-001 | Main Success: Parse unencrypted v2 container.
 	#[test]
-	fn parse_unencrypted_v2() {
+	fn sfdl001_parse_unencrypted_v2() {
 		let container = parse_sfdl(UNENCRYPTED_V2).unwrap();
 
 		assert_eq!(container.container_version, 2);
@@ -500,10 +502,9 @@ mod tests {
 		assert_eq!(pkg.bulk_folder_list[0].bulk_folder_path, "/releases/test/");
 	}
 
-	// --- AT-03: Verschlüsselte v3-Datei parsen (Felder sind noch Base64) ---
-
+	/// SFDL-001 | Main Success: Parse encrypted v3 container (fields are Base64).
 	#[test]
-	fn parse_encrypted_v3_raw() {
+	fn sfdl001_parse_encrypted_v3_raw() {
 		let container = parse_sfdl(ENCRYPTED_V3).unwrap();
 
 		assert_eq!(container.container_version, 10);
@@ -515,10 +516,9 @@ mod tests {
 		assert_eq!(container.connection.port, 21);
 	}
 
-	// --- v3 BulkFolderMode=true ---
-
+	/// SFDL-001 | Main Success: Parse v3 BulkFolder container.
 	#[test]
-	fn parse_bulkfolder_v3() {
+	fn sfdl001_parse_bulkfolder_v3() {
 		let container = parse_sfdl(BULKFOLDER_V3).unwrap();
 
 		assert_eq!(container.container_version, 10);
@@ -540,8 +540,9 @@ mod tests {
 		assert_eq!(pkg.bulk_folder_list[1].package_name, "BulkPkg1");
 	}
 
+	/// SFDL-001 | Main Success: BulkFolder container has correct connection data.
 	#[test]
-	fn parse_bulkfolder_v3_has_correct_connection() {
+	fn sfdl001_parse_bulkfolder_v3_connection() {
 		let container = parse_sfdl(BULKFOLDER_V3).unwrap();
 
 		assert_eq!(container.connection.host, "ftp.example.com");
@@ -551,8 +552,9 @@ mod tests {
 		assert!(container.connection.auth_required);
 	}
 
+	/// SFDL-001 | Main Success: Parse encrypted v3 BulkFolder (fields encrypted).
 	#[test]
-	fn parse_encrypted_bulkfolder_v3_raw() {
+	fn sfdl001_parse_encrypted_bulkfolder_v3_raw() {
 		let container = parse_sfdl(ENCRYPTED_BULKFOLDER_V3).unwrap();
 
 		assert_eq!(container.container_version, 10);
@@ -572,30 +574,32 @@ mod tests {
 		assert_ne!(pkg.bulk_folder_list[0].bulk_folder_path, "/releases/movie/");
 	}
 
-	// --- AT-06: Ungültiges XML ---
-
+	/// SFDL-001 | A1: Invalid XML returns error.
 	#[test]
-	fn parse_invalid_xml() {
+	fn sfdl001_parse_invalid_xml() {
 		let result = parse_sfdl(INVALID);
 		assert!(result.is_err());
 	}
 
+	/// SFDL-001 | A1: Random text is not a valid SFDL.
 	#[test]
-	fn detect_version_invalid() {
+	fn sfdl001_detect_version_invalid() {
 		let result = detect_version("just some random text");
 		assert!(result.is_err());
 	}
 
+	/// SFDL-001 | A1: Empty input returns error.
 	#[test]
-	fn detect_version_empty() {
+	fn sfdl001_detect_version_empty() {
 		let result = detect_version("");
 		assert!(result.is_err());
 	}
 
-	// --- AT-35: Serializer round-trip tests ---
+	// --- CR-005: Serialize container ---
 
+	/// CR-005 | Main Success: Serialize and re-parse v3 FileList container.
 	#[test]
-	fn serialize_v3_round_trip_filelist() {
+	fn cr005_serialize_v3_round_trip_filelist() {
 		let original = parse_sfdl(UNENCRYPTED_V3).unwrap();
 		let xml = serialize_v3(&original).unwrap();
 		let reparsed = parse_sfdl(&xml).unwrap();
@@ -620,8 +624,9 @@ mod tests {
 		assert_eq!(re_pkg.file_list[1], orig_pkg.file_list[1]);
 	}
 
+	/// CR-005 | Main Success: Serialize and re-parse v3 BulkFolder container.
 	#[test]
-	fn serialize_v3_round_trip_bulkfolder() {
+	fn cr005_serialize_v3_round_trip_bulkfolder() {
 		let original = parse_sfdl(BULKFOLDER_V3).unwrap();
 		let xml = serialize_v3(&original).unwrap();
 		let reparsed = parse_sfdl(&xml).unwrap();
@@ -638,15 +643,17 @@ mod tests {
 		assert_eq!(re_pkg.bulk_folder_list[1].bulk_folder_path, orig_pkg.bulk_folder_list[1].bulk_folder_path);
 	}
 
+	/// CR-005 | BR: Serialized XML has proper header.
 	#[test]
-	fn serialize_v3_has_xml_header() {
+	fn cr005_serialize_v3_has_xml_header() {
 		let container = SfdlContainer::default();
 		let xml = serialize_v3(&container).unwrap();
 		assert!(xml.starts_with("<?xml version=\"1.0\" encoding=\"utf-8\"?>"));
 	}
 
+	/// CR-005 | Full Pipeline: Build, encrypt, serialize, parse, decrypt, verify.
 	#[test]
-	fn serialize_v3_full_pipeline() {
+	fn cr005_serialize_v3_full_pipeline() {
 		use crate::sfdl::crypto::{decrypt_container, encrypt_container};
 
 		// Build a container from scratch
