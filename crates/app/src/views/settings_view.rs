@@ -1,8 +1,14 @@
+//! UI-005: Settings dialog view.
+
 use dioxus::prelude::*;
 
 use crate::icons;
 use crate::state::{AppState, AppView};
 
+/// UI-005: Settings view with Card-based sections.
+///
+/// Layout sections: Allgemein, Download-Verhalten, Nachbearbeitung,
+/// Ausschlussmuster, Auto-Passwörter, Footer (Abbrechen/Speichern).
 #[component]
 pub fn SettingsView() -> Element {
 	let mut state = use_context::<AppState>();
@@ -23,7 +29,7 @@ pub fn SettingsView() -> Element {
 			div { class: "flex-1 overflow-y-auto",
 					div { class: "max-w-[900px] mx-auto px-4 py-5",
 
-							// Header
+							// Header with back arrow
 							div { class: "flex items-center gap-2.5 mb-5",
 									button {
 											class: "btn-icon",
@@ -43,7 +49,8 @@ pub fn SettingsView() -> Element {
 							// Allgemein
 							div { class: "settings-card",
 									div { class: "sg-title", "Allgemein" }
-									SettingRow { label: "Download-Verzeichnis", sub: "Zielordner fuer Downloads" }
+									// A4: Download directory with Browse dialog
+									SettingRow { label: "Download-Verzeichnis", sub: "Zielordner für Downloads" }
 									div { class: "flex gap-2 mb-2.5 mt-[-4px]",
 											input {
 													class: "themed-input flex-1",
@@ -63,6 +70,7 @@ pub fn SettingsView() -> Element {
 													"Browse..."
 											}
 									}
+									// BR-UI-013: Inline validation with clamping
 									NumberRow { label: "Max. parallele Downloads", value: max_threads, min: 1, max: 20, on_change: move |v: u32| { state.settings.write().max_threads = v; } }
 									NumberRow { label: "Max. Geschwindigkeit (KB/s)", sub: "0 = unbegrenzt", value: max_speed, min: 0, max: 999999, on_change: move |v: u32| { state.settings.write().max_speed_kbps = v; } }
 							}
@@ -72,17 +80,18 @@ pub fn SettingsView() -> Element {
 									div { class: "sg-title", "Download-Verhalten" }
 									NumberRow { label: "Max. Wiederholungen", value: max_retries, min: 0, max: 50, on_change: move |v: u32| { state.settings.write().max_retries = v; } }
 									NumberRow { label: "Retry-Wartezeit (Sek.)", value: retry_delay, min: 1, max: 3600, on_change: move |v: u32| { state.settings.write().retry_delay_seconds = v; } }
-									ToggleRow { label: "Strikte Speicherplatzpruefung", value: strict_disk, on_toggle: move |_| { let mut s = state.settings.write(); s.strict_disk_check = !s.strict_disk_check; } }
+									// BR-UI-014: Toggle switches for booleans
+									ToggleRow { label: "Strikte Speicherplatzprüfung", value: strict_disk, on_toggle: move |_| { let mut s = state.settings.write(); s.strict_disk_check = !s.strict_disk_check; } }
 							}
 
 							// Nachbearbeitung
 							div { class: "settings-card",
 									div { class: "sg-title", "Nachbearbeitung" }
 									ToggleRow { label: "Auto-Extraktion", sub: "Archive nach Download entpacken", value: auto_extract, on_toggle: move |_| { let mut s = state.settings.write(); s.auto_extract = !s.auto_extract; } }
-									ToggleRow { label: "Archive nach Extraktion loeschen", value: delete_after_extract, on_toggle: move |_| { let mut s = state.settings.write(); s.delete_archives_after_extract = !s.delete_archives_after_extract; } }
+									ToggleRow { label: "Archive nach Extraktion löschen", value: delete_after_extract, on_toggle: move |_| { let mut s = state.settings.write(); s.delete_archives_after_extract = !s.delete_archives_after_extract; } }
 							}
 
-							// Ausschlussmuster
+							// A5: Ausschlussmuster (BR-UI-016)
 							div { class: "settings-card",
 									div { class: "sg-title", "Ausschlussmuster" }
 									TagList {
@@ -93,14 +102,14 @@ pub fn SettingsView() -> Element {
 											on_remove: move |idx: usize| {
 													state.settings.write().exclusion_patterns.remove(idx);
 											},
-											placeholder: "Neues Muster hinzufuegen...",
+											placeholder: "Neues Muster hinzufügen...",
 											masked: false,
 									}
 							}
 
-							// Auto-Passwoerter
+							// A6: Auto-Passwörter (BR-UI-015)
 							div { class: "settings-card",
-									div { class: "sg-title", "Auto-Passwoerter" }
+									div { class: "sg-title", "Auto-Passwörter" }
 									TagList {
 											tags: auto_passwords,
 											on_add: move |tag: String| {
@@ -114,8 +123,9 @@ pub fn SettingsView() -> Element {
 									}
 							}
 
-							// Footer
+							// Footer: Abbrechen / Speichern
 							div { class: "flex justify-end gap-2 mt-5 pb-8",
+									// A3: Cancel → back without disk save
 									button {
 											class: "btn btn-ghost",
 											onclick: move |_| { state.current_view.set(AppView::Main); },
@@ -124,8 +134,10 @@ pub fn SettingsView() -> Element {
 									button {
 											class: "btn btn-accent",
 											onclick: move |_| {
-													save_settings(state);
-													state.current_view.set(AppView::Main);
+													// A2: Stay on Settings if save fails
+													if try_save_settings(state) {
+															state.current_view.set(AppView::Main);
+													}
 											},
 											"Speichern"
 									}
@@ -158,6 +170,7 @@ fn SettingRow(label: String, #[props(default)] sub: String) -> Element {
 	}
 }
 
+/// BR-UI-013: Number input with clamping.
 #[component]
 fn NumberRow(label: String, #[props(default)] sub: String, value: u32, min: u32, max: u32, on_change: EventHandler<u32>) -> Element {
 	rsx! {
@@ -193,6 +206,7 @@ fn NumberRow(label: String, #[props(default)] sub: String, value: u32, min: u32,
 	}
 }
 
+/// BR-UI-014: Toggle switch for boolean settings.
 #[component]
 fn ToggleRow(label: String, #[props(default)] sub: String, value: bool, on_toggle: EventHandler<()>) -> Element {
 	rsx! {
@@ -220,6 +234,7 @@ fn ToggleRow(label: String, #[props(default)] sub: String, value: bool, on_toggl
 	}
 }
 
+/// BR-UI-015 / BR-UI-016: Tag list for patterns or passwords.
 #[component]
 fn TagList(tags: Vec<String>, on_add: EventHandler<String>, on_remove: EventHandler<usize>, placeholder: String, masked: bool) -> Element {
 	let mut input_value = use_signal(String::new);
@@ -278,11 +293,18 @@ fn TagList(tags: Vec<String>, on_add: EventHandler<String>, on_remove: EventHand
 	}
 }
 
-fn save_settings(mut state: AppState) {
+/// UI-005: Save settings to disk. Returns true on success, false on failure.
+///
+/// On failure, sets error_message in app state (A2: stay on settings view).
+fn try_save_settings(mut state: AppState) -> bool {
 	let settings = state.settings.read().clone();
 	let path = rsfdl_core::settings::config_path();
 
-	if let Err(e) = rsfdl_core::settings::save(&path, &settings) {
-		state.error_message.set(Some(format!("Failed to save settings: {e}")));
+	match rsfdl_core::settings::save(&path, &settings) {
+		Ok(()) => true,
+		Err(e) => {
+			state.error_message.set(Some(format!("Failed to save settings: {e}")));
+			false
+		}
 	}
 }
