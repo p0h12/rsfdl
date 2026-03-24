@@ -48,11 +48,29 @@ enum Commands {
 		#[arg(short, long)]
 		dest: Option<String>,
 		/// Max concurrent downloads
-		#[arg(short, long, default_value = "3")]
-		threads: u32,
+		#[arg(short, long)]
+		threads: Option<u32>,
+		/// Max download speed in KB/s (0 = unlimited)
+		#[arg(long)]
+		max_speed: Option<u32>,
+		/// Max retry attempts per file
+		#[arg(long)]
+		retries: Option<u32>,
+		/// Delay between retries in seconds
+		#[arg(long)]
+		retry_delay: Option<u32>,
+		/// Abort if insufficient disk space
+		#[arg(long)]
+		strict_disk_check: bool,
 		/// Exclude files matching glob pattern (can be repeated)
 		#[arg(long)]
 		exclude: Vec<String>,
+		/// Disable all exclusion patterns
+		#[arg(long)]
+		no_exclude: bool,
+		/// Suppress progress display
+		#[arg(short, long)]
+		quiet: bool,
 	},
 	/// Manage settings
 	Config {
@@ -102,9 +120,23 @@ async fn main() {
 			let passwords = load_password_file(args.password_file.as_deref());
 			commands::list::run(&args, &passwords, resolve, json, &exclude, no_exclude, show_excluded).await;
 		}
-		Commands::Download { args, dest, threads, exclude } => {
+		Commands::Download {
+			args,
+			dest,
+			threads,
+			max_speed,
+			retries,
+			retry_delay,
+			strict_disk_check,
+			exclude,
+			no_exclude,
+			quiet,
+		} => {
 			let passwords = load_password_file(args.password_file.as_deref());
-			commands::download::run(&args, &passwords, dest.as_deref(), threads, &exclude).await;
+			commands::download::run(
+				&args, &passwords, dest.as_deref(), threads, max_speed, retries, retry_delay, strict_disk_check, &exclude, no_exclude, quiet,
+			)
+			.await;
 		}
 		Commands::Config { action } => match action {
 			ConfigAction::Show { config_file } => {

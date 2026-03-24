@@ -269,6 +269,21 @@ fn list_unencrypted_v2_shows_bulk_folders() {
 		.stdout(predicate::str::contains("/releases/test/"));
 }
 
+/// CLI-003 | A6: download --help shows all flags.
+#[test]
+fn download_help_shows_all_flags() {
+	let output = cmd().args(["download", "--help"]).assert().success();
+	output
+		.stdout(predicate::str::contains("--threads"))
+		.stdout(predicate::str::contains("--max-speed"))
+		.stdout(predicate::str::contains("--retries"))
+		.stdout(predicate::str::contains("--retry-delay"))
+		.stdout(predicate::str::contains("--strict-disk-check"))
+		.stdout(predicate::str::contains("--exclude"))
+		.stdout(predicate::str::contains("--no-exclude"))
+		.stdout(predicate::str::contains("--quiet"));
+}
+
 // --- AT-18 update: Help shows config subcommand ---
 
 #[test]
