@@ -604,6 +604,33 @@ fn config_path_prints_path() {
 		.stdout(predicate::str::contains("settings.toml"));
 }
 
+/// CLI-005 | BR-CLI-014: config path respects RSFDL_CONFIG env var.
+#[test]
+fn config_path_respects_env_override() {
+	cmd()
+		.args(["config", "path"])
+		.env("RSFDL_CONFIG", "/custom/path/my-settings.toml")
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("/custom/path/my-settings.toml"));
+}
+
+/// CLI-005 | A1: config edit with failing editor → exit 1.
+#[test]
+fn config_edit_failing_editor_exits_1() {
+	let dir = tempfile::tempdir().unwrap();
+	let path = dir.path().join("rsfdl/settings.toml");
+
+	cmd()
+		.args(["config", "edit"])
+		.env("RSFDL_CONFIG", path.to_string_lossy().to_string())
+		.env("EDITOR", "false") // `false` exits with code 1
+		.assert()
+		.failure()
+		.code(1)
+		.stderr(predicate::str::contains("Editor"));
+}
+
 /// CLI-005 | config --help shows all subcommands.
 #[test]
 fn config_help_shows_subcommands() {
