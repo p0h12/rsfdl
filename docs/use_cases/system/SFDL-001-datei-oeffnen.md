@@ -14,9 +14,10 @@
 
 1. Actor übergibt einen Dateipfad an das System.
 2. System liest die Datei vom Dateisystem.
-3. System erkennt die SFDL-Version anhand der XML-Struktur:
-    - `ContainerVersion=10` → v3
-    - `SFDLFileVersion` vorhanden → v2
+3. System erkennt die SFDL-Version anhand der XML-Struktur und des numerischen Werts:
+    - `<ContainerVersion>` vorhanden, Wert 10 → v3
+    - `<SFDLFileVersion>` vorhanden, Wert 6–9 → v2
+    - Wert 0–5 oder >10 → ungueltig (siehe BR-SFDL-001)
 4. System parst den XML-Inhalt gemäss erkannter Version.
 5. **[v2]** System normalisiert die v2-Struktur intern auf das v3-Datenmodell.
 6. System prüft, ob der Container verschlüsselt ist (`Encrypted=true`).
@@ -51,8 +52,18 @@
 
 **BR-SFDL-001: Versionserkennung**
 
-- v3 hat Vorrang: Enthält eine Datei sowohl v2- als auch v3-Marker, wird v3 verwendet.
-- Die Versionserkennung basiert ausschliesslich auf der XML-Struktur, nicht auf der Dateiendung.
+Numerische ContainerVersion-Werte (Quelle: SFDL.NET Referenzimplementierung):
+
+| ContainerVersion | SFDL Version | Verhalten |
+|------------------|-------------|-----------|
+| 0 | ungueltig | Fehler: „nicht kompatibel" |
+| 1–5 | v1 | Fehler: „nicht mehr unterstuetzt" |
+| 6–9 | v2 (legacy) | Wird intern zu v3 konvertiert |
+| **10** | **v3** | Aktuelles Format, direkt parsen |
+| >10 | ungueltig | Fehler: „nicht kompatibel" |
+
+- v3 hat Vorrang: Enthaelt eine Datei sowohl v2- als auch v3-Marker, wird v3 verwendet.
+- Die Versionserkennung basiert auf dem XML-Element-Namen (`<ContainerVersion>` vs `<SFDLFileVersion>`) und dem numerischen Wert.
 
 **BR-SFDL-002: v2-Normalisierung**
 
