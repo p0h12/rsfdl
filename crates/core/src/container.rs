@@ -173,7 +173,7 @@ mod tests {
 	#[test]
 	fn sfdl001_load_not_encrypted() {
 		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
-<SFDLFile>
+<Container>
   <ContainerVersion>10</ContainerVersion>
   <Description>Test</Description>
   <Uploader>user</Uploader>
@@ -191,14 +191,14 @@ mod tests {
     <SSLProtocol>None</SSLProtocol>
   </Connection>
   <Packages>
-    <SFDLPackage>
+    <Package>
       <Name>Pkg1</Name>
       <BulkFolderMode>false</BulkFolderMode>
       <FileList></FileList>
       <BulkFolderList></BulkFolderList>
-    </SFDLPackage>
+    </Package>
   </Packages>
-</SFDLFile>"#;
+</Container>"#;
 
 		let result = load_sfdl(xml, &[]).unwrap();
 		assert!(matches!(result.status, DecryptionStatus::NotEncrypted));
