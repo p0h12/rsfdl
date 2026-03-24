@@ -96,7 +96,7 @@ impl DownloadManager {
 			});
 		}
 
-		// 2. Check resume state, skip already-complete files
+		// 2. DL-005: Check resume state, skip already-complete files
 		let mut skipped = 0u32;
 		let mut to_download: Vec<DownloadItem> = Vec::new();
 
@@ -110,6 +110,11 @@ impl DownloadManager {
 							file_name: item.file_item.file_name.clone(),
 						});
 						skipped += 1;
+					}
+					ResumeAction::DeleteAndRestart => {
+						// A2: Oversized or unknown remote size — delete and re-download
+						let _ = std::fs::remove_file(&item.local_path);
+						to_download.push(item);
 					}
 					_ => {
 						to_download.push(item);
@@ -213,7 +218,7 @@ impl DownloadManager {
 					return DownloadStatus::Failed;
 				}
 
-				// Determine resume offset
+				// DL-005: Determine resume offset
 				let resume_offset = if resume_downloads {
 					match item.check_local_state() {
 						ResumeAction::Resume(offset) => offset,
@@ -223,6 +228,10 @@ impl DownloadManager {
 								file_name: item.file_item.file_name.clone(),
 							});
 							return DownloadStatus::Skipped;
+						}
+						ResumeAction::DeleteAndRestart => {
+							let _ = tokio::fs::remove_file(&item.local_path).await;
+							0
 						}
 						ResumeAction::StartFresh => 0,
 					}

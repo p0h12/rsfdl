@@ -13,11 +13,16 @@ pub enum DownloadStatus {
 	Skipped,
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ResumeAction {
+	/// No local file exists — download from scratch.
 	StartFresh,
+	/// Local file partially downloaded — resume from offset.
 	Resume(u64),
+	/// Local file matches remote size — skip download.
 	AlreadyComplete,
+	/// Local file is oversized or remote size unknown — delete and restart (A2).
+	DeleteAndRestart,
 }
 
 #[derive(Debug, Clone)]
@@ -59,17 +64,29 @@ impl DownloadItem {
 		}
 	}
 
-	/// Check if local file exists, determine what to do.
+	/// DL-005 / BR-DL-012: Check local file state to determine resume action.
+	///
+	/// - No local file → StartFresh
+	/// - Local size == remote size → AlreadyComplete (skip)
+	/// - Local size < remote size → Resume(offset)
+	/// - Local size > remote size → DeleteAndRestart (A2: possibly corrupt)
+	/// - Remote size unknown (0) + local file exists → DeleteAndRestart (can't verify)
 	pub fn check_local_state(&self) -> ResumeAction {
 		match std::fs::metadata(&self.local_path) {
 			Ok(meta) => {
 				let local_size = meta.len();
-				if self.file_item.file_size > 0 && local_size >= self.file_item.file_size {
+				if local_size == 0 {
+					ResumeAction::StartFresh
+				} else if self.file_item.file_size == 0 {
+					// Remote size unknown — can't tell if local is complete or corrupt
+					ResumeAction::DeleteAndRestart
+				} else if local_size == self.file_item.file_size {
 					ResumeAction::AlreadyComplete
-				} else if local_size > 0 {
+				} else if local_size < self.file_item.file_size {
 					ResumeAction::Resume(local_size)
 				} else {
-					ResumeAction::StartFresh
+					// local_size > file_size — oversized, possibly corrupt (A2)
+					ResumeAction::DeleteAndRestart
 				}
 			}
 			Err(_) => ResumeAction::StartFresh,
@@ -188,7 +205,7 @@ mod tests {
 		}
 	}
 
-	/// DL-005 | A1: Complete local file → AlreadyComplete.
+	/// DL-005 | BR-DL-012: Complete local file (exact size) → AlreadyComplete.
 	#[test]
 	fn dl005_check_local_state_complete_file() {
 		let dir = tempfile::tempdir().unwrap();
@@ -205,6 +222,63 @@ mod tests {
 		};
 		let mut item = DownloadItem::from_file_item(&fi, dir.path(), "", true);
 		item.local_path = path;
-		assert!(matches!(item.check_local_state(), ResumeAction::AlreadyComplete));
+		assert_eq!(item.check_local_state(), ResumeAction::AlreadyComplete);
+	}
+
+	/// DL-005 | A2: Local file larger than remote → DeleteAndRestart.
+	#[test]
+	fn dl005_check_local_state_oversized() {
+		let dir = tempfile::tempdir().unwrap();
+		let path = dir.path().join("oversized.rar");
+		{
+			let mut f = std::fs::File::create(&path).unwrap();
+			f.write_all(&[0u8; 2000]).unwrap(); // 2000 > 1000
+		}
+		let fi = FileItem {
+			file_name: "oversized.rar".into(),
+			directory_path: String::new(),
+			file_size: 1000,
+			..sample_file_item("oversized.rar", 1000)
+		};
+		let mut item = DownloadItem::from_file_item(&fi, dir.path(), "", true);
+		item.local_path = path;
+		assert_eq!(item.check_local_state(), ResumeAction::DeleteAndRestart);
+	}
+
+	/// DL-005 | A2: Remote size unknown (0) + local file exists → DeleteAndRestart.
+	#[test]
+	fn dl005_check_local_state_unknown_remote_size() {
+		let dir = tempfile::tempdir().unwrap();
+		let path = dir.path().join("unknown.rar");
+		{
+			let mut f = std::fs::File::create(&path).unwrap();
+			f.write_all(&[0u8; 500]).unwrap();
+		}
+		let fi = FileItem {
+			file_name: "unknown.rar".into(),
+			directory_path: String::new(),
+			file_size: 0, // unknown remote size
+			..sample_file_item("unknown.rar", 0)
+		};
+		let mut item = DownloadItem::from_file_item(&fi, dir.path(), "", true);
+		item.local_path = path;
+		assert_eq!(item.check_local_state(), ResumeAction::DeleteAndRestart);
+	}
+
+	/// DL-005 | Edge: Empty local file (0 bytes) → StartFresh.
+	#[test]
+	fn dl005_check_local_state_empty_file() {
+		let dir = tempfile::tempdir().unwrap();
+		let path = dir.path().join("empty.rar");
+		std::fs::File::create(&path).unwrap(); // 0 bytes
+		let fi = FileItem {
+			file_name: "empty.rar".into(),
+			directory_path: String::new(),
+			file_size: 1000,
+			..sample_file_item("empty.rar", 1000)
+		};
+		let mut item = DownloadItem::from_file_item(&fi, dir.path(), "", true);
+		item.local_path = path;
+		assert_eq!(item.check_local_state(), ResumeAction::StartFresh);
 	}
 }
