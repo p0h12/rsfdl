@@ -177,7 +177,7 @@ fn badge_class(version: &str) -> &str {
 
 #[component]
 fn DownloadActions(container_id: ContainerId) -> Element {
-	let mut state = use_context::<AppState>();
+	let state = use_context::<AppState>();
 	let containers = state.containers.read();
 	let Some(cs) = containers.iter().find(|c| c.id == container_id) else {
 		return rsx! {};

@@ -191,7 +191,7 @@ impl ContainerState {
 
 	/// SFDL version string (e.g. "v3").
 	pub fn version_tag(&self) -> &str {
-		if self.container.version == 3 {
+		if self.container.container_version >= 10 {
 			"v3"
 		} else {
 			"v2"

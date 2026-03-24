@@ -12,7 +12,7 @@ use crate::state::{AppState, ContainerId, ContainerPhase, DownloadSummary, FileD
 /// Start downloading files for a specific container.
 pub fn start_download(mut state: AppState, container_id: ContainerId) {
 	// Extract data from container state
-	let (mut container, settings) = {
+	let (container, settings) = {
 		let containers = state.containers.read();
 		let Some(cs) = containers.iter().find(|c| c.id == container_id) else {
 			return;
