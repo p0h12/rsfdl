@@ -128,7 +128,17 @@ async fn main() {
 		} => {
 			let passwords = load_password_file(args.password_file.as_deref());
 			commands::download::run(
-				&args, &passwords, dest.as_deref(), threads, max_speed, retries, retry_delay, strict_disk_check, &exclude, no_exclude, quiet,
+				&args,
+				&passwords,
+				dest.as_deref(),
+				threads,
+				max_speed,
+				retries,
+				retry_delay,
+				strict_disk_check,
+				&exclude,
+				no_exclude,
+				quiet,
 			)
 			.await;
 		}

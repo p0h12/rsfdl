@@ -121,7 +121,14 @@ pub async fn run(
 	if quiet {
 		// Quiet mode: just drain events until AllDone
 		while let Some(event) = rx.recv().await {
-			if let ProgressEvent::AllDone { total_files, completed, failed, cancelled, skipped } = event {
+			if let ProgressEvent::AllDone {
+				total_files,
+				completed,
+				failed,
+				cancelled,
+				skipped,
+			} = event
+			{
 				final_result = Some((total_files, completed, failed, cancelled, skipped));
 				break;
 			}
@@ -161,7 +168,9 @@ pub async fn run(
 					bar.set_prefix(truncate_name(&file_name, 30));
 					bars.insert(item_id, bar);
 				}
-				ProgressEvent::BytesWritten { item_id, bytes_delta, total_written, .. } => {
+				ProgressEvent::BytesWritten {
+					item_id, bytes_delta, total_written, ..
+				} => {
 					if let Some(bar) = bars.get(&item_id) {
 						bar.set_position(total_written);
 					}
@@ -190,7 +199,13 @@ pub async fn run(
 					files_done += 1;
 					global_bar.set_prefix(format!("[{}/{} files]", files_done, files_total));
 				}
-				ProgressEvent::Retry { item_id, attempt, max_retries, delay_seconds, error } => {
+				ProgressEvent::Retry {
+					item_id,
+					attempt,
+					max_retries,
+					delay_seconds,
+					error,
+				} => {
 					if let Some(bar) = bars.get(&item_id) {
 						bar.set_message(format!("retry {}/{} in {}s: {}", attempt, max_retries, delay_seconds, error));
 					}
@@ -202,7 +217,13 @@ pub async fn run(
 					files_done += 1;
 					global_bar.set_prefix(format!("[{}/{} files]", files_done, files_total));
 				}
-				ProgressEvent::AllDone { total_files, completed, failed, cancelled, skipped } => {
+				ProgressEvent::AllDone {
+					total_files,
+					completed,
+					failed,
+					cancelled,
+					skipped,
+				} => {
 					global_bar.finish_and_clear();
 					final_result = Some((total_files, completed, failed, cancelled, skipped));
 					break;
@@ -221,7 +242,12 @@ pub async fn run(
 	if let Some((total_files, completed, failed, cancelled, skipped)) = final_result {
 		eprintln!(
 			"\nDone: {} total, {} completed, {} skipped, {} failed, {} cancelled ({:.1}s)",
-			total_files, completed, skipped, failed, cancelled, elapsed.as_secs_f64()
+			total_files,
+			completed,
+			skipped,
+			failed,
+			cancelled,
+			elapsed.as_secs_f64()
 		);
 
 		// POST-002: Auto-extraction

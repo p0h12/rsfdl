@@ -63,12 +63,7 @@ pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(S
 /// 4. Error (exit code 3)
 ///
 /// Returns the decryption outcome or an error string.
-fn resolve_password_and_decrypt(
-	container: &mut SfdlContainer,
-	status: DecryptionStatus,
-	password_flag: Option<&str>,
-	is_terminal: bool,
-) -> Result<DecryptOutcome, String> {
+fn resolve_password_and_decrypt(container: &mut SfdlContainer, status: DecryptionStatus, password_flag: Option<&str>, is_terminal: bool) -> Result<DecryptOutcome, String> {
 	match status {
 		// Not encrypted — nothing to do
 		DecryptionStatus::NotEncrypted => Ok(DecryptionStatus::NotEncrypted),
