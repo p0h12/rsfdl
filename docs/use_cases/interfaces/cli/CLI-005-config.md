@@ -43,15 +43,7 @@
 
 ## Alternative Flows
 
-### A1: --config-file ueberschreibt Standardpfad
-
-**Trigger:** Benutzer gibt `--config-file <path>` an
-**Flow:**
-
-1. System verwendet den angegebenen Pfad statt des Standardpfads.
-2. Use Case faehrt normal fort.
-
-### A2: Editor-Prozess schlaegt fehl
+### A1: Editor-Prozess schlaegt fehl
 
 **Trigger:** Editor beendet sich mit Exit-Code != 0 (config edit, Schritt 6)
 **Flow:**
@@ -59,7 +51,7 @@
 1. System meldet: "Editor '{name}' exited with {code}."
 2. Use Case endet mit Exit-Code 1.
 
-### A3: Datei nach Bearbeitung ungueltig
+### A2: Datei nach Bearbeitung ungueltig
 
 **Trigger:** Validierung nach Editor-Schliessung findet Fehler (config edit, Schritt 7)
 **Flow:**
@@ -67,7 +59,7 @@
 1. System gibt Korrektur-Warnings auf stderr aus (-> CFG-001, A3).
 2. Use Case endet mit Exit-Code 0 (Warnings sind informativ, keine harten Fehler).
 
-### A4: Konfigurationsdatei nicht schreibbar
+### A3: Konfigurationsdatei nicht schreibbar
 
 **Trigger:** Dateisystem-Fehler beim Erstellen der Default-Datei (config edit, Schritt 3)
 **Flow:**
@@ -91,8 +83,8 @@
 
 ### BR-CLI-014: Pfadermittlung
 
-- `--config-file <path>` ueberschreibt den Standardpfad (-> CFG-001, BR-CFG-001).
-- Ohne `--config-file`: Plattform-spezifischer Standardpfad (-> CFG-001, BR-CFG-001).
+- Konfigurationspfad wird via CFG-002 ermittelt.
+- `config path` gibt diesen Pfad auf stdout aus.
 
 ### BR-CLI-015: Editor-Ermittlung
 
@@ -111,8 +103,8 @@ Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Exit-Code
 
 | Subcommand    | Optionen                 | Beschreibung                          |
 |---------------|--------------------------|---------------------------------------|
-| `config show` | `[--config-file <path>]` | Einstellungen anzeigen                |
-| `config edit` | `[--config-file <path>]` | Konfigurationsdatei im Editor oeffnen |
+| `config show` | —                        | Einstellungen anzeigen                |
+| `config edit` | —                        | Konfigurationsdatei im Editor oeffnen |
 | `config path` | —                        | Pfad zur Konfigurationsdatei ausgeben |
 
 ## Exit-Codes
@@ -125,7 +117,7 @@ Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Exit-Code
 ## Input
 
 - `subcommand`: show | edit | path
-- `--config-file`: optionaler Pfad zur Konfigurationsdatei
+- Konfigurationspfad via CFG-002
 
 ## Output
 

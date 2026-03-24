@@ -11,13 +11,13 @@
 
 ## Preconditions
 
-- Der Konfigurationspfad wurde von der aufrufenden Schicht (CLI, GUI, Mobile) bereitgestellt.
+- Ein Konfigurationspfad liegt vor (-> CFG-002).
 
 ## Main Success Scenario
 
 ### Variante A: Einstellungen laden
 
-1. System erhält den Konfigurationspfad (-> BR-CFG-001).
+1. System erhaelt den Konfigurationspfad (-> CFG-002).
 2. System prüft, ob die Konfigurationsdatei existiert.
 3. System liest und parst die TOML-Datei.
 4. System validiert die Werte (-> BR-CFG-003).
@@ -99,18 +99,7 @@
 
 ## Business Rules
 
-### BR-CFG-001: Dateipfad
-
-- Der Konfigurationspfad wird von der aufrufenden Schicht (CLI, GUI, Mobile) übergeben.
-- Der Core ermittelt keinen Pfad selbst — er nimmt ihn als Parameter entgegen.
-- Empfohlene Standardpfade pro Plattform:
-    - Linux: `~/.config/rsfdl/settings.toml`
-    - macOS: `~/Library/Application Support/rsfdl/settings.toml`
-    - Windows: `%APPDATA%\rsfdl\settings.toml`
-    - iOS/Android: vom OS-Framework bereitgestelltes App-Verzeichnis
-- Umgebungsvariable `RSFDL_CONFIG` überschreibt den Standardpfad (CLI/Desktop).
-
-### BR-CFG-002: Standardwerte
+### BR-CFG-001: Standardwerte
 
 | Feld                          | Standardwert                                     |
 |-------------------------------|--------------------------------------------------|
@@ -127,7 +116,7 @@
 | auto_passwords                | []                                               |
 | speedreport_template          | ""                                               |
 
-### BR-CFG-003: Validierung
+### BR-CFG-002: Validierung
 
 - `max_threads`: 1–20
 - `max_speed_kbps`: >= 0 (0 = unbegrenzt)
@@ -136,7 +125,7 @@
 - `download_directory`: Pfad muss existieren oder erstellbar sein
 - `exclusion_patterns`: Jedes Muster muss gültiger Glob-Syntax entsprechen
 
-### BR-CFG-004: Passwort-Speicherung
+### BR-CFG-003: Passwort-Speicherung
 
 - Passwoerter in der `auto_passwords` Liste werden aktuell im Klartext in der TOML-Datei gespeichert.
 - Geplant: OS-spezifischer Keyring oder AES mit maschinengebundenem Schluessel (NFR-06).

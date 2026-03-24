@@ -48,10 +48,10 @@ async fn cli_download_success() {
 
 	let (_cfg_dir, cfg_path) = fast_settings();
 
-	// Run CLI in a blocking thread to keep the async FTP server alive
 	let output = tokio::task::spawn_blocking(move || {
 		cmd()
-			.args(["download", &sfdl_str, "-d", &dest_str, "--config-file", &cfg_path])
+			.args(["download", &sfdl_str, "-d", &dest_str])
+			.env("RSFDL_CONFIG", &cfg_path)
 			.assert()
 			.success()
 			.stderr(predicate::str::contains("Done:"))
@@ -60,9 +60,8 @@ async fn cli_download_success() {
 	.await
 	.unwrap();
 
-	let _ = output; // assert already ran
+	let _ = output;
 
-	// Verify file was downloaded
 	let local = dest.path().join("TestPkg/releases/test/movie.rar");
 	assert!(local.exists(), "downloaded file should exist");
 	assert_eq!(fs::read(&local).unwrap(), content);
@@ -86,7 +85,11 @@ async fn cli_download_with_dest_flag() {
 	let (_cfg_dir, cfg_path) = fast_settings();
 
 	tokio::task::spawn_blocking(move || {
-		cmd().args(["download", &sfdl_str, "-d", &dest_str, "--config-file", &cfg_path]).assert().success();
+		cmd()
+			.args(["download", &sfdl_str, "-d", &dest_str])
+			.env("RSFDL_CONFIG", &cfg_path)
+			.assert()
+			.success();
 	})
 	.await
 	.unwrap();
@@ -99,7 +102,6 @@ async fn cli_download_connection_error() {
 	let sfdl_dir = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
-	// Point to a port with no FTP server
 	let port = portpicker::pick_unused_port().expect("no free port");
 	let xml = generate_sfdl_xml(port, &[("nope.bin", "data", "/data/nope.bin", 100)]);
 	let sfdl_path = write_sfdl_to_file(sfdl_dir.path(), &xml);
@@ -110,7 +112,8 @@ async fn cli_download_connection_error() {
 
 	tokio::task::spawn_blocking(move || {
 		cmd()
-			.args(["download", &sfdl_str, "-d", &dest_str, "--config-file", &cfg_path])
+			.args(["download", &sfdl_str, "-d", &dest_str])
+			.env("RSFDL_CONFIG", &cfg_path)
 			.assert()
 			.failure()
 			.stderr(predicate::str::contains("1 failed"));

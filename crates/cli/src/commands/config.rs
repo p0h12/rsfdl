@@ -1,9 +1,7 @@
-use std::path::PathBuf;
-
 use rsfdl_core::settings::{self, Settings, default_settings_path, format_settings};
 
-pub fn run_show(config_file: Option<&str>) {
-	let path = config_file.map(PathBuf::from).unwrap_or_else(default_settings_path);
+pub fn run_show() {
+	let path = default_settings_path();
 	let result = settings::load(&path);
 	for w in &result.warnings {
 		eprintln!("Warning: {w}");
@@ -15,8 +13,8 @@ pub fn run_path() {
 	println!("{}", default_settings_path().display());
 }
 
-pub fn run_edit(config_file: Option<&str>) -> std::io::Result<()> {
-	let path = config_file.map(PathBuf::from).unwrap_or_else(default_settings_path);
+pub fn run_edit() -> std::io::Result<()> {
+	let path = default_settings_path();
 
 	if !path.exists() {
 		settings::save(&path, &Settings::default()).map_err(|e| std::io::Error::other(e.to_string()))?;

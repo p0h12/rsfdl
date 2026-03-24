@@ -82,17 +82,9 @@ enum Commands {
 #[derive(Subcommand)]
 enum ConfigAction {
 	/// Show current settings
-	Show {
-		/// Path to settings file (default: platform config dir)
-		#[arg(long)]
-		config_file: Option<String>,
-	},
+	Show,
 	/// Edit settings in $EDITOR
-	Edit {
-		/// Path to settings file (default: platform config dir)
-		#[arg(long)]
-		config_file: Option<String>,
-	},
+	Edit,
 	/// Print path to settings file
 	Path,
 }
@@ -141,11 +133,11 @@ async fn main() {
 			.await;
 		}
 		Commands::Config { action } => match action {
-			ConfigAction::Show { config_file } => {
-				commands::config::run_show(config_file.as_deref());
+			ConfigAction::Show => {
+				commands::config::run_show();
 			}
-			ConfigAction::Edit { config_file } => {
-				if let Err(e) = commands::config::run_edit(config_file.as_deref()) {
+			ConfigAction::Edit => {
+				if let Err(e) = commands::config::run_edit() {
 					eprintln!("Error: {}", e);
 					std::process::exit(1);
 				}

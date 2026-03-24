@@ -102,11 +102,16 @@ pub fn fix_invalid(settings: &mut Settings) -> Vec<String> {
 	corrected
 }
 
-/// Get the default settings file path (BR-CFG-001).
+/// Get the settings file path (CFG-002).
+///
+/// Priority: `RSFDL_CONFIG` env var > platform default.
 /// - macOS: ~/Library/Application Support/rsfdl/settings.toml
 /// - Linux: ~/.config/rsfdl/settings.toml
 /// - Windows: %APPDATA%\rsfdl\settings.toml
 pub fn default_settings_path() -> PathBuf {
+	if let Ok(path) = std::env::var("RSFDL_CONFIG") {
+		return PathBuf::from(path);
+	}
 	let config_dir = dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("rsfdl");
 	config_dir.join("settings.toml")
 }
@@ -585,10 +590,10 @@ mod tests {
 	}
 
 	// -------------------------------------------------------
-	// CFG-001 BR-CFG-001: Default settings path
+	// CFG-001 CFG-002: Default settings path
 	// -------------------------------------------------------
 
-	/// CFG-001 | BR-CFG-001: Default path uses platform config dir with .toml extension.
+	/// CFG-001 | CFG-002: Default path uses platform config dir with .toml extension.
 	#[test]
 	fn cfg001_default_path_ends_with_toml() {
 		let path = default_settings_path();

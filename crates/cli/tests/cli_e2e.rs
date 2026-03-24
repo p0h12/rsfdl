@@ -312,7 +312,7 @@ speedreport_template = ""
 	);
 
 	cmd()
-		.args(["config", "show", "--config-file", &path])
+		.args(["config", "show"]).env("RSFDL_CONFIG", &path)
 		.assert()
 		.success()
 		.stdout(predicate::str::contains(&path))
@@ -328,7 +328,8 @@ fn config_show_without_file_shows_defaults() {
 	let path = dir.path().join("nonexistent/settings.toml");
 
 	cmd()
-		.args(["config", "show", "--config-file", &path.to_string_lossy()])
+		.args(["config", "show"])
+		.env("RSFDL_CONFIG", path.to_string_lossy().to_string())
 		.assert()
 		.success()
 		.stdout(predicate::str::contains("max_threads"))
@@ -343,7 +344,7 @@ fn config_edit_creates_default_file() {
 	let path = dir.path().join("rsfdl/settings.toml");
 
 	// Use `true` as editor — it exits immediately with success
-	cmd().args(["config", "edit", "--config-file", &path.to_string_lossy()]).env("EDITOR", "true").assert().success();
+	cmd().args(["config", "edit"]).env("RSFDL_CONFIG", path.to_string_lossy().to_string()).env("EDITOR", "true").assert().success();
 
 	// File should now exist with valid TOML defaults
 	assert!(path.exists(), "Settings file should have been created");
@@ -374,7 +375,7 @@ speedreport_template = ""
 	// Download will fail (no FTP server), but that's OK —
 	// we only care that the settings file is unchanged after the attempt.
 	let _ = cmd()
-		.args(["download", &fixture("unencrypted_v3.sfdl"), "--threads", "7", "--dest", "/tmp/override_dest", "--config-file", &path])
+		.args(["download", &fixture("unencrypted_v3.sfdl"), "--threads", "7", "--dest", "/tmp/override_dest"]).env("RSFDL_CONFIG", &path)
 		.assert();
 
 	let content_after = std::fs::read_to_string(&path).unwrap();
@@ -401,7 +402,7 @@ speedreport_template = ""
 	let (_dir, path) = create_settings_file(toml);
 
 	cmd()
-		.args(["info", &fixture("encrypted_v3.sfdl"), "--config-file", &path])
+		.args(["info", &fixture("encrypted_v3.sfdl")]).env("RSFDL_CONFIG", &path)
 		.assert()
 		.success()
 		.stderr(predicate::str::contains("Auto-decrypted with password from list"))
@@ -426,7 +427,7 @@ speedreport_template = ""
 	let (_dir, path) = create_settings_file(toml);
 
 	cmd()
-		.args(["list", &fixture("encrypted_v3.sfdl"), "--config-file", &path])
+		.args(["list", &fixture("encrypted_v3.sfdl")]).env("RSFDL_CONFIG", &path)
 		.assert()
 		.success()
 		.stderr(predicate::str::contains("Auto-decrypted with password from list"))
@@ -455,7 +456,7 @@ speedreport_template = ""
 	// Download will fail at FTP connection, but decryption should succeed
 	// using "test" from auto_passwords — no -p flag needed
 	cmd()
-		.args(["download", &fixture("encrypted_v3.sfdl"), "--config-file", &path])
+		.args(["download", &fixture("encrypted_v3.sfdl")]).env("RSFDL_CONFIG", &path)
 		.assert()
 		.stderr(predicate::str::contains("Auto-decrypted with password from list"));
 }
@@ -467,7 +468,7 @@ fn config_show_with_corrupt_file_shows_defaults() {
 	let (_dir, path) = create_settings_file("not valid toml {{{");
 
 	cmd()
-		.args(["config", "show", "--config-file", &path])
+		.args(["config", "show"]).env("RSFDL_CONFIG", &path)
 		.assert()
 		.success()
 		.stdout(predicate::str::contains("max_threads"))
