@@ -50,7 +50,7 @@ impl Default for Settings {
 	}
 }
 
-/// Validate settings per BR-CFG-003.
+/// Validate settings per BR-CFG-002.
 /// Returns a list of (field_name, reason) pairs for all invalid values.
 pub fn validate(settings: &Settings) -> Vec<(String, String)> {
 	let mut errors = Vec::new();
@@ -230,6 +230,11 @@ pub fn format_settings(path: &Path, settings: &Settings) -> String {
 		writeln!(out, "exclusion_patterns           = {}", settings.exclusion_patterns.join(", ")).unwrap();
 	}
 	writeln!(out, "auto_passwords               = ({} entries)", settings.auto_passwords.len()).unwrap();
+	if settings.speedreport_template.is_empty() {
+		writeln!(out, "speedreport_template         = (none)").unwrap();
+	} else {
+		writeln!(out, "speedreport_template         = (custom)").unwrap();
+	}
 	out
 }
 
@@ -241,10 +246,11 @@ mod tests {
 	// CFG-001 / BR-CFG-002: Default values
 	// -------------------------------------------------------
 
-	/// CFG-001 | BR-CFG-002: All default values match the specification.
+	/// CFG-001 | BR-CFG-001: All default values match the specification.
 	#[test]
 	fn cfg001_defaults_match_spec() {
 		let s = Settings::default();
+		assert!(s.download_directory.ends_with("rsfdl"));
 		assert_eq!(s.max_threads, 3);
 		assert_eq!(s.max_speed_kbps, 0);
 		assert_eq!(s.max_retries, 3);
@@ -252,23 +258,24 @@ mod tests {
 		assert!(!s.auto_extract);
 		assert!(!s.delete_archives_after_extract);
 		assert!(!s.strict_disk_check);
+		assert_eq!(s.ftp_timeout_seconds, 30);
 		assert_eq!(s.exclusion_patterns, vec!["*.nfo", "*.jpg", "*.png", "*.txt", "*sample*"]);
 		assert!(s.auto_passwords.is_empty());
 		assert!(s.speedreport_template.is_empty());
 	}
 
 	// -------------------------------------------------------
-	// CFG-001 / BR-CFG-003: Validation
+	// CFG-001 / BR-CFG-002: Validation
 	// -------------------------------------------------------
 
-	/// CFG-001 | BR-CFG-003: Default values pass validation.
+	/// CFG-001 | BR-CFG-002: Default values pass validation.
 	#[test]
 	fn cfg001_validate_accepts_defaults() {
 		let s = Settings::default();
 		assert!(validate(&s).is_empty());
 	}
 
-	/// CFG-001 | BR-CFG-003: max_threads must be 1–20.
+	/// CFG-001 | BR-CFG-002: max_threads must be 1–20.
 	#[test]
 	fn cfg001_validate_max_threads_bounds() {
 		let mut s = Settings::default();
@@ -286,7 +293,7 @@ mod tests {
 		assert!(validate(&s).is_empty());
 	}
 
-	/// CFG-001 | BR-CFG-003: max_retries must be 0–50.
+	/// CFG-001 | BR-CFG-002: max_retries must be 0–50.
 	#[test]
 	fn cfg001_validate_max_retries_bounds() {
 		let mut s = Settings::default();
@@ -301,7 +308,7 @@ mod tests {
 		assert!(validate(&s).is_empty());
 	}
 
-	/// CFG-001 | BR-CFG-003: retry_delay_seconds must be 1–3600.
+	/// CFG-001 | BR-CFG-002: retry_delay_seconds must be 1–3600.
 	#[test]
 	fn cfg001_validate_retry_delay_bounds() {
 		let mut s = Settings::default();
@@ -319,7 +326,7 @@ mod tests {
 		assert!(validate(&s).is_empty());
 	}
 
-	/// CFG-001 | BR-CFG-003: exclusion_patterns must be valid glob syntax (non-empty).
+	/// CFG-001 | BR-CFG-002: exclusion_patterns must be valid glob syntax (non-empty).
 	#[test]
 	fn cfg001_validate_empty_exclusion_pattern() {
 		let mut s = Settings::default();
@@ -536,7 +543,7 @@ mod tests {
 	// CFG-001 Variante A+B: Exclusion patterns round-trip
 	// -------------------------------------------------------
 
-	/// CFG-001 | BR-CFG-003: Exclusion patterns survive TOML round-trip.
+	/// CFG-001 | BR-CFG-002: Exclusion patterns survive TOML round-trip.
 	#[test]
 	fn cfg001_exclusion_patterns_round_trip() {
 		let dir = tempfile::tempdir().unwrap();
@@ -583,7 +590,7 @@ mod tests {
 		assert!(output.contains("*.nfo"));
 	}
 
-	/// CFG-001 | BR-CFG-005: Passwords are not shown in cleartext.
+	/// CFG-001 | BR-CFG-003: Passwords are not shown in cleartext.
 	#[test]
 	fn cfg001_format_settings_hides_passwords() {
 		let mut s = Settings::default();
@@ -595,6 +602,48 @@ mod tests {
 		assert!(!output.contains("secret1"));
 		assert!(!output.contains("secret2"));
 		assert!(output.contains("2 entries"));
+	}
+
+	/// CFG-001 | CLI-005: format_settings shows speedreport_template status.
+	#[test]
+	fn cfg001_format_settings_shows_speedreport_template() {
+		let path = Path::new("/tmp/settings.toml");
+
+		let s = Settings::default();
+		let output = format_settings(path, &s);
+		assert!(output.contains("speedreport_template"));
+		assert!(output.contains("(none)"));
+
+		let mut s2 = Settings::default();
+		s2.speedreport_template = "custom template".into();
+		let output2 = format_settings(path, &s2);
+		assert!(output2.contains("(custom)"));
+		assert!(!output2.contains("custom template"));
+	}
+
+	// -------------------------------------------------------
+	// CFG-001 Variante A: Partial TOML (missing keys)
+	// -------------------------------------------------------
+
+	/// CFG-001 | Variante A: Missing TOML keys are filled with defaults.
+	#[test]
+	fn cfg001_load_partial_toml_fills_defaults() {
+		let dir = tempfile::tempdir().unwrap();
+		let path = dir.path().join("settings.toml");
+
+		// Write TOML with only one field
+		std::fs::write(&path, "max_threads = 7\n").unwrap();
+
+		let result = load(&path);
+
+		assert!(result.warnings.is_empty());
+		assert_eq!(result.settings.max_threads, 7);
+		// All other fields should be defaults
+		assert_eq!(result.settings.max_retries, 3);
+		assert_eq!(result.settings.retry_delay_seconds, 10);
+		assert_eq!(result.settings.ftp_timeout_seconds, 30);
+		assert!(!result.settings.auto_extract);
+		assert_eq!(result.settings.exclusion_patterns, vec!["*.nfo", "*.jpg", "*.png", "*.txt", "*sample*"]);
 	}
 
 	// -------------------------------------------------------
@@ -627,9 +676,7 @@ mod tests {
 	#[test]
 	fn cfg002_platform_default_is_under_config_dir() {
 		let path = resolve_config_path(None);
-		let expected_parent = dirs::config_dir()
-			.unwrap_or_else(|| PathBuf::from("."))
-			.join("rsfdl");
+		let expected_parent = dirs::config_dir().unwrap_or_else(|| PathBuf::from(".")).join("rsfdl");
 		assert_eq!(path.parent().unwrap(), expected_parent);
 	}
 
