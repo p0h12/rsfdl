@@ -147,6 +147,14 @@ struct RawBulkFolderV3 {
 fn parse_v3(xml: &str) -> Result<SfdlContainer, SfdlError> {
 	let raw: RawContainerV3 = from_str(xml).map_err(|e| SfdlError::ParseError(e.to_string()))?;
 
+	// BR-SFDL-001: Validate ContainerVersion number
+	if raw.container_version != 10 {
+		return Err(SfdlError::ParseError(format!(
+			"Unsupported ContainerVersion {}. Only version 10 (SFDL v3) is supported.",
+			raw.container_version
+		)));
+	}
+
 	Ok(SfdlContainer {
 		container_version: raw.container_version,
 		version: SfdlVersion::V3,
@@ -574,6 +582,63 @@ mod tests {
 
 		// Paths are still encrypted
 		assert_ne!(pkg.bulk_folder_list[0].bulk_folder_path, "/releases/movie/");
+	}
+
+	/// SFDL-001 | Main Success: Parsed v3 container has SfdlVersion::V3.
+	#[test]
+	fn sfdl001_v3_has_version_field() {
+		let container = parse_sfdl(UNENCRYPTED_V3).unwrap();
+		assert_eq!(container.version, SfdlVersion::V3);
+	}
+
+	/// SFDL-001 | Main Success: Parsed v2 container has SfdlVersion::V2.
+	#[test]
+	fn sfdl001_v2_has_version_field() {
+		let container = parse_sfdl(UNENCRYPTED_V2).unwrap();
+		assert_eq!(container.version, SfdlVersion::V2);
+	}
+
+	/// SFDL-001 | BR-SFDL-001: ContainerVersion 0 is rejected.
+	#[test]
+	fn sfdl001_reject_container_version_0() {
+		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>0</ContainerVersion>
+  <Encrypted>false</Encrypted>
+  <Connection><Host>x</Host><Port>21</Port></Connection>
+  <Packages></Packages>
+</Container>"#;
+		let result = parse_sfdl(xml);
+		assert!(result.is_err());
+		assert!(result.unwrap_err().to_string().contains("Unsupported ContainerVersion"));
+	}
+
+	/// SFDL-001 | BR-SFDL-001: ContainerVersion 5 (v1) is rejected.
+	#[test]
+	fn sfdl001_reject_container_version_v1() {
+		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>5</ContainerVersion>
+  <Encrypted>false</Encrypted>
+  <Connection><Host>x</Host><Port>21</Port></Connection>
+  <Packages></Packages>
+</Container>"#;
+		let result = parse_sfdl(xml);
+		assert!(result.is_err());
+	}
+
+	/// SFDL-001 | BR-SFDL-001: ContainerVersion 11 (>10) is rejected.
+	#[test]
+	fn sfdl001_reject_container_version_above_10() {
+		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
+<Container>
+  <ContainerVersion>11</ContainerVersion>
+  <Encrypted>false</Encrypted>
+  <Connection><Host>x</Host><Port>21</Port></Connection>
+  <Packages></Packages>
+</Container>"#;
+		let result = parse_sfdl(xml);
+		assert!(result.is_err());
 	}
 
 	/// SFDL-001 | A1: Invalid XML returns error.
