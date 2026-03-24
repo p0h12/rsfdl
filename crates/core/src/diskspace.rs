@@ -74,6 +74,7 @@ pub fn query_available_space(path: &Path) -> Result<u64, DownloadError> {
 		if libc::statvfs(c_path.as_ptr(), &mut stat) != 0 {
 			return Err(DownloadError::Io(std::io::Error::last_os_error()));
 		}
+		#[allow(clippy::unnecessary_cast)]
 		Ok(stat.f_bavail as u64 * stat.f_frsize as u64)
 	}
 }
