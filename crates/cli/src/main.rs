@@ -16,6 +16,9 @@ enum Commands {
 	Info {
 		#[command(flatten)]
 		args: SfdlArgs,
+		/// Output as JSON
+		#[arg(long)]
+		json: bool,
 	},
 	/// List files in SFDL container
 	List {
@@ -72,9 +75,9 @@ async fn main() {
 	let cli = Cli::parse();
 
 	match cli.command {
-		Commands::Info { args } => {
+		Commands::Info { args, json } => {
 			let passwords = load_password_file(args.password_file.as_deref());
-			commands::info::run(&args, &passwords);
+			commands::info::run(&args, &passwords, json);
 		}
 		Commands::List { args, resolve } => {
 			let passwords = load_password_file(args.password_file.as_deref());

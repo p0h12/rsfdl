@@ -83,16 +83,81 @@ fn info_encrypted_wrong_password_fails() {
 
 // --- File not found ---
 
+/// CLI-001 | A3: Nonexistent file → exit code 1.
 #[test]
 fn info_nonexistent_file_fails() {
-	cmd().args(["info", "/tmp/nonexistent_file_12345.sfdl"]).assert().failure();
+	cmd()
+		.args(["info", "/tmp/nonexistent_file_12345.sfdl"])
+		.assert()
+		.failure()
+		.code(1);
 }
 
-// --- Invalid SFDL ---
-
+/// CLI-001 | A4: Invalid SFDL → exit code 2.
 #[test]
 fn info_invalid_file_fails() {
-	cmd().args(["info", &fixture("invalid.sfdl")]).assert().failure();
+	cmd()
+		.args(["info", &fixture("invalid.sfdl")])
+		.assert()
+		.failure()
+		.code(2);
+}
+
+/// CLI-001 | A2: Wrong password → exit code 4.
+#[test]
+fn info_wrong_password_exit_code() {
+	cmd()
+		.args(["info", &fixture("encrypted_v3.sfdl"), "-p", "wrong"])
+		.assert()
+		.failure()
+		.code(4);
+}
+
+/// CLI-001 | A1: Encrypted without password → exit code 3.
+#[test]
+fn info_password_required_exit_code() {
+	cmd()
+		.args(["info", &fixture("encrypted_v3.sfdl")])
+		.assert()
+		.failure()
+		.code(3);
+}
+
+/// CLI-001 | BR-CLI-001-001: --json produces valid JSON.
+#[test]
+fn info_json_output() {
+	let output = cmd()
+		.args(["info", &fixture("unencrypted_v3.sfdl"), "--json"])
+		.assert()
+		.success()
+		.get_output()
+		.stdout
+		.clone();
+
+	let json: serde_json::Value = serde_json::from_slice(&output).expect("stdout should be valid JSON");
+	assert_eq!(json["description"], "Test.Release.2026.1080p");
+	assert_eq!(json["host"], "ftp.example.com");
+	assert_eq!(json["port"], 21);
+	assert_eq!(json["protocol"], "FTP");
+	assert_eq!(json["encrypted"], false);
+	assert_eq!(json["packages"], 1);
+	assert_eq!(json["total_files"], 2);
+}
+
+/// CLI-001 | Main Success: --json with encrypted container.
+#[test]
+fn info_json_encrypted() {
+	let output = cmd()
+		.args(["info", &fixture("encrypted_v3.sfdl"), "-p", "test", "--json"])
+		.assert()
+		.success()
+		.get_output()
+		.stdout
+		.clone();
+
+	let json: serde_json::Value = serde_json::from_slice(&output).expect("stdout should be valid JSON");
+	assert_eq!(json["encrypted"], true);
+	assert_eq!(json["host"], "ftp.example.com");
 }
 
 // --- AT-08: CLI list (unencrypted) ---

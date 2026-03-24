@@ -93,7 +93,7 @@
 
 ### BR-CLI-001-001: Ausgabeformat
 
-Standard-Ausgabe als key-value-Text. Mit `--json` (geplant): JSON-Objekt auf stdout.
+Standard-Ausgabe als key-value-Text. Mit `--json`: JSON-Objekt auf stdout.
 
 ## Ausgabe (Standard)
 
