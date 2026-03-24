@@ -1,3 +1,5 @@
+//! UI-001: Application state management.
+
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
@@ -29,7 +31,7 @@ pub enum Theme {
 	System,
 }
 
-/// Per-container lifecycle phase.
+/// UI-001 / BR-UI-002: Per-container lifecycle phase.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ContainerPhase {
 	/// Encrypted, waiting for password input.
@@ -217,7 +219,7 @@ impl ContainerState {
 // Central app state
 // ---------------------------------------------------------------------------
 
-/// Central app state provided via use_context_provider at root.
+/// UI-001: Central app state provided via use_context_provider at root.
 /// All fields are Signal handles (Clone + Copy).
 #[derive(Clone, Copy)]
 pub struct AppState {
@@ -351,5 +353,175 @@ impl AppState {
 	/// Container count.
 	pub fn container_count(&self) -> usize {
 		self.containers.read().len()
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use rsfdl_core::selection::FileSelection;
+	use rsfdl_core::sfdl::models::{Connection, FileItem, Package, SfdlContainer, SfdlVersion};
+
+	fn test_container_state(description: &str, host: &str, packages: Vec<Package>) -> ContainerState {
+		let container = SfdlContainer {
+			description: description.into(),
+			connection: Connection { host: host.into(), port: 21, ..Connection::default() },
+			packages,
+			..SfdlContainer::default()
+		};
+		let selection = FileSelection::new(&container, &[]);
+		ContainerState {
+			id: 1,
+			file_path: "/tmp/test.sfdl".into(),
+			container,
+			phase: ContainerPhase::Ready,
+			expanded: true,
+			password_error: None,
+			selection,
+			file_states: HashMap::new(),
+			cancel_token: None,
+			file_cancel_tx: None,
+			global_progress: GlobalProgressState::default(),
+			summary: None,
+		}
+	}
+
+	fn test_package(files: Vec<(&str, u64)>) -> Package {
+		Package {
+			name: "TestPkg".into(),
+			file_list: files
+				.into_iter()
+				.map(|(name, size)| FileItem { file_name: name.into(), file_size: size, ..FileItem::default() })
+				.collect(),
+			..Package::default()
+		}
+	}
+
+	// -------------------------------------------------------
+	// UI-001 | ContainerState: display_name
+	// -------------------------------------------------------
+
+	/// UI-001 | ContainerState: display_name returns description when non-empty.
+	#[test]
+	fn ui001_display_name_from_description() {
+		let cs = test_container_state("My.Release.2026", "ftp.example.com", vec![]);
+		assert_eq!(cs.display_name(), "My.Release.2026");
+	}
+
+	/// UI-001 | ContainerState: display_name falls back to filename when description empty.
+	#[test]
+	fn ui001_display_name_from_path() {
+		let cs = test_container_state("", "ftp.example.com", vec![]);
+		assert_eq!(cs.display_name(), "test.sfdl");
+	}
+
+	// -------------------------------------------------------
+	// UI-001 | ContainerState: version_tag
+	// -------------------------------------------------------
+
+	/// UI-001 | ContainerState: version_tag for v3.
+	#[test]
+	fn ui001_version_tag_v3() {
+		let cs = test_container_state("test", "", vec![]);
+		assert_eq!(cs.version_tag(), "v3"); // default is V3
+	}
+
+	/// UI-001 | ContainerState: version_tag for v2.
+	#[test]
+	fn ui001_version_tag_v2() {
+		let mut cs = test_container_state("test", "", vec![]);
+		cs.container.version = SfdlVersion::V2;
+		assert_eq!(cs.version_tag(), "v2");
+	}
+
+	// -------------------------------------------------------
+	// UI-001 | ContainerState: host_display
+	// -------------------------------------------------------
+
+	/// UI-001 | ContainerState: host_display with host.
+	#[test]
+	fn ui001_host_display_with_host() {
+		let cs = test_container_state("test", "ftp.example.com", vec![]);
+		assert_eq!(cs.host_display(), Some("ftp.example.com:21".into()));
+	}
+
+	/// UI-001 | ContainerState: host_display with empty host returns None.
+	#[test]
+	fn ui001_host_display_empty() {
+		let cs = test_container_state("test", "", vec![]);
+		assert_eq!(cs.host_display(), None);
+	}
+
+	// -------------------------------------------------------
+	// UI-001 | ContainerState: file counts and selection
+	// -------------------------------------------------------
+
+	/// UI-001 | ContainerState: total_file_count and selected_count.
+	#[test]
+	fn ui001_file_counts() {
+		let pkg = test_package(vec![("a.rar", 1000), ("b.rar", 2000), ("c.nfo", 100)]);
+		let cs = test_container_state("test", "", vec![pkg]);
+		assert_eq!(cs.total_file_count(), 3);
+		assert_eq!(cs.selected_count(), 3); // no exclusion patterns
+		assert_eq!(cs.package_count(), 1);
+	}
+
+	// -------------------------------------------------------
+	// UI-001 | A7: reset_download
+	// -------------------------------------------------------
+
+	/// UI-001 | A7: reset_download resets to Ready with cleared state.
+	#[test]
+	fn ui001_reset_download() {
+		let pkg = test_package(vec![("a.rar", 1000)]);
+		let mut cs = test_container_state("test", "", vec![pkg]);
+		cs.phase = ContainerPhase::Done;
+		cs.summary = Some(DownloadSummary { total_files: 1, completed: 1, failed: 0, cancelled: 0, skipped: 0 });
+
+		cs.reset_download();
+
+		assert_eq!(cs.phase, ContainerPhase::Ready);
+		assert!(cs.summary.is_none());
+		assert!(cs.file_states.is_empty());
+		assert!(cs.cancel_token.is_none());
+	}
+
+	// -------------------------------------------------------
+	// UI-001 | GlobalProgressState
+	// -------------------------------------------------------
+
+	/// UI-001 | GlobalProgressState: percent with zero total.
+	#[test]
+	fn ui001_progress_percent_zero() {
+		let gp = GlobalProgressState::default();
+		assert_eq!(gp.percent(), 0.0);
+	}
+
+	/// UI-001 | GlobalProgressState: percent normal calculation.
+	#[test]
+	fn ui001_progress_percent_normal() {
+		let gp = GlobalProgressState { total_bytes_all: 1000, total_written_all: 500, ..Default::default() };
+		assert!((gp.percent() - 50.0).abs() < 0.1);
+	}
+
+	/// UI-001 | GlobalProgressState: percent capped at 100.
+	#[test]
+	fn ui001_progress_percent_capped() {
+		let gp = GlobalProgressState { total_bytes_all: 100, total_written_all: 200, ..Default::default() };
+		assert_eq!(gp.percent(), 100.0);
+	}
+
+	/// UI-001 | GlobalProgressState: eta_seconds returns None when no speed.
+	#[test]
+	fn ui001_eta_no_speed() {
+		let gp = GlobalProgressState::default();
+		assert!(gp.eta_seconds().is_none());
+	}
+
+	/// UI-001 | GlobalProgressState: speed is 0 when no start time.
+	#[test]
+	fn ui001_speed_no_start() {
+		let gp = GlobalProgressState { total_written_all: 1000, ..Default::default() };
+		assert_eq!(gp.speed_bytes_per_sec(), 0.0);
 	}
 }

@@ -42,7 +42,7 @@ pub fn MainView() -> Element {
 															style: "width: 14px; height: 14px;",
 															dangerous_inner_html: icons::PLUS,
 													}
-													"Hinzufuegen"
+													"Hinzufügen"
 											}
 											button {
 													class: "btn btn-ghost btn-sm btn-danger",
