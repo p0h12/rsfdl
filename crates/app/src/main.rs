@@ -5,12 +5,13 @@ mod views;
 
 use dioxus::prelude::*;
 
-use state::{AppState, AppView};
+use state::{AppState, AppView, Theme};
 use views::creator_view::CreatorView;
 use views::main_view::MainView;
 use views::settings_view::SettingsView;
 
 const TAILWIND_CSS: &str = include_str!("../assets/tailwind.css");
+const THEME_CSS: &str = include_str!("../assets/theme.css");
 
 fn main() {
 	tracing_subscriber::fmt().with_env_filter(tracing_subscriber::EnvFilter::from_default_env()).init();
@@ -48,9 +49,20 @@ fn app() -> Element {
 	let view = *state.current_view.read();
 	let error = state.error_message.read().clone();
 
+	let theme = *state.theme.read();
+	let theme_attr = match theme {
+		Theme::Light => "light",
+		Theme::Dark => "dark",
+		Theme::System => "",
+	};
+
 	rsx! {
 			style { "{TAILWIND_CSS}" }
-			div { class: "flex flex-col h-screen bg-white text-gray-900",
+			style { "{THEME_CSS}" }
+			div {
+					class: "flex flex-col h-screen",
+					style: "background: var(--color-background-secondary); color: var(--color-text-primary);",
+					"data-theme": "{theme_attr}",
 					// Header (always visible)
 					components::header::Header {}
 
