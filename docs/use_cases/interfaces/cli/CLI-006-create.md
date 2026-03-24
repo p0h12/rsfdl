@@ -107,6 +107,8 @@
 - Threads: 3 wenn nicht angegeben.
 - Format: SFDL v3.
 
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Exit-Codes (BR-CLI-007).
+
 ## Ausgabe
 
 Fortschrittsmeldungen auf stderr (Verbindungsaufbau, Verzeichnis-Listing). Abschlussmeldung auf stdout mit Dateiname, Gesamtgroesse und Dateianzahl.

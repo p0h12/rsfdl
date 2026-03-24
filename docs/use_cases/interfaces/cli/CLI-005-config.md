@@ -106,6 +106,8 @@
 - Passwoerter werden maskiert: nur `(N entries)` angezeigt (-> CFG-001, BR-CFG-005).
 - Warnings und Fehler gehen auf stderr.
 
+Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Exit-Codes (BR-CLI-007).
+
 ## Syntax
 
 | Subcommand    | Optionen                 | Beschreibung                          |
