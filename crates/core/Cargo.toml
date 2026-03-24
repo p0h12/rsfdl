@@ -37,6 +37,9 @@ regex = "1"
 # Platform
 libc = "0.2"
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Storage_FileSystem"] }
+
 # Utilities
 uuid = { version = "1", features = ["v4"] }
 dirs = "6"
