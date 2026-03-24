@@ -154,8 +154,8 @@ fn config_show_displays_settings_and_path() {
 download_directory = "/tmp/downloads"
 max_threads = 5
 max_speed_kbps = 0
-max_retries = 3
-retry_delay_seconds = 10
+max_retries = 0
+retry_delay_seconds = 0
 auto_extract = false
 delete_archives_after_extract = false
 strict_disk_check = false
@@ -213,8 +213,8 @@ fn download_override_does_not_modify_settings_file() {
 download_directory = "/tmp/original"
 max_threads = 3
 max_speed_kbps = 0
-max_retries = 3
-retry_delay_seconds = 10
+max_retries = 0
+retry_delay_seconds = 0
 auto_extract = false
 delete_archives_after_extract = false
 strict_disk_check = false
@@ -243,8 +243,8 @@ fn info_uses_auto_passwords_from_settings() {
 download_directory = "/tmp/downloads"
 max_threads = 3
 max_speed_kbps = 0
-max_retries = 3
-retry_delay_seconds = 10
+max_retries = 0
+retry_delay_seconds = 0
 auto_extract = false
 delete_archives_after_extract = false
 strict_disk_check = false
@@ -268,8 +268,8 @@ fn list_uses_auto_passwords_from_settings() {
 download_directory = "/tmp/downloads"
 max_threads = 3
 max_speed_kbps = 0
-max_retries = 3
-retry_delay_seconds = 10
+max_retries = 0
+retry_delay_seconds = 0
 auto_extract = false
 delete_archives_after_extract = false
 strict_disk_check = false
@@ -295,8 +295,8 @@ fn download_uses_auto_passwords_from_settings() {
 download_directory = "/tmp/downloads"
 max_threads = 3
 max_speed_kbps = 0
-max_retries = 3
-retry_delay_seconds = 10
+max_retries = 0
+retry_delay_seconds = 0
 auto_extract = false
 delete_archives_after_extract = false
 strict_disk_check = false
