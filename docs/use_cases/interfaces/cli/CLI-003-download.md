@@ -43,15 +43,16 @@
 ## Main Success Scenario
 
 1. Benutzer ruft `rsfdl download <datei.sfdl>` auf.
-2. System oeffnet und entschluesselt den Container (-> SFDL-001, SFDL-002).
-3. System loest den Inhalt auf (-> SFDL-003).
-4. System wendet Ausschlussmuster an (-> DL-002).
-5. System erstellt die Selektion (-> DL-001): Alle nicht-ausgeschlossenen Dateien.
-6. System prueft den Speicherplatz (-> DL-003).
-7. System startet den Download (-> DL-004) mit Fortschrittsanzeige auf stderr (-> CLI-CC).
-8. Nach Abschluss: optionale Verifikation (-> POST-001), Extraktion (-> POST-002).
-9. System gibt Ergebnis-Zusammenfassung auf stdout aus.
-10. Optional: Speed-Report auf stdout (-> POST-003).
+2. System oeffnet und parst die SFDL-Datei (-> SFDL-001).
+3. Falls verschluesselt: System entschluesselt den Container (-> SFDL-002, via --password, Auto-Passwort-Liste oder interaktiver Prompt).
+4. System loest den Inhalt auf (-> SFDL-003).
+5. System wendet Ausschlussmuster an (-> DL-002).
+6. System erstellt die Selektion (-> DL-001): Alle nicht-ausgeschlossenen Dateien.
+7. System prueft den Speicherplatz (-> DL-003).
+8. System startet den Download (-> DL-004) mit Fortschrittsanzeige auf stderr (-> CLI-CC).
+9. Nach Abschluss: optionale Verifikation (-> POST-001), Extraktion (-> POST-002).
+10. System gibt Ergebnis-Zusammenfassung auf stdout aus.
+11. Optional: Speed-Report auf stdout (-> POST-003).
 
 ## Alternative Flows
 

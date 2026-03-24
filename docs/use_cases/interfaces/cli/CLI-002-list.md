@@ -32,10 +32,11 @@
 ## Main Success Scenario
 
 1. Benutzer ruft `rsfdl list <datei.sfdl>` auf.
-2. System oeffnet, parst und entschluesselt die SFDL-Datei (-> SFDL-001, SFDL-002).
-3. System loest den Container-Inhalt auf (-> SFDL-003).
-4. System wendet Ausschlussmuster an (-> DL-002).
-5. System gibt die Dateiliste auf stdout aus.
+2. System oeffnet und parst die SFDL-Datei (-> SFDL-001).
+3. Falls verschluesselt: System entschluesselt den Container (-> SFDL-002, via --password, Auto-Passwort-Liste oder interaktiver Prompt).
+4. System loest den Container-Inhalt auf (-> SFDL-003).
+5. System wendet Ausschlussmuster an (-> DL-002).
+6. System gibt die Dateiliste auf stdout aus.
 
 ## Alternative Flows
 
