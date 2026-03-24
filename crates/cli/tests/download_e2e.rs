@@ -50,7 +50,7 @@ async fn cli_download_success() {
 
 	let output = tokio::task::spawn_blocking(move || {
 		cmd()
-			.args(["download", &sfdl_str, "-d", &dest_str])
+			.args(["download", &sfdl_str, "-o", &dest_str])
 			.env("RSFDL_CONFIG", &cfg_path)
 			.assert()
 			.success()
@@ -85,7 +85,7 @@ async fn cli_download_with_dest_flag() {
 	let (_cfg_dir, cfg_path) = fast_settings();
 
 	tokio::task::spawn_blocking(move || {
-		cmd().args(["download", &sfdl_str, "-d", &dest_str]).env("RSFDL_CONFIG", &cfg_path).assert().success();
+		cmd().args(["download", &sfdl_str, "-o", &dest_str]).env("RSFDL_CONFIG", &cfg_path).assert().success();
 	})
 	.await
 	.unwrap();
@@ -108,7 +108,7 @@ async fn cli_download_connection_error() {
 
 	tokio::task::spawn_blocking(move || {
 		cmd()
-			.args(["download", &sfdl_str, "-d", &dest_str])
+			.args(["download", &sfdl_str, "-o", &dest_str])
 			.env("RSFDL_CONFIG", &cfg_path)
 			.assert()
 			.failure()

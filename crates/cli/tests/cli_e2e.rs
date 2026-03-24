@@ -284,6 +284,32 @@ fn download_help_shows_exclude_flag() {
 	cmd().args(["download", "--help"]).assert().success().stdout(predicate::str::contains("--exclude"));
 }
 
+// --- CLI-003: Exit codes ---
+
+/// CLI-003 | A2: Nonexistent file → exit code 1.
+#[test]
+fn download_nonexistent_file_fails() {
+	cmd().args(["download", "/tmp/nonexistent_file_12345.sfdl"]).assert().failure().code(1);
+}
+
+/// CLI-003 | A3: Invalid SFDL → exit code 2.
+#[test]
+fn download_invalid_file_fails() {
+	cmd().args(["download", &fixture("invalid.sfdl")]).assert().failure().code(2);
+}
+
+/// CLI-003 | A1: Encrypted without password → exit code 3.
+#[test]
+fn download_password_required_exit_code() {
+	cmd().args(["download", &fixture("encrypted_v3.sfdl")]).assert().failure().code(3);
+}
+
+/// CLI-003 | A1: Wrong password → exit code 4.
+#[test]
+fn download_wrong_password_exit_code() {
+	cmd().args(["download", &fixture("encrypted_v3.sfdl"), "-p", "wrong"]).assert().failure().code(4);
+}
+
 // --- CLI list v2 ---
 
 #[test]
@@ -295,16 +321,19 @@ fn list_unencrypted_v2_shows_bulk_folders() {
 		.stdout(predicate::str::contains("/releases/test/"));
 }
 
-/// CLI-003 | A6: download --help shows all flags.
+/// CLI-003 | A8: download --help shows all flags.
 #[test]
 fn download_help_shows_all_flags() {
 	let output = cmd().args(["download", "--help"]).assert().success();
 	output
+		.stdout(predicate::str::contains("--output"))
 		.stdout(predicate::str::contains("--threads"))
 		.stdout(predicate::str::contains("--max-speed"))
 		.stdout(predicate::str::contains("--retries"))
 		.stdout(predicate::str::contains("--retry-delay"))
 		.stdout(predicate::str::contains("--strict-disk-check"))
+		.stdout(predicate::str::contains("--extract"))
+		.stdout(predicate::str::contains("--delete-archives"))
 		.stdout(predicate::str::contains("--exclude"))
 		.stdout(predicate::str::contains("--no-exclude"))
 		.stdout(predicate::str::contains("--quiet"));
@@ -407,7 +436,7 @@ speedreport_template = ""
 	// Download will fail (no FTP server), but that's OK —
 	// we only care that the settings file is unchanged after the attempt.
 	let _ = cmd()
-		.args(["download", &fixture("unencrypted_v3.sfdl"), "--threads", "7", "--dest", "/tmp/override_dest"])
+		.args(["download", &fixture("unencrypted_v3.sfdl"), "--threads", "7", "--output", "/tmp/override_dest"])
 		.env("RSFDL_CONFIG", &path)
 		.assert();
 

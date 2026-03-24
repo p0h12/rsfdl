@@ -1,3 +1,5 @@
+//! CLI-003: Download files from an SFDL container.
+
 use std::collections::HashMap;
 use std::path::PathBuf;
 use std::time::Instant;
@@ -8,24 +10,30 @@ use uuid::Uuid;
 
 use rsfdl_core::download::manager::DownloadManager;
 use rsfdl_core::download::progress::ProgressEvent;
+use rsfdl_core::error::DownloadError;
 use rsfdl_core::format_bytes;
 
 use super::common::{SfdlArgs, load_and_decrypt};
 
-/// CLI-003: Exit codes per spec.
+/// CLI-003 exit codes per BR-CLI-007.
+const EXIT_INSUFFICIENT_DISK_SPACE: i32 = 6;
 const EXIT_PARTIAL_FAILURE: i32 = 10;
 const EXIT_ALL_FAILED: i32 = 11;
+const EXIT_SIGNAL_ABORT: i32 = 12;
 
+/// CLI-003: Download files from an SFDL container.
 #[allow(clippy::too_many_arguments)]
 pub async fn run(
 	args: &SfdlArgs,
 	password_list: &[String],
-	dest: Option<&str>,
+	output: Option<&str>,
 	threads: Option<u32>,
 	max_speed: Option<u32>,
 	retries: Option<u32>,
 	retry_delay: Option<u32>,
 	strict_disk_check: bool,
+	extract: bool,
+	delete_archives: bool,
 	cli_exclude: &[String],
 	no_exclude: bool,
 	quiet: bool,
@@ -39,11 +47,9 @@ pub async fn run(
 		}
 	};
 
-	// A6: CLI parameter overrides (BR-CFG-004)
-	if let Some(d) = dest {
-		settings.download_directory = PathBuf::from(d);
-	} else {
-		settings.download_directory = std::env::current_dir().unwrap_or_else(|_| PathBuf::from("."));
+	// A8: CLI parameter overrides (BR-CLI-006)
+	if let Some(dir) = output {
+		settings.download_directory = PathBuf::from(dir);
 	}
 	if let Some(t) = threads {
 		settings.max_threads = t;
@@ -59,6 +65,12 @@ pub async fn run(
 	}
 	if strict_disk_check {
 		settings.strict_disk_check = true;
+	}
+	if extract {
+		settings.auto_extract = true;
+	}
+	if delete_archives {
+		settings.delete_archives_after_extract = true;
 	}
 
 	// SFDL-003: Resolve BulkFolders before download
@@ -97,7 +109,7 @@ pub async fn run(
 	// DL-004: Create download manager
 	let (manager, cancel_token, _file_cancel_tx) = DownloadManager::new(container, &settings);
 
-	// DL-006 / BR-CLI-003-002: Ctrl+C handler
+	// DL-006 / BR-CLI-013: Ctrl+C handler
 	let cancel_for_signal = cancel_token.clone();
 	tokio::spawn(async move {
 		tokio::signal::ctrl_c().await.ok();
@@ -118,7 +130,7 @@ pub async fn run(
 	let mut final_result = None;
 
 	if quiet {
-		// Quiet mode: just drain events until AllDone
+		// BR-CLI-008: Quiet mode — drain events until AllDone
 		while let Some(event) = rx.recv().await {
 			if let ProgressEvent::AllDone {
 				total_files,
@@ -133,7 +145,7 @@ pub async fn run(
 			}
 		}
 	} else {
-		// Normal mode: progress bars
+		// BR-CLI-012: Progress bars on stderr
 		let multi = MultiProgress::new();
 		let mut bars: HashMap<Uuid, ProgressBar> = HashMap::new();
 
@@ -254,13 +266,13 @@ pub async fn run(
 			run_extraction(&settings, quiet).await;
 		}
 
-		// Determine exit code
+		// Determine exit code per BR-CLI-007
 		let exit_code = if cancelled > 0 {
-			12 // A5: Signal abort
+			EXIT_SIGNAL_ABORT // A7: Signal abort
 		} else if failed > 0 && completed == 0 {
-			EXIT_ALL_FAILED // A4
+			EXIT_ALL_FAILED // A6: All downloads failed
 		} else if failed > 0 {
-			EXIT_PARTIAL_FAILURE // A3
+			EXIT_PARTIAL_FAILURE // A5: Partial failure
 		} else {
 			0
 		};
@@ -275,10 +287,12 @@ pub async fn run(
 		Ok(Ok(_)) => {}
 		Ok(Err(e)) => {
 			eprintln!("Error: {}", e);
-			if e.to_string().contains("disk space") {
-				std::process::exit(6); // A2: Insufficient disk space
-			}
-			std::process::exit(1);
+			// A4: Insufficient disk space (typed match)
+			let exit_code = match e {
+				DownloadError::InsufficientDiskSpace => EXIT_INSUFFICIENT_DISK_SPACE,
+				_ => 1,
+			};
+			std::process::exit(exit_code);
 		}
 		Err(e) => {
 			eprintln!("Error: {}", e);
@@ -329,5 +343,32 @@ fn truncate_name(name: &str, max: usize) -> String {
 	} else {
 		let suffix: String = name.chars().rev().take(max - 3).collect::<Vec<_>>().into_iter().rev().collect();
 		format!("...{suffix}")
+	}
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	/// CLI-003 | BR-CLI-012: truncate_name leaves short names unchanged.
+	#[test]
+	fn cli003_truncate_short_name() {
+		assert_eq!(truncate_name("movie.rar", 30), "movie.rar");
+	}
+
+	/// CLI-003 | BR-CLI-012: truncate_name truncates long names with ellipsis.
+	#[test]
+	fn cli003_truncate_long_name() {
+		let long = "a_very_long_filename_that_exceeds.rar";
+		let result = truncate_name(long, 15);
+		assert!(result.starts_with("..."));
+		assert_eq!(result.chars().count(), 15);
+	}
+
+	/// CLI-003 | BR-CLI-012: truncate_name handles exact boundary.
+	#[test]
+	fn cli003_truncate_exact_boundary() {
+		let name = "exactly10!";
+		assert_eq!(truncate_name(name, 10), "exactly10!");
 	}
 }

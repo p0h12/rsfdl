@@ -46,7 +46,7 @@ enum Commands {
 		args: SfdlArgs,
 		/// Download destination directory
 		#[arg(short, long)]
-		dest: Option<String>,
+		output: Option<String>,
 		/// Max concurrent downloads
 		#[arg(short, long)]
 		threads: Option<u32>,
@@ -62,6 +62,12 @@ enum Commands {
 		/// Abort if insufficient disk space
 		#[arg(long)]
 		strict_disk_check: bool,
+		/// Auto-extract archives after download
+		#[arg(long)]
+		extract: bool,
+		/// Delete archives after successful extraction
+		#[arg(long)]
+		delete_archives: bool,
 		/// Exclude files matching glob pattern (can be repeated)
 		#[arg(long)]
 		exclude: Vec<String>,
@@ -116,12 +122,14 @@ async fn main() {
 		}
 		Commands::Download {
 			args,
-			dest,
+			output,
 			threads,
 			max_speed,
 			retries,
 			retry_delay,
 			strict_disk_check,
+			extract,
+			delete_archives,
 			exclude,
 			no_exclude,
 			quiet,
@@ -130,12 +138,14 @@ async fn main() {
 			commands::download::run(
 				&args,
 				&passwords,
-				dest.as_deref(),
+				output.as_deref(),
 				threads,
 				max_speed,
 				retries,
 				retry_delay,
 				strict_disk_check,
+				extract,
+				delete_archives,
 				&exclude,
 				no_exclude,
 				quiet,
