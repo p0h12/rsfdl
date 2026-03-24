@@ -45,7 +45,7 @@
 
 ### BR-DL-017: Throttling-Mechanismus
 
-- Throttling geschieht im Read-Loop nach jedem Buffer-Write (64 KB Block).
+- Throttling geschieht im Read-Loop nach jedem Buffer-Write (32 KB Block).
 - Berechnung: `sleep_time = bytes_written / limit_per_second - elapsed_time`
 - Wenn `sleep_time <= 0`: kein Throttling noetig.
 

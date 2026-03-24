@@ -8,6 +8,7 @@ use uuid::Uuid;
 
 use crate::download::item::{DownloadItem, DownloadStatus, ResumeAction};
 use crate::download::progress::ProgressEvent;
+use crate::download::throttle::Throttle;
 use crate::error::DownloadError;
 use crate::ftp::client::FtpClient;
 use crate::settings::Settings;
@@ -26,6 +27,7 @@ pub struct DownloadManager {
 	container: SfdlContainer,
 	dest_dir: PathBuf,
 	max_threads: u32,
+	max_speed_kbps: u32,
 	max_retries: u32,
 	retry_delay_seconds: u32,
 	strict_disk_check: bool,
@@ -48,6 +50,7 @@ impl DownloadManager {
 				container,
 				dest_dir: settings.download_directory.clone(),
 				max_threads: settings.max_threads,
+				max_speed_kbps: settings.max_speed_kbps,
 				max_retries: settings.max_retries,
 				retry_delay_seconds: settings.retry_delay_seconds,
 				strict_disk_check: settings.strict_disk_check,
@@ -175,9 +178,10 @@ impl DownloadManager {
 			}
 		});
 
-		// 5. Parallel downloads with semaphore
+		// 5. Parallel downloads with semaphore + throttle
 		let semaphore = Arc::new(Semaphore::new(self.max_threads as usize));
 		let conn = Arc::new(self.container.connection.clone());
+		let throttle = Throttle::new(self.max_speed_kbps);
 		let cancel = self.cancel_token.clone();
 		let resume_downloads = self.resume_downloads;
 		let ftp_timeout = self.ftp_timeout_seconds;
@@ -192,6 +196,7 @@ impl DownloadManager {
 			let tx = progress_tx.clone();
 			let global_cancel = cancel.clone();
 			let file_tokens = file_tokens.clone();
+			let mut throttle_handle = throttle.handle();
 
 			// DL-006: Create a child token for this file
 			let file_cancel = global_cancel.child_token();
@@ -288,8 +293,10 @@ impl DownloadManager {
 						total_bytes: item.file_item.file_size,
 					});
 
-					// Download (uses per-file cancel token)
-					let result = client.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &file_cancel).await;
+					// DL-008: Register active thread for bandwidth throttle
+					throttle_handle.start();
+					let result = client.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &file_cancel, &mut throttle_handle).await;
+					throttle_handle.finish();
 
 					client.disconnect().await;
 

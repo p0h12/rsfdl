@@ -96,7 +96,7 @@ impl FtpClient {
 		Ok(())
 	}
 
-	/// Download a file with streaming, resume, progress reporting, and cancellation.
+	/// Download a file with streaming, resume, progress reporting, cancellation, and throttling.
 	/// Returns total bytes written (including resume offset).
 	pub async fn download_file(
 		&mut self,
@@ -106,6 +106,7 @@ impl FtpClient {
 		item_id: Uuid,
 		progress_tx: &mpsc::UnboundedSender<ProgressEvent>,
 		cancel_token: &CancellationToken,
+		throttle: &mut crate::download::throttle::ThrottleHandle,
 	) -> Result<u64, DownloadError> {
 		// Set binary transfer mode
 		self.stream.transfer_type(FileType::Binary).await.map_err(FtpError::from)?;
@@ -153,6 +154,9 @@ impl FtpClient {
 				bytes_delta: n as u64,
 				total_written,
 			});
+
+			// DL-008: Throttle if over speed limit
+			throttle.on_bytes_written(n as u64).await;
 		}
 
 		// Finalize the RETR transfer
