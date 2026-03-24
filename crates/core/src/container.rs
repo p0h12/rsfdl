@@ -140,8 +140,9 @@ mod tests {
 		}
 	}
 
+	/// DL-001 | BR-DL-001: Exclusion patterns mark matching files as unselected.
 	#[test]
-	fn compute_file_selection_excludes_matching() {
+	fn dl001_compute_selection_excludes_matching() {
 		let container = make_container_with_files(&["movie.rar", "info.nfo", "cover.jpg"]);
 		let patterns = vec!["*.nfo".into(), "*.jpg".into()];
 
@@ -149,15 +150,17 @@ mod tests {
 		assert_eq!(selection, vec![true, false, false]);
 	}
 
+	/// DL-001 | BR-DL-001: Empty patterns mean all files are selected.
 	#[test]
-	fn compute_file_selection_empty_patterns() {
+	fn dl001_compute_selection_empty_patterns() {
 		let container = make_container_with_files(&["movie.rar", "info.nfo"]);
 		let selection = compute_file_selection(&container, &[]);
 		assert_eq!(selection, vec![true, true]);
 	}
 
+	/// DL-001 | Main Success: filter_container removes unselected files.
 	#[test]
-	fn filter_container_removes_unselected() {
+	fn dl001_filter_container_removes_unselected() {
 		let mut container = make_container_with_files(&["a.rar", "b.nfo", "c.jpg"]);
 		let selected = vec![true, false, true];
 
@@ -167,8 +170,9 @@ mod tests {
 		assert_eq!(names, vec!["a.rar", "c.jpg"]);
 	}
 
+	/// SFDL-001 | Main Success: load_sfdl parses unencrypted container.
 	#[test]
-	fn load_sfdl_not_encrypted() {
+	fn sfdl001_load_not_encrypted() {
 		let xml = r#"<?xml version="1.0" encoding="utf-8"?>
 <SFDLFile>
   <ContainerVersion>10</ContainerVersion>
@@ -202,8 +206,9 @@ mod tests {
 		assert_eq!(result.container.description, "Test");
 	}
 
+	/// SFDL-002 | A2: decrypt_with_password with wrong password returns InvalidPassword.
 	#[test]
-	fn decrypt_with_password_invalid() {
+	fn sfdl002_decrypt_with_password_invalid() {
 		let mut container = SfdlContainer {
 			encrypted: true,
 			connection: Connection {

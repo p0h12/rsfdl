@@ -82,42 +82,42 @@ mod tests {
 	}
 
 	// -------------------------------------------------------
-	// AT-24: Datei-Ausschluss per Muster
+	// DL-002: Ausschlussmuster anwenden
 	// -------------------------------------------------------
 
-	/// Covers AT-24: Files matching exclusion patterns are excluded
+	/// DL-002 | Main Success: Files matching exclusion patterns are excluded.
 	#[test]
-	fn test_is_excluded_matches_nfo_extension() {
+	fn dl002_is_excluded_matches_nfo_extension() {
 		let patterns = vec!["*.nfo".into()];
 		assert!(is_excluded("info.nfo", &patterns));
 	}
 
-	/// Covers AT-24: Files matching exclusion patterns are excluded
+	/// DL-002 | Main Success: Files matching exclusion patterns are excluded
 	#[test]
-	fn test_is_excluded_matches_jpg_extension() {
+	fn dl002_is_excluded_matches_jpg_extension() {
 		let patterns = vec!["*.jpg".into()];
 		assert!(is_excluded("cover.jpg", &patterns));
 	}
 
-	/// Covers AT-24: Files matching exclusion patterns are excluded
+	/// DL-002 | Main Success: Files matching exclusion patterns are excluded
 	#[test]
-	fn test_is_excluded_matches_sample_wildcard() {
+	fn dl002_is_excluded_matches_sample_wildcard() {
 		let patterns = vec!["*sample*".into()];
 		assert!(is_excluded("sample.mkv", &patterns));
 		assert!(is_excluded("movie-sample-720p.mkv", &patterns));
 		assert!(is_excluded("Sample.avi", &patterns)); // case-insensitive
 	}
 
-	/// Covers AT-24: Non-matching files are NOT excluded
+	/// DL-002 | Main Success: Non-matching files are NOT excluded
 	#[test]
-	fn test_is_excluded_does_not_match_rar() {
+	fn dl002_is_excluded_does_not_match_rar() {
 		let patterns = vec!["*.nfo".into(), "*.jpg".into(), "*sample*".into()];
 		assert!(!is_excluded("movie.rar", &patterns));
 	}
 
-	/// Covers AT-24: Multiple patterns, mixed matches
+	/// DL-002 | Main Success: Multiple patterns, mixed matches
 	#[test]
-	fn test_is_excluded_multiple_patterns() {
+	fn dl002_is_excluded_multiple_patterns() {
 		let patterns = vec!["*.nfo".into(), "*.jpg".into(), "*.txt".into()];
 		assert!(is_excluded("info.nfo", &patterns));
 		assert!(is_excluded("cover.jpg", &patterns));
@@ -130,18 +130,18 @@ mod tests {
 	// BR-001: Case-insensitive matching
 	// -------------------------------------------------------
 
-	/// Covers BR-001: Matching is case-insensitive
+	/// DL-002 | BR-DL-003: Matching is case-insensitive
 	#[test]
-	fn test_is_excluded_case_insensitive() {
+	fn dl002_is_excluded_case_insensitive() {
 		let patterns = vec!["*.nfo".into()];
 		assert!(is_excluded("INFO.NFO", &patterns));
 		assert!(is_excluded("Info.Nfo", &patterns));
 		assert!(is_excluded("info.nfo", &patterns));
 	}
 
-	/// Covers BR-001: Pattern itself can be any case
+	/// DL-002 | BR-DL-003: Pattern itself can be any case
 	#[test]
-	fn test_is_excluded_pattern_case_insensitive() {
+	fn dl002_is_excluded_pattern_case_insensitive() {
 		let patterns = vec!["*.NFO".into()];
 		assert!(is_excluded("info.nfo", &patterns));
 	}
@@ -150,9 +150,9 @@ mod tests {
 	// A1: Empty patterns → no exclusions
 	// -------------------------------------------------------
 
-	/// Covers A1: Empty pattern list excludes nothing
+	/// DL-002 | A1: Empty pattern list excludes nothing
 	#[test]
-	fn test_is_excluded_empty_patterns() {
+	fn dl002_is_excluded_empty_patterns() {
 		let patterns: Vec<String> = vec![];
 		assert!(!is_excluded("info.nfo", &patterns));
 		assert!(!is_excluded("movie.rar", &patterns));
@@ -162,9 +162,9 @@ mod tests {
 	// BR-002: Glob syntax (* and ?)
 	// -------------------------------------------------------
 
-	/// Covers BR-002: Question mark matches exactly one character
+	/// DL-002 | BR-DL-003: Question mark matches exactly one character
 	#[test]
-	fn test_glob_question_mark() {
+	fn dl002_glob_question_mark() {
 		let patterns = vec!["file?.txt".into()];
 		assert!(is_excluded("file1.txt", &patterns));
 		assert!(is_excluded("fileA.txt", &patterns));
@@ -172,17 +172,17 @@ mod tests {
 		assert!(!is_excluded("file.txt", &patterns)); // ? requires 1 char
 	}
 
-	/// Covers BR-002: Star matches zero or more characters
+	/// DL-002 | BR-DL-003: Star matches zero or more characters
 	#[test]
-	fn test_glob_star_matches_zero_chars() {
+	fn dl002_glob_star_matches_zero_chars() {
 		let patterns = vec!["movie*.rar".into()];
 		assert!(is_excluded("movie.rar", &patterns)); // * matches zero chars
 		assert!(is_excluded("movie-part1.rar", &patterns)); // * matches multiple chars
 	}
 
-	/// Covers BR-002: Exact match (no wildcards)
+	/// DL-002 | BR-DL-003: Exact match (no wildcards)
 	#[test]
-	fn test_glob_exact_match() {
+	fn dl002_glob_exact_match() {
 		let patterns = vec!["thumbs.db".into()];
 		assert!(is_excluded("thumbs.db", &patterns));
 		assert!(!is_excluded("thumbs.db.bak", &patterns));
@@ -193,9 +193,9 @@ mod tests {
 	// compute_exclusion_mask tests
 	// -------------------------------------------------------
 
-	/// Covers AT-24: compute_exclusion_mask returns correct mask for mixed files
+	/// DL-002 | Main Success: compute_exclusion_mask returns correct mask for mixed files
 	#[test]
-	fn test_compute_exclusion_mask_mixed_files() {
+	fn dl002_compute_exclusion_mask_mixed_files() {
 		let files = vec![
 			make_file("movie.rar", 1_000_000),
 			make_file("info.nfo", 1_000),
@@ -209,9 +209,9 @@ mod tests {
 		assert_eq!(mask, vec![false, true, true, true]);
 	}
 
-	/// Covers AT-24: Only movie.rar should remain for download
+	/// DL-002 | Main Success: Only movie.rar should remain for download
 	#[test]
-	fn test_compute_exclusion_mask_selected_size() {
+	fn dl002_compute_exclusion_mask_selected_size() {
 		let files = vec![
 			make_file("movie.rar", 1_000_000),
 			make_file("info.nfo", 1_000),
@@ -228,9 +228,9 @@ mod tests {
 		assert_eq!(selected_size, 1_000_000); // only movie.rar
 	}
 
-	/// Covers A1: Empty patterns → all false (nothing excluded)
+	/// DL-002 | A1: Empty patterns → all false (nothing excluded)
 	#[test]
-	fn test_compute_exclusion_mask_no_patterns() {
+	fn dl002_compute_exclusion_mask_no_patterns() {
 		let files = vec![make_file("movie.rar", 1_000_000), make_file("info.nfo", 1_000)];
 		let patterns: Vec<String> = vec![];
 
@@ -239,9 +239,9 @@ mod tests {
 		assert_eq!(mask, vec![false, false]);
 	}
 
-	/// Covers A2: All files match patterns → all true
+	/// DL-002 | A2: All files match patterns → all true
 	#[test]
-	fn test_compute_exclusion_mask_all_excluded() {
+	fn dl002_compute_exclusion_mask_all_excluded() {
 		let files = vec![make_file("info.nfo", 1_000), make_file("cover.jpg", 50_000)];
 		let patterns = vec!["*.nfo".into(), "*.jpg".into()];
 
@@ -252,7 +252,7 @@ mod tests {
 
 	/// Empty file list → empty mask
 	#[test]
-	fn test_compute_exclusion_mask_empty_files() {
+	fn dl002_compute_exclusion_mask_empty_files() {
 		let files: Vec<FileItem> = vec![];
 		let patterns = vec!["*.nfo".into()];
 
@@ -267,7 +267,7 @@ mod tests {
 
 	/// File name with dots in various positions
 	#[test]
-	fn test_is_excluded_file_with_multiple_dots() {
+	fn dl002_is_excluded_file_with_multiple_dots() {
 		let patterns = vec!["*.nfo".into()];
 		assert!(is_excluded("movie.release.2026.nfo", &patterns));
 		assert!(!is_excluded("movie.release.2026.rar", &patterns));
@@ -275,7 +275,7 @@ mod tests {
 
 	/// Pattern with no wildcard must match exactly
 	#[test]
-	fn test_is_excluded_no_wildcard_exact() {
+	fn dl002_is_excluded_no_wildcard_exact() {
 		let patterns = vec!["Thumbs.db".into()];
 		assert!(is_excluded("Thumbs.db", &patterns));
 		assert!(is_excluded("thumbs.db", &patterns)); // case-insensitive
@@ -284,7 +284,7 @@ mod tests {
 
 	/// Star-only pattern matches everything
 	#[test]
-	fn test_is_excluded_star_only_matches_all() {
+	fn dl002_is_excluded_star_only_matches_all() {
 		let patterns = vec!["*".into()];
 		assert!(is_excluded("anything.rar", &patterns));
 		assert!(is_excluded("", &patterns));
@@ -292,7 +292,7 @@ mod tests {
 
 	/// Empty file name
 	#[test]
-	fn test_is_excluded_empty_filename() {
+	fn dl002_is_excluded_empty_filename() {
 		let patterns = vec!["*.nfo".into()];
 		assert!(!is_excluded("", &patterns));
 	}
