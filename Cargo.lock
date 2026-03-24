@@ -4528,6 +4528,7 @@ dependencies = [
  "cbc",
  "dirs",
  "futures-lite",
+ "libc",
  "libunftp",
  "md-5",
  "portpicker",

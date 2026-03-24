@@ -103,30 +103,34 @@ mod tests {
 		}
 	}
 
+	/// DL-004 | BR-DL-011: Local path mirrors remote structure with package subfolder.
 	#[test]
-	fn from_file_item_builds_correct_path() {
+	fn dl004_from_file_item_builds_correct_path() {
 		let fi = sample_file_item("movie.rar", 1000);
 		let item = DownloadItem::from_file_item(&fi, Path::new("/tmp/dl"), "TestPkg", true);
 		assert_eq!(item.local_path, PathBuf::from("/tmp/dl/TestPkg/release/sub/movie.rar"));
 		assert_eq!(item.status, DownloadStatus::Pending);
 	}
 
+	/// DL-004 | BR-DL-011: Without package subfolder, path skips package name.
 	#[test]
-	fn from_file_item_no_package_subfolder() {
+	fn dl004_from_file_item_no_package_subfolder() {
 		let fi = sample_file_item("movie.rar", 1000);
 		let item = DownloadItem::from_file_item(&fi, Path::new("/tmp/dl"), "TestPkg", false);
 		assert_eq!(item.local_path, PathBuf::from("/tmp/dl/release/sub/movie.rar"));
 	}
 
+	/// DL-004 | BR-DL-011: Empty package name is skipped.
 	#[test]
-	fn from_file_item_no_package_name() {
+	fn dl004_from_file_item_no_package_name() {
 		let fi = sample_file_item("movie.rar", 1000);
 		let item = DownloadItem::from_file_item(&fi, Path::new("/tmp/dl"), "", true);
 		assert_eq!(item.local_path, PathBuf::from("/tmp/dl/release/sub/movie.rar"));
 	}
 
+	/// DL-004 | BR-DL-011: Empty directory path produces flat structure.
 	#[test]
-	fn from_file_item_empty_dir_path() {
+	fn dl004_from_file_item_empty_dir_path() {
 		let fi = FileItem {
 			file_name: "file.txt".into(),
 			directory_path: String::new(),
@@ -136,30 +140,34 @@ mod tests {
 		assert_eq!(item.local_path, PathBuf::from("/tmp/pkg/file.txt"));
 	}
 
+	/// DL-004 | Progress: Percentage calculation mid-download.
 	#[test]
-	fn progress_percent_normal() {
+	fn dl004_progress_percent_normal() {
 		let fi = sample_file_item("f.rar", 1000);
 		let mut item = DownloadItem::from_file_item(&fi, Path::new("/tmp"), "", true);
 		item.bytes_downloaded = 500;
 		assert!((item.progress_percent() - 50.0).abs() < 0.01);
 	}
 
+	/// DL-004 | Progress: Zero-size file returns 0%.
 	#[test]
-	fn progress_percent_zero_size() {
+	fn dl004_progress_percent_zero_size() {
 		let fi = sample_file_item("f.rar", 0);
 		let item = DownloadItem::from_file_item(&fi, Path::new("/tmp"), "", true);
 		assert!((item.progress_percent() - 0.0).abs() < 0.01);
 	}
 
+	/// DL-005 | Main Success: No local file → StartFresh.
 	#[test]
-	fn check_local_state_no_file() {
+	fn dl005_check_local_state_no_file() {
 		let fi = sample_file_item("nonexistent_abc123.rar", 1000);
 		let item = DownloadItem::from_file_item(&fi, Path::new("/tmp/no_such_dir_xyz"), "", true);
 		assert!(matches!(item.check_local_state(), ResumeAction::StartFresh));
 	}
 
+	/// DL-005 | Main Success: Partial local file → Resume(offset).
 	#[test]
-	fn check_local_state_partial_file() {
+	fn dl005_check_local_state_partial_file() {
 		let dir = tempfile::tempdir().unwrap();
 		let path = dir.path().join("partial.rar");
 		{
@@ -180,8 +188,9 @@ mod tests {
 		}
 	}
 
+	/// DL-005 | A1: Complete local file → AlreadyComplete.
 	#[test]
-	fn check_local_state_complete_file() {
+	fn dl005_check_local_state_complete_file() {
 		let dir = tempfile::tempdir().unwrap();
 		let path = dir.path().join("complete.rar");
 		{

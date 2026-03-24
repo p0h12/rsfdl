@@ -57,9 +57,12 @@ impl DownloadManager {
 		)
 	}
 
-	/// Run the download session. Sends ProgressEvents to progress_tx.
+	/// DL-004: Run the download session. Sends ProgressEvents to progress_tx.
+	///
+	/// Ideally the container should have BulkFolders resolved (SFDL-003) and
+	/// unselected files filtered out (DL-001) before calling this.
+	/// As a fallback, unresolved BulkFolders are resolved during the run.
 	pub async fn run(self, progress_tx: mpsc::UnboundedSender<ProgressEvent>) -> Result<DownloadResult, DownloadError> {
-		// 1. Build file list from packages
 		let mut items: Vec<DownloadItem> = Vec::new();
 
 		for package in &self.container.packages {
@@ -68,7 +71,7 @@ impl DownloadManager {
 				items.push(DownloadItem::from_file_item(file_item, &self.dest_dir, &package.name, self.create_package_subfolder));
 			}
 
-			// BulkFolder resolution (requires FTP connection)
+			// Fallback: resolve unresolved BulkFolders
 			if package.bulk_folder_mode && !package.bulk_folder_list.is_empty() {
 				match resolve_all_bulk_folders(&self.container.connection, &package.bulk_folder_list, self.ftp_timeout_seconds).await {
 					Ok(resolved) => {
