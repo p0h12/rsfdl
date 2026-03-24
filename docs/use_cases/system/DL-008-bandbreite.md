@@ -1,42 +1,60 @@
-# DL-008: Bandbreite begrenzen
+# Use Case: Bandbreite begrenzen
+
+## Overview
 
 **Use Case ID:** DL-008
-**Requirements:** FR-15
+**Use Case Name:** Bandbreite begrenzen
 **Primary Actor:** Benutzer (Konfiguration), System (Durchsetzung)
-**Trigger:** Wird als `<<extend>>` von DL-004 aktiviert, wenn `max_speed_kbps > 0`.
-**Preconditions:** `max_speed_kbps` ist in den Einstellungen oder als Parameter gesetzt und > 0.
-**Postconditions:** Download-Geschwindigkeit überschreitet das konfigurierte Limit nicht.
+**Goal:** Die Download-Geschwindigkeit auf ein konfiguriertes Limit begrenzen.
+**Requirements:** FR-15
+**Status:** Stable
 
----
+## Preconditions
+
+- `max_speed_kbps` ist in den Einstellungen oder als Parameter gesetzt und > 0.
 
 ## Main Success Scenario
 
 1. System berechnet das Limit pro Thread: `max_bytes_per_thread = (max_speed_kbps * 1024) / aktive_threads`.
 2. Nach jedem geschriebenen Block misst der Worker die aktuelle Geschwindigkeit.
-3. Wenn die Geschwindigkeit das Pro-Thread-Limit überschreitet:
-   3a. System berechnet die erforderliche Pause.
-   3b. Worker wartet (sleep) die berechnete Zeit.
-4. System passt das Pro-Thread-Limit dynamisch an, wenn sich die Anzahl aktiver Threads ändert (Task endet, neue Task startet).
+3. Wenn die Geschwindigkeit das Pro-Thread-Limit ueberschreitet:
+   - System berechnet die erforderliche Pause.
+   - Worker wartet (sleep) die berechnete Zeit.
+4. System passt das Pro-Thread-Limit dynamisch an, wenn sich die Anzahl aktiver Threads aendert (Task endet, neue Task startet).
 
-## Alternative Paths
+## Alternative Flows
 
-**4a. Nur 1 Thread aktiv:**
-4a.1. Der eine aktive Thread erhält das gesamte Bandbreitenlimit.
+### A1: Nur 1 Thread aktiv
+
+**Trigger:** Anzahl aktiver Threads sinkt auf 1 (Schritt 4)
+**Flow:**
+
+1. Der eine aktive Thread erhaelt das gesamte Bandbreitenlimit.
+
+## Postconditions
+
+### Success Postconditions
+
+- Download-Geschwindigkeit ueberschreitet das konfigurierte Limit nicht.
+
+### Failure Postconditions
+
+- Keine — Throttling kann nicht fehlschlagen.
 
 ## Business Rules
 
-**BR-DL-017: Throttling-Mechanismus**
+### BR-DL-017: Throttling-Mechanismus
 
 - Throttling geschieht im Read-Loop nach jedem Buffer-Write (64 KB Block).
 - Berechnung: `sleep_time = bytes_written / limit_per_second - elapsed_time`
-- Wenn `sleep_time <= 0`: kein Throttling nötig.
+- Wenn `sleep_time <= 0`: kein Throttling noetig.
 
-**BR-DL-018: Dynamische Anpassung**
+### BR-DL-018: Dynamische Anpassung
 
 - Wenn ein Thread fertig wird, teilen sich die verbleibenden Threads das Gesamtlimit neu auf.
 - Neuberechnung bei jedem Thread-Start/Ende, nicht bei jedem Block.
 
-**BR-DL-019: Konfiguration**
+### BR-DL-019: Konfiguration
 
 - `max_speed_kbps=0` bedeutet unbegrenzt (kein Throttling aktiv).
 - CLI: `--max-speed <KB/s>`

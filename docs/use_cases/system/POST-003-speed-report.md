@@ -1,37 +1,56 @@
-# POST-003: Speed-Report generieren
+# Use Case: Speed-Report generieren
+
+## Overview
 
 **Use Case ID:** POST-003
-**Requirements:** FR-18
+**Use Case Name:** Speed-Report generieren
 **Primary Actor:** Benutzer
-**Preconditions:** Eine DownloadSession ist abgeschlossen (Status `Completed` oder `Failed`).
-**Postconditions:** Ein formatierter BBCode-Report liegt als String vor.
+**Goal:** Nach Abschluss einer Download-Session einen formatierten BBCode-Report generieren.
+**Requirements:** FR-18
+**Status:** Stable
 
----
+## Preconditions
+
+- Eine DownloadSession ist abgeschlossen (Status `Completed` oder `Failed`).
 
 ## Main Success Scenario
 
 1. Actor fordert einen Speed-Report an.
 2. System sammelt die Statistiken der DownloadSession:
-    - Gesamtgrösse (heruntergeladene Bytes)
-    - Gesamtdauer (Start bis Ende)
-    - Durchschnittsgeschwindigkeit
-    - Anzahl Dateien (erfolgreich / fehlgeschlagen / übersprungen)
-3. System lädt das BBCode-Template aus den Einstellungen (→ BR-POST-006).
+   - Gesamtgroesse (heruntergeladene Bytes)
+   - Gesamtdauer (Start bis Ende)
+   - Durchschnittsgeschwindigkeit
+   - Anzahl Dateien (erfolgreich / fehlgeschlagen / uebersprungen)
+3. System laedt das BBCode-Template aus den Einstellungen (→ BR-POST-006).
 4. System ersetzt die Template-Variablen durch die berechneten Werte.
-5. System gibt den gerenderten Report-Text zurück.
+5. System gibt den gerenderten Report-Text zurueck.
 
-## Alternative Paths
+## Alternative Flows
 
-**3a. Kein Template konfiguriert:**
-3a.1. System verwendet das Standard-Template (→ BR-POST-006).
+### A1: Kein Template konfiguriert
+
+**Trigger:** Kein benutzerdefiniertes Template vorhanden (Schritt 3)
+**Flow:**
+
+1. System verwendet das Standard-Template (→ BR-POST-006).
+
+## Postconditions
+
+### Success Postconditions
+
+- Ein formatierter BBCode-Report liegt als String vor.
+
+### Failure Postconditions
+
+- Keine — der Report kann immer generiert werden (Fallback auf Standard-Template).
 
 ## Business Rules
 
-**BR-POST-006: Template-Variablen**
+### BR-POST-006: Template-Variablen
 
-Das Standard-Template enthält BBCode-formatierte Zeilen mit Tool-Name, Dateizähler (total, OK, fehlgeschlagen), Gesamtgrösse, Dauer und Durchschnittsgeschwindigkeit.
+Das Standard-Template enthaelt BBCode-formatierte Zeilen mit Tool-Name, Dateizaehler (total, OK, fehlgeschlagen), Gesamtgroesse, Dauer und Durchschnittsgeschwindigkeit.
 
-Verfügbare Variablen:
+Verfuegbare Variablen:
 
 - `{{username}}` — aus Einstellungen
 - `{{total_files}}`, `{{completed_files}}`, `{{failed_files}}`, `{{skipped_files}}`

@@ -1,52 +1,76 @@
-# DL-003: Speicherplatz prüfen
+# Use Case: Speicherplatz pruefen
+
+## Overview
 
 **Use Case ID:** DL-003
-**Requirements:** FR-19
+**Use Case Name:** Speicherplatz pruefen
 **Primary Actor:** System (automatisch vor Download-Start)
-**Status:** Not Implemented (Error-Typ und Setting-Stub vorhanden, keine Logik)
-**Trigger:** Wird als `<<include>>` von DL-004 aufgerufen, bevor der erste Download-Task startet.
-**Preconditions:** Eine Selektion mit Dateien und Grössen liegt vor. Ein Zielverzeichnis ist konfiguriert.
-**Postconditions (Erfolg):** Genügend Speicherplatz vorhanden, Download kann starten.
-**Postconditions (Warnung):** Speicherplatz knapp, Actor wurde informiert.
+**Goal:** Sicherstellen, dass genuegend Speicherplatz fuer den Download vorhanden ist.
+**Requirements:** FR-19
+**Status:** Not Implemented
 
----
+## Preconditions
+
+- Eine Selektion mit Dateien und Groessen liegt vor.
+- Ein Zielverzeichnis ist konfiguriert.
 
 ## Main Success Scenario
 
-1. System ermittelt den verfügbaren Speicherplatz im Zielverzeichnis.
-2. System berechnet den benötigten Speicherplatz:
-    - Für neue Dateien: volle Dateigrösse
-    - Für teilweise vorhandene Dateien (Resume): nur die Restgrösse
-3. System vergleicht verfügbaren mit benötigtem Speicherplatz.
-4. Verfügbarer Platz >= benötigter Platz → Use Case endet erfolgreich.
+1. System ermittelt den verfuegbaren Speicherplatz im Zielverzeichnis.
+2. System berechnet den benoetigten Speicherplatz:
+   - Fuer neue Dateien: volle Dateigroesse
+   - Fuer teilweise vorhandene Dateien (Resume): nur die Restgroesse
+3. System vergleicht verfuegbaren mit benoetigtem Speicherplatz.
+4. Verfuegbarer Platz >= benoetigter Platz — Use Case endet erfolgreich.
 
-## Alternative Paths
+## Alternative Flows
 
-**4a. Speicherplatz unzureichend:**
-4a.1. System meldet: „Nicht genügend Speicherplatz. Benötigt: X MB, Verfügbar: Y MB."
-4a.2. Actor kann den Download trotzdem starten (bestätigen).
-4a.3. Actor kann den Download abbrechen.
+### A1: Speicherplatz unzureichend
 
-**4b. Speicherplatz unzureichend + strict mode:**
-4b.1. `strict_disk_check=true` (CLI: `--strict-disk-check`)
-4b.2. System meldet Fehler und bricht ab. Kein Bestätigen möglich.
-4b.3. Use Case endet mit Fehler.
+**Trigger:** Verfuegbarer Platz < benoetigter Platz (Schritt 4)
+**Flow:**
 
-**2a. Grössen teilweise unbekannt:**
-2a.1. Nicht alle Dateien haben eine bekannte Grösse.
-2a.2. System berechnet mit bekannten Grössen und warnt:
-„Prüfung basiert auf X von Y Dateien. Tatsächlicher Bedarf kann höher sein."
+1. System meldet: „Nicht genuegend Speicherplatz. Benoetigt: X MB, Verfuegbar: Y MB."
+2. Actor kann den Download trotzdem starten (bestaetigen).
+3. Actor kann den Download abbrechen.
+
+### A2: Speicherplatz unzureichend und strict mode
+
+**Trigger:** Verfuegbarer Platz < benoetigter Platz und `strict_disk_check=true` (Schritt 4)
+**Flow:**
+
+1. `strict_disk_check=true` (CLI: `--strict-disk-check`)
+2. System meldet Fehler und bricht ab. Kein Bestaetigen moeglich.
+3. Use Case endet mit Fehler.
+
+### A3: Groessen teilweise unbekannt
+
+**Trigger:** Nicht alle Dateien haben eine bekannte Groesse (Schritt 2)
+**Flow:**
+
+1. Nicht alle Dateien haben eine bekannte Groesse.
+2. System berechnet mit bekannten Groessen und warnt: „Pruefung basiert auf X von Y Dateien. Tatsaechlicher Bedarf kann hoeher sein."
+
+## Postconditions
+
+### Success Postconditions
+
+- Genuegend Speicherplatz vorhanden, Download kann starten.
+
+### Failure Postconditions
+
+- Speicherplatz knapp, Actor wurde informiert.
 
 ## Business Rules
 
-**BR-DL-006: Speicherplatz-Berechnung**
+### BR-DL-006: Speicherplatz-Berechnung
 
-- Benötigter Platz = Σ(dateigrösse - bereits_heruntergeladen) für alle selektierten Dateien
+- Benoetigter Platz = Sigma(dateigroesse - bereits_heruntergeladen) fuer alle selektierten Dateien
 - Ein Sicherheitspuffer von 1% wird addiert (mindestens 10 MB)
 
 ## Input
 
-- `selection`: Aktive Selektion mit Dateigrössen
+- `selection`: Aktive Selektion mit Dateigroessen
 - `target_directory`: Zielverzeichnis
 - `strict: bool`: Ob bei Unterschreitung abgebrochen wird
 

@@ -1,62 +1,83 @@
-# CR-004: Container verschlüsseln
+# Use Case: Container verschluesseln
+
+## Overview
 
 **Use Case ID:** CR-004
-**Requirements:** FR-23
+**Use Case Name:** Container verschluesseln
 **Primary Actor:** System
-**Trigger:** Wird von CR-001 aufgerufen, wenn ein Verschlüsselungspasswort angegeben wurde.
-**Preconditions:** Ein vollständig aufgebauter Container mit Klartextwerten liegt vor. Ein Passwort ist verfügbar.
-**Postconditions (Erfolg):** Alle sensitiven Felder sind AES-128-CBC-verschlüsselt. Container-Flag `Encrypted=true`.
-**Postconditions (Fehlschlag):** Container bleibt unverschlüsselt. Fehlermeldung mit Ursache.
+**Goal:** Alle sensitiven Felder eines Containers mit AES-128-CBC verschluesseln.
+**Requirements:** FR-23
+**Status:** Stable
 
----
+## Preconditions
+
+- Ein vollstaendig aufgebauter Container mit Klartextwerten liegt vor.
+- Ein Passwort ist verfuegbar.
+- Wird von CR-001 aufgerufen, wenn ein Verschluesselungspasswort angegeben wurde.
 
 ## Main Success Scenario
 
-1. System leitet den AES-Schlüssel aus dem Passwort ab (→ BR-SFDL-003).
-2. Für jedes zu verschlüsselnde Feld:
-   2a. System generiert einen kryptographisch zufälligen IV.
-   2b. System verschlüsselt den Klartextwert mit AES-128-CBC.
+1. System leitet den AES-Schluessel aus dem Passwort ab (-> BR-SFDL-003).
+2. Fuer jedes zu verschluesselnde Feld:
+   2a. System generiert einen kryptographisch zufaelligen IV.
+   2b. System verschluesselt den Klartextwert mit AES-128-CBC.
    2c. System kodiert das Ergebnis als Base64.
-3. System ersetzt die Klartextwerte im Container durch die verschlüsselten Werte.
+3. System ersetzt die Klartextwerte im Container durch die verschluesselten Werte.
 4. System setzt `Encrypted=true` im Container.
-5. System gibt den verschlüsselten Container an CR-001 zurück.
+5. System gibt den verschluesselten Container an CR-001 zurueck.
 
-## Alternative Paths
+## Alternative Flows
 
-**1a. Leeres Passwort:**
-1a.1. Actor hat ein leeres Passwort angegeben.
-1a.2. System meldet: „Passwort darf nicht leer sein."
-1a.3. Use Case endet mit Fehler.
+### A1: Leeres Passwort
+
+**Trigger:** Actor hat ein leeres Passwort angegeben (Schritt 1)
+**Flow:**
+
+1. Actor hat ein leeres Passwort angegeben.
+2. System meldet: "Passwort darf nicht leer sein."
+3. Use Case endet mit Fehler.
+
+## Postconditions
+
+### Success Postconditions
+
+- Alle sensitiven Felder sind AES-128-CBC-verschluesselt.
+- Container-Flag `Encrypted=true` ist gesetzt.
+
+### Failure Postconditions
+
+- Container bleibt unverschluesselt.
+- Fehlermeldung mit Ursache liegt vor.
 
 ## Business Rules
 
-**BR-CR-007: Verschlüsselte Felder**
+### BR-CR-007: Verschluesselte Felder
 
-Folgende Felder werden verschlüsselt:
+Folgende Felder werden verschluesselt:
 
 - Host, Username, Password
 - Dateinamen, Pfade, Beschreibung
 
-Folgende Felder bleiben unverschlüsselt:
+Folgende Felder bleiben unverschluesselt:
 
 - Port, FileSize, HashType
 
-**BR-CR-008: Schlüsselableitung**
+### BR-CR-008: Schluesselableitung
 
-- Identischer Algorithmus wie bei der Entschlüsselung (BR-SFDL-003):
+- Identischer Algorithmus wie bei der Entschluesselung (BR-SFDL-003):
     - AES-128-CBC, MD5-Key-Derivation, PKCS7-Padding
-- Round-Trip mit SFDL-002: Verschlüsselter Container muss mit demselben Passwort entschlüsselbar sein.
+- Round-Trip mit SFDL-002: Verschluesselter Container muss mit demselben Passwort entschluesselt werden koennen.
 
-**BR-CR-009: IV-Generierung**
+### BR-CR-009: IV-Generierung
 
-- Jedes Feld erhält einen eigenen kryptographisch zufälligen IV.
-- Der IV wird nicht separat gespeichert — er ist als Präfix im verschlüsselten Wert enthalten (SFDL-Konvention).
+- Jedes Feld erhaelt einen eigenen kryptographisch zufaelligen IV.
+- Der IV wird nicht separat gespeichert -- er ist als Praefix im verschluesselten Wert enthalten (SFDL-Konvention).
 
 ## Input
 
-- `container`: Unverschlüsselter Container
+- `container`: Unverschluesselter Container
 - `password`: Klartext-Passwort
 
-## Output (Erfolg)
+## Output
 
-- `Container` mit verschlüsselten Feldern und `Encrypted=true`
+- `Container` mit verschluesselten Feldern und `Encrypted=true`

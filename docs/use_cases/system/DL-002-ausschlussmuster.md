@@ -1,46 +1,65 @@
-# DL-002: Ausschlussmuster anwenden
+# Use Case: Ausschlussmuster anwenden
+
+## Overview
 
 **Use Case ID:** DL-002
-**Requirements:** FR-17
+**Use Case Name:** Ausschlussmuster anwenden
 **Primary Actor:** System (automatisch)
-**Trigger:** Wird als `<<include>>` von SFDL-003 und DL-001 aufgerufen.
-**Preconditions:** Eine Liste von FileEntries liegt vor. Einstellungen mit Ausschlussmustern sind geladen.
-**Postconditions:** FileEntries sind mit `excluded=true/false` markiert.
+**Goal:** FileEntries anhand konfigurierter Glob-Muster als ausgeschlossen markieren.
+**Requirements:** FR-17
+**Status:** Stable
 
----
+## Preconditions
+
+- Eine Liste von FileEntries liegt vor.
+- Einstellungen mit Ausschlussmustern sind geladen (CFG-001).
 
 ## Main Success Scenario
 
-1. System lädt die Ausschlussmuster aus den Einstellungen (CFG-001).
-2. Für jeden FileEntry prüft das System den Dateinamen gegen alle Muster:
-   2a. System führt einen case-insensitiven Glob-Match des Dateinamens gegen jedes Muster durch.
-   2b. Wenn mindestens ein Muster passt: FileEntry wird als `excluded=true` markiert.
-3. System gibt die markierte Liste zurück.
+1. System laedt die Ausschlussmuster aus den Einstellungen (CFG-001).
+2. Fuer jeden FileEntry prueft das System den Dateinamen gegen alle Muster:
+   - System fuehrt einen case-insensitiven Glob-Match des Dateinamens gegen jedes Muster durch.
+   - Wenn mindestens ein Muster passt: FileEntry wird als `excluded=true` markiert.
+3. System gibt die markierte Liste zurueck.
 
-## Alternative Paths
+## Alternative Flows
 
-**1a. Keine Muster konfiguriert:**
-1a.1. Ausschlussmuster-Liste ist leer.
-1a.2. Alle FileEntries bleiben `excluded=false`.
-1a.3. Use Case endet.
+### A1: Keine Muster konfiguriert
+
+**Trigger:** Ausschlussmuster-Liste ist leer (Schritt 1)
+**Flow:**
+
+1. Ausschlussmuster-Liste ist leer.
+2. Alle FileEntries bleiben `excluded=false`.
+3. Use Case endet.
+
+## Postconditions
+
+### Success Postconditions
+
+- FileEntries sind mit `excluded=true/false` markiert.
+
+### Failure Postconditions
+
+- Keine — der Use Case kann nicht fehlschlagen.
 
 ## Business Rules
 
-**BR-DL-003: Glob-Syntax**
+### BR-DL-003: Glob-Syntax
 
-- Unterstützte Wildcards: `*` (beliebig viele Zeichen), `?` (ein Zeichen)
+- Unterstuetzte Wildcards: `*` (beliebig viele Zeichen), `?` (ein Zeichen)
 - Matching ist case-insensitiv
 - Muster werden nur auf den Dateinamen angewendet, nicht auf den Pfad
 
-**BR-DL-004: Standard-Blacklist**
+### BR-DL-004: Standard-Blacklist
 
 - Default-Muster (bei Erstinstallation): `*.nfo`, `*.jpg`, `*.png`, `*.txt`, `*sample*`, `*Sample*`
-- Actor kann Muster hinzufügen und entfernen (CFG-001)
-- Standard-Muster sind als `is_default=true` markiert, können aber deaktiviert werden
+- Actor kann Muster hinzufuegen und entfernen (CFG-001)
+- Standard-Muster sind als `is_default=true` markiert, koennen aber deaktiviert werden
 
-**BR-DL-005: CLI-Überschreibung**
+### BR-DL-005: CLI-Ueberschreibung
 
-- CLI-Parameter `--exclude <pattern>` fügt Muster zusätzlich zu den gespeicherten Mustern hinzu
+- CLI-Parameter `--exclude <pattern>` fuegt Muster zusaetzlich zu den gespeicherten Mustern hinzu
 - CLI-Parameter `--no-exclude` deaktiviert alle Ausschlussmuster (auch gespeicherte)
 
 ## Input
