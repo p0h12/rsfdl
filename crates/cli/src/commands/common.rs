@@ -54,16 +54,22 @@ pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(S
 			DecryptionStatus::AutoDecrypted { password }
 		}
 		DecryptionStatus::NeedsPassword => {
-			// Manual password required
-			if let Some(pw) = args.password.as_deref() {
-				rsfdl_core::container::decrypt_with_password(&mut container, pw).map_err(|e| match e {
-					AppError::InvalidPassword => "Invalid password".to_string(),
-					other => format!("Decryption failed: {other}"),
-				})?;
-				DecryptionStatus::AutoDecrypted { password: pw.to_string() }
+			// Try --password flag first
+			let pw = if let Some(pw) = args.password.as_deref() {
+				pw.to_string()
+			} else if std::io::IsTerminal::is_terminal(&std::io::stderr()) {
+				// A5: Interactive prompt when terminal is available
+				eprintln!("File is encrypted. Enter password:");
+				rpassword::read_password().map_err(|e| format!("Failed to read password: {e}"))?
 			} else {
 				return Err("File is encrypted. Provide a password with -p <password>".into());
-			}
+			};
+
+			rsfdl_core::container::decrypt_with_password(&mut container, &pw).map_err(|e| match e {
+				AppError::InvalidPassword => "Invalid password".to_string(),
+				other => format!("Decryption failed: {other}"),
+			})?;
+			DecryptionStatus::AutoDecrypted { password: pw }
 		}
 	};
 

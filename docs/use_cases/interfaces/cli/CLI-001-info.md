@@ -100,15 +100,16 @@ Weitere Regeln: -> CLI-CC (Cross-Cutting): Kanaltrennung (BR-CLI-001), Parameter
 
 Key-value-Paare auf stdout, eines pro Zeile:
 
-| Feld          | Beschreibung                                                |
-|---------------|-------------------------------------------------------------|
-| Container     | Beschreibung / Release-Name                                 |
-| Uploader      | Uploader-Name                                               |
-| Host          | Hostname:Port (Protokoll)                                   |
-| Pakete        | Anzahl Pakete                                               |
-| Dateien       | Anzahl Dateien                                              |
-| Groesse       | Gesamtgroesse (menschenlesbar)                              |
-| Verschluesselt | ja/nein, ggf. mit Hinweis auf Auto-Passwort-Entschluesselung |
+| Feld       | Beschreibung                                                  |
+|------------|---------------------------------------------------------------|
+| Container  | Beschreibung / Release-Name                                   |
+| Uploader   | Uploader-Name                                                 |
+| Host       | Hostname:Port (Protokoll)                                     |
+| Version    | v2 oder v3                                                    |
+| Encrypted  | no / yes (auto-decrypted) / yes (not decrypted)               |
+| Packages   | Anzahl Pakete                                                 |
+| Files      | Anzahl Dateien                                                |
+| Size       | Gesamtgroesse (menschenlesbar)                                |
 
 ## Ausgabe (JSON)
 

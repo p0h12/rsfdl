@@ -8,6 +8,7 @@ rsfdl-core = { workspace = true }
 clap = { version = "4", features = ["derive"] }
 tokio = { workspace = true }
 indicatif = "0.17"
+rpassword = "7"
 serde_json = "1"
 uuid = { version = "1" }
 tracing = { workspace = true }
