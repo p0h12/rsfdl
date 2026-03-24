@@ -1,111 +1,109 @@
-use std::collections::HashMap;
-
 use dioxus::prelude::*;
 
-use crate::components::file_row::FileRow;
-use crate::state::{AppState, DownloadPhase, FileStatus};
+use crate::icons;
+use crate::state::{AppState, ContainerId};
+use rsfdl_core::format_bytes;
 
 #[component]
-pub fn FileList() -> Element {
+pub fn FileList(container_id: ContainerId) -> Element {
 	let mut state = use_context::<AppState>();
-	let downloading = *state.download_phase.read() != DownloadPhase::Idle;
-
-	let container = state.container.read();
-	let Some(container) = container.as_ref() else {
+	let containers = state.containers.read();
+	let Some(cs) = containers.iter().find(|c| c.id == container_id) else {
 		return rsx! {};
 	};
 
-	// Build name → status map once (O(n)) instead of per-row scanning
-	let file_status_map: HashMap<String, FileStatus> = {
-		let file_states = state.file_states.read();
-		file_states.values().map(|fs| (fs.file_name.clone(), fs.status)).collect()
-	};
+	let files = cs.all_files();
+	let selected = cs.selected_files.clone();
+	let total = files.len();
+	let selected_count = selected.iter().filter(|&&s| s).count();
+	drop(containers);
 
-	// Build package groups: (package_name, start_index, file_count)
-	#[allow(clippy::type_complexity)]
-	let mut groups: Vec<(String, usize, Vec<(usize, String, u64)>)> = Vec::new();
-	let mut global_idx = 0;
-	for pkg in &container.packages {
-		let mut files = Vec::new();
-		for file in &pkg.file_list {
-			files.push((global_idx, file.file_name.clone(), file.file_size));
-			global_idx += 1;
-		}
-		if !files.is_empty() {
-			groups.push((pkg.name.clone(), files[0].0, files));
-		}
-	}
-
-	if groups.is_empty() {
-		return rsx! {};
-	}
-
-	let selected = state.selected_files.read();
-	let all_selected = !selected.is_empty() && selected.iter().all(|&s| s);
-	let total_count = selected.len();
+	let cid = container_id;
+	let cid2 = container_id;
 
 	rsx! {
-			div { class: "flex-1 overflow-y-auto",
-					// Select All header
-					div { class: "flex items-center px-4 py-2 bg-gray-100 border-b text-sm font-medium text-gray-700",
-							input {
-									r#type: "checkbox",
-									class: "mr-3",
-									checked: all_selected,
-									disabled: downloading,
-									onchange: move |_| {
-											let new_val = !all_selected;
-											state.selected_files.set(vec![new_val; total_count]);
-									},
+			div {
+					// File toolbar
+					div {
+							class: "flex items-center justify-between px-4 py-2.5 flex-wrap gap-2",
+							style: "border-bottom: 0.5px solid var(--color-border-tertiary);",
+							div { class: "flex items-center gap-2",
+									button {
+											class: "btn btn-ghost btn-sm",
+											onclick: move |_| {
+													state.with_container_mut(cid, |cs| {
+															cs.selected_files.iter_mut().for_each(|s| *s = true);
+													});
+											},
+											"Alle"
+									}
+									button {
+											class: "btn btn-ghost btn-sm",
+											onclick: move |_| {
+													state.with_container_mut(cid2, |cs| {
+															cs.selected_files.iter_mut().for_each(|s| *s = false);
+													});
+											},
+											"Keine"
+									}
 							}
-							span { "Select All" }
+							span {
+									style: "font-size: 12px; color: var(--color-text-secondary); font-family: var(--font-mono);",
+									"{selected_count} von {total} ausgewaehlt"
+							}
 					}
-					// Package groups
-					for (pkg_name, _start_idx, files) in groups.iter() {
-							{render_package_group(state, pkg_name, files, downloading, &file_status_map)}
-					}
-			}
-	}
-}
 
-fn render_package_group(mut state: AppState, pkg_name: &str, files: &[(usize, String, u64)], downloading: bool, file_status_map: &HashMap<String, FileStatus>) -> Element {
-	let indices: Vec<usize> = files.iter().map(|(i, _, _)| *i).collect();
-	let selected = state.selected_files.read();
-	let pkg_all_selected = indices.iter().all(|i| selected.get(*i).copied().unwrap_or(false));
+					// File rows
+					for (idx, file) in files.iter().enumerate() {
+							{
+									let is_selected = selected.get(idx).copied().unwrap_or(false);
+									let name = file.file_name.clone();
+									let size = format_bytes(file.file_size);
+									let cid3 = container_id;
+									rsx! {
+											div {
+													class: "flex items-center gap-2 px-4 py-1.5 text-[13px]",
+													style: "padding-left: 40px; border-bottom: 0.5px solid var(--color-border-tertiary);",
+													onmouseenter: |_| {},
 
-	let show_header = !pkg_name.is_empty() && !files.is_empty();
-
-	rsx! {
-			if show_header {
-					div { class: "flex items-center px-4 py-1.5 bg-gray-50 border-b text-sm font-medium text-gray-600",
-							input {
-									r#type: "checkbox",
-									class: "mr-3",
-									checked: pkg_all_selected,
-									disabled: downloading,
-									onchange: {
-											let indices = indices.clone();
-											move |_| {
-													let new_val = !pkg_all_selected;
-													let mut sel = state.selected_files.write();
-													for &idx in &indices {
-															if let Some(v) = sel.get_mut(idx) {
-																	*v = new_val;
+													// Checkbox
+													div {
+															class: "w-4 h-4 rounded flex items-center justify-center flex-shrink-0 cursor-pointer",
+															style: if is_selected {
+																	"background: var(--color-accent); border: 0.5px solid var(--color-accent);"
+															} else {
+																	"background: var(--color-background-secondary); border: 0.5px solid var(--color-border-secondary);"
+															},
+															onclick: move |_| {
+																	state.with_container_mut(cid3, |cs| {
+																			if let Some(s) = cs.selected_files.get_mut(idx) {
+																					*s = !*s;
+																			}
+																	});
+															},
+															if is_selected {
+																	span {
+																			style: "width: 10px; height: 10px; color: white;",
+																			dangerous_inner_html: icons::CHECK,
+																	}
 															}
 													}
+
+													// File name
+													span {
+															class: "flex-1 min-w-0 truncate",
+															style: "color: var(--color-text-primary);",
+															"{name}"
+													}
+
+													// Size
+													span {
+															style: "font-size: 11px; font-family: var(--font-mono); color: var(--color-text-tertiary); white-space: nowrap; flex-shrink: 0;",
+															"{size}"
+													}
 											}
-									},
+									}
 							}
-							span { "{pkg_name}" }
-					}
-			}
-			for (idx, file_name, file_size) in files.iter() {
-					FileRow {
-							key: "{idx}",
-							index: *idx,
-							file_name: file_name.clone(),
-							file_size: *file_size,
-							status: file_status_map.get(file_name).copied(),
 					}
 			}
 	}

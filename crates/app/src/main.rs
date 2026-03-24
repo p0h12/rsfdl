@@ -68,10 +68,12 @@ fn app() -> Element {
 
 					// Error banner
 					if let Some(err) = &error {
-							div { class: "px-4 py-2 bg-red-100 text-red-800 text-sm flex justify-between items-center",
+							div {
+									class: "px-4 py-2 text-sm flex justify-between items-center",
+									style: "background: var(--color-error-bg); color: var(--color-error);",
 									span { "{err}" }
 									button {
-											class: "ml-2 text-red-600 hover:text-red-800 font-bold",
+											class: "btn-icon btn-danger ml-2",
 											onclick: move |_| state.error_message.set(None),
 											"x"
 									}

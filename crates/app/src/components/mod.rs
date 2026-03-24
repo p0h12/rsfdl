@@ -1,7 +1,9 @@
+pub mod container_card;
 pub mod container_info;
+pub mod download_handler;
+pub mod drop_zone;
 pub mod file_list;
-pub mod file_row;
 pub mod header;
-pub mod password_dialog;
+pub mod inline_password;
 pub mod progress_panel;
 pub mod summary_banner;

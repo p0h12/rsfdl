@@ -1,23 +1,22 @@
 use dioxus::prelude::*;
-use uuid::Uuid;
 
+use crate::state::{AppState, ContainerId, ContainerPhase, FileStatus};
 use rsfdl_core::format_bytes;
 
-use crate::state::{AppState, DownloadPhase, FileDownloadState, FileStatus};
-
 #[component]
-pub fn ProgressPanel() -> Element {
+pub fn ProgressPanel(container_id: ContainerId) -> Element {
 	let state = use_context::<AppState>();
-	let phase = *state.download_phase.read();
+	let containers = state.containers.read();
+	let Some(cs) = containers.iter().find(|c| c.id == container_id) else {
+		return rsx! {};
+	};
 
-	if phase == DownloadPhase::Idle {
+	if cs.phase != ContainerPhase::Downloading {
 		return rsx! {};
 	}
 
-	let gp = state.global_progress.read().clone();
-	let file_states = state.file_states.read();
-	let mut entries: Vec<_> = file_states.iter().map(|(id, fs)| (*id, fs.clone())).collect();
-	// Show active downloads first, then completed/failed
+	let gp = cs.global_progress.clone();
+	let mut entries: Vec<_> = cs.file_states.iter().map(|(id, fs)| (*id, fs.clone())).collect();
 	entries.sort_by_key(|(_, fs)| match fs.status {
 		FileStatus::Downloading => 0,
 		FileStatus::Pending => 1,
@@ -30,90 +29,108 @@ pub fn ProgressPanel() -> Element {
 	let global_percent = gp.percent();
 	let speed = gp.speed_bytes_per_sec();
 	let eta = gp.eta_seconds();
-
 	let speed_text = if speed > 0.0 { format!("{}/s", format_bytes(speed as u64)) } else { String::new() };
-
 	let eta_text = match eta {
 		Some(secs) if secs > 0.0 => {
 			let mins = (secs / 60.0).floor() as u64;
-			let secs = (secs % 60.0).floor() as u64;
-			if mins > 0 { format!("ETA {}:{:02}", mins, secs) } else { format!("ETA {}s", secs) }
+			let s = (secs % 60.0).floor() as u64;
+			if mins > 0 { format!("ETA {}:{:02}", mins, s) } else { format!("ETA {}s", s) }
 		}
 		_ => String::new(),
 	};
 
+	// Cancel button
+	let cancel_token = cs.cancel_token.clone();
+	drop(containers);
+
 	rsx! {
-			div { class: "border-t bg-white",
-					// Global progress
-					div { class: "px-4 py-2 bg-gray-100 border-b",
-							div { class: "flex justify-between text-sm text-gray-700 mb-1",
-									span { class: "font-medium",
-											"{gp.files_done}/{gp.files_total} files"
-									}
-									span { class: "text-gray-500",
-											"{format_bytes(gp.total_written_all)}/{format_bytes(gp.total_bytes_all)} {speed_text} {eta_text}"
-									}
+			div {
+					class: "px-4 py-3",
+					style: "border-top: 0.5px solid var(--color-border-tertiary);",
+
+					// Header with stats
+					div { class: "flex items-center justify-between mb-2.5",
+							span {
+									class: "text-[13px] font-medium",
+									style: "color: var(--color-text-primary);",
+									"{gp.files_done}/{gp.files_total} files"
 							}
-							div { class: "w-full bg-gray-200 rounded-full h-2",
-									div {
-											class: "h-2 rounded-full bg-cyan-500 transition-all duration-200",
-											style: "width: {global_percent:.1}%",
+							div {
+									class: "flex gap-3",
+									style: "font-size: 12px; font-family: var(--font-mono); color: var(--color-text-secondary);",
+									span { "{format_bytes(gp.total_written_all)}/{format_bytes(gp.total_bytes_all)}" }
+									if !speed_text.is_empty() {
+											span { "{speed_text}" }
+									}
+									if !eta_text.is_empty() {
+											span { "{eta_text}" }
 									}
 							}
 					}
-					// Per-file progress
-					div { class: "max-h-48 overflow-y-auto",
-							for (item_id, fs) in entries.iter() {
-									{render_progress_row(state, *item_id, fs)}
+
+					// Global progress bar
+					div { class: "progress-bar-track mb-2.5",
+							div {
+									class: "progress-bar-fill",
+									style: "width: {global_percent:.1}%;",
 							}
 					}
-			}
-	}
-}
 
-fn render_progress_row(state: AppState, item_id: Uuid, fs: &FileDownloadState) -> Element {
-	let percent = if fs.total_bytes > 0 {
-		(fs.bytes_written as f64 / fs.total_bytes as f64 * 100.0).min(100.0)
-	} else {
-		0.0
-	};
-
-	let (bar_color, status_text) = match fs.status {
-		FileStatus::Downloading => ("bg-blue-500", format!("{} / {}", format_bytes(fs.bytes_written), format_bytes(fs.total_bytes))),
-		FileStatus::Completed => ("bg-green-500", "completed".to_string()),
-		FileStatus::Failed => ("bg-red-500", fs.error.clone().unwrap_or("failed".to_string())),
-		FileStatus::Cancelled => ("bg-yellow-500", "cancelled".to_string()),
-		FileStatus::Skipped => ("bg-gray-300", "skipped".to_string()),
-		FileStatus::Pending => ("bg-gray-300", "pending".to_string()),
-	};
-
-	let is_downloading = fs.status == FileStatus::Downloading;
-
-	rsx! {
-			div { class: "px-4 py-1.5 border-b border-gray-100 text-sm",
-					div { class: "flex justify-between items-center mb-1",
-							span { class: "truncate text-gray-800 mr-2", "{fs.file_name}" }
-							div { class: "flex items-center gap-2 whitespace-nowrap",
-									span { class: "text-gray-500", "{status_text}" }
-									if is_downloading {
-											button {
-													class: "text-red-500 hover:text-red-700 text-xs font-medium px-1",
-													title: "Cancel this file",
-													onclick: move |_| {
-															if let Some(tx) = state.file_cancel_tx.read().as_ref() {
-																	let _ = tx.send(item_id);
+					// Per-file rows
+					for (_item_id, fs) in entries.iter() {
+							{
+									let percent = if fs.total_bytes > 0 {
+											(fs.bytes_written as f64 / fs.total_bytes as f64 * 100.0).min(100.0)
+									} else {
+											0.0
+									};
+									let status_text = match fs.status {
+											FileStatus::Downloading => format!("{}/{}", format_bytes(fs.bytes_written), format_bytes(fs.total_bytes)),
+											FileStatus::Completed => "completed".to_string(),
+											FileStatus::Failed => fs.error.clone().unwrap_or_else(|| "failed".to_string()),
+											FileStatus::Cancelled => "cancelled".to_string(),
+											FileStatus::Skipped => "skipped".to_string(),
+											FileStatus::Pending => "pending".to_string(),
+									};
+									let status_color = match fs.status {
+											FileStatus::Downloading => "var(--color-accent)",
+											FileStatus::Completed => "var(--color-success)",
+											FileStatus::Failed => "var(--color-error)",
+											_ => "var(--color-text-tertiary)",
+									};
+									rsx! {
+											div {
+													class: "flex items-center gap-2 py-1.5",
+													style: "font-size: 12px; border-bottom: 0.5px solid var(--color-border-tertiary);",
+													span {
+															class: "flex-1 min-w-0 truncate",
+															style: "font-family: var(--font-mono); color: var(--color-text-primary);",
+															"{fs.file_name}"
+													}
+													span {
+															style: "font-family: var(--font-mono); color: {status_color}; white-space: nowrap; flex-shrink: 0;",
+															"{status_text}"
+													}
+													if fs.status == FileStatus::Downloading {
+															div {
+																	style: "width: 60px; height: 3px; background: var(--color-background-tertiary); border-radius: 2px; overflow: hidden; flex-shrink: 0;",
+																	div {
+																			style: "width: {percent:.1}%; height: 100%; background: var(--color-accent); border-radius: 2px; transition: width .3s;",
+																	}
 															}
-													},
-													"X"
+													}
 											}
 									}
 							}
 					}
-					if is_downloading {
-							div { class: "w-full bg-gray-200 rounded-full h-1.5",
-									div {
-											class: "h-1.5 rounded-full {bar_color}",
-											style: "width: {percent:.1}%",
+
+					// Cancel button
+					if let Some(token) = cancel_token {
+							div { class: "flex justify-end mt-3",
+									button {
+											class: "btn btn-ghost btn-sm btn-danger",
+											onclick: move |_| { token.cancel(); },
+											"Abbrechen"
 									}
 							}
 					}
