@@ -73,15 +73,21 @@ pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(S
 	// SFDL-001: Read and parse
 	let xml = std::fs::read_to_string(&args.file).map_err(|e| CliError::FileError(format!("Cannot read file '{}': {}", args.file, e)))?;
 
-	// Merge password lists: CLI --password-file first, then settings auto_passwords
-	let mut all_passwords = auto_passwords.to_vec();
-	for pw in &settings.auto_passwords {
-		if !all_passwords.contains(pw) {
-			all_passwords.push(pw.clone());
+	// BR-CLI-018: Password priority — --password flag skips auto-list entirely.
+	// Only use auto-passwords when no explicit --password was given.
+	let auto_list = if args.password.is_some() {
+		Vec::new()
+	} else {
+		let mut all = auto_passwords.to_vec();
+		for pw in &settings.auto_passwords {
+			if !all.contains(pw) {
+				all.push(pw.clone());
+			}
 		}
-	}
+		all
+	};
 
-	let LoadedContainer { mut container, status } = load_sfdl(&xml, &all_passwords).map_err(|e| match &e {
+	let LoadedContainer { mut container, status } = load_sfdl(&xml, &auto_list).map_err(|e| match &e {
 		AppError::InvalidPassword => CliError::InvalidPassword,
 		AppError::Decrypt(_) => CliError::InvalidPassword,
 		AppError::Parse(_) => CliError::ParseError(e.to_string()),
@@ -252,15 +258,47 @@ mod tests {
 		assert_eq!(container.connection.host, "ftp.example.com");
 	}
 
-	/// CLI-004 | BR-CLI-018: --password flag takes priority over auto-list.
+	/// CLI-004 | A1: --password flag is used when NeedsPassword and flag given.
 	#[test]
-	fn cli004_flag_priority_over_auto() {
-		let mut container = SfdlContainer::default();
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::AutoDecrypted { password: "auto".into() }, Some("manual"), false).unwrap();
+	fn cli004_flag_used_when_needs_password() {
+		use rsfdl_core::sfdl::models::Connection;
+
+		let mut container = SfdlContainer {
+			encrypted: true,
+			connection: Connection {
+				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
+				..Connection::default()
+			},
+			..SfdlContainer::default()
+		};
+
+		// NeedsPassword + flag → tries flag password
+		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("test"), false).unwrap();
 		if let DecryptionStatus::AutoDecrypted { password } = result {
-			assert_eq!(password, "auto");
+			assert_eq!(password, "test");
 		} else {
-			panic!("expected AutoDecrypted");
+			panic!("expected AutoDecrypted with flag password");
 		}
+	}
+
+	/// CLI-004 | A3: NeedsPassword with no flag and no terminal → PasswordRequired.
+	/// This is the scenario when --password is given but wrong (auto-list was skipped),
+	/// and there's no terminal fallback.
+	#[test]
+	fn cli004_no_fallback_after_flag_fails() {
+		use rsfdl_core::sfdl::models::Connection;
+
+		let mut container = SfdlContainer {
+			encrypted: true,
+			connection: Connection {
+				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
+				..Connection::default()
+			},
+			..SfdlContainer::default()
+		};
+
+		// Wrong flag password → InvalidPassword (no fallback to auto-list)
+		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("wrong"), false);
+		assert!(matches!(result.unwrap_err(), CliError::InvalidPassword));
 	}
 }

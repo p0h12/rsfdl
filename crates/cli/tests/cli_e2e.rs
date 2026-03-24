@@ -526,6 +526,58 @@ speedreport_template = ""
 		.stderr(predicate::str::contains("Auto-decrypted with password from list"));
 }
 
+// --- CLI-004 | BR-CLI-018: Password priority ---
+
+/// CLI-004 | BR-CLI-018: --password flag overrides auto-list.
+/// Settings has wrong auto-passwords, but -p provides correct one → success.
+#[test]
+fn cli004_password_flag_overrides_auto_list() {
+	let toml = r#"
+download_directory = "/tmp/downloads"
+max_threads = 3
+max_speed_kbps = 0
+max_retries = 1
+retry_delay_seconds = 1
+auto_extract = false
+delete_archives_after_extract = false
+strict_disk_check = false
+exclusion_patterns = []
+auto_passwords = ["wrong1", "wrong2"]
+speedreport_template = ""
+"#;
+	let (_dir, path) = create_settings_file(toml);
+
+	cmd()
+		.args(["info", &fixture("encrypted_v3.sfdl"), "-p", "test"])
+		.env("RSFDL_CONFIG", &path)
+		.assert()
+		.success()
+		.stdout(predicate::str::contains("ftp.example.com"));
+}
+
+/// CLI-004 | BR-CLI-018: --password flag has priority — wrong flag does NOT fall back to auto-list.
+/// Settings has correct auto-password, but -p provides wrong one → exit 4.
+#[test]
+fn cli004_wrong_flag_does_not_fall_back_to_auto() {
+	let toml = r#"
+download_directory = "/tmp/downloads"
+max_threads = 3
+max_speed_kbps = 0
+max_retries = 1
+retry_delay_seconds = 1
+auto_extract = false
+delete_archives_after_extract = false
+strict_disk_check = false
+exclusion_patterns = []
+auto_passwords = ["test"]
+speedreport_template = ""
+"#;
+	let (_dir, path) = create_settings_file(toml);
+
+	// "test" is in auto_passwords and would work, but -p "wrong" takes priority
+	cmd().args(["info", &fixture("encrypted_v3.sfdl"), "-p", "wrong"]).env("RSFDL_CONFIG", &path).assert().failure().code(4);
+}
+
 // --- AT-43: config show with corrupt settings file shows defaults ---
 
 #[test]
