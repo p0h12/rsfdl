@@ -191,10 +191,9 @@ impl ContainerState {
 
 	/// SFDL version string (e.g. "v3").
 	pub fn version_tag(&self) -> &str {
-		if self.container.container_version >= 10 {
-			"v3"
-		} else {
-			"v2"
+		match self.container.version {
+			rsfdl_core::sfdl::models::SfdlVersion::V3 => "v3",
+			rsfdl_core::sfdl::models::SfdlVersion::V2 => "v2",
 		}
 	}
 

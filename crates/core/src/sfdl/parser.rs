@@ -149,6 +149,7 @@ fn parse_v3(xml: &str) -> Result<SfdlContainer, SfdlError> {
 
 	Ok(SfdlContainer {
 		container_version: raw.container_version,
+		version: SfdlVersion::V3,
 		description: raw.description,
 		uploader: raw.uploader,
 		encrypted: raw.encrypted,
@@ -366,6 +367,7 @@ fn parse_v2(xml: &str) -> Result<SfdlContainer, SfdlError> {
 
 	Ok(SfdlContainer {
 		container_version: 2,
+		version: SfdlVersion::V2,
 		description: raw.description,
 		uploader: raw.uploader,
 		encrypted: raw.encrypted,

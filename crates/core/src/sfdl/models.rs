@@ -54,9 +54,10 @@ pub enum HashType {
 	None,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum SfdlVersion {
 	V2,
+	#[default]
 	V3,
 }
 
@@ -65,6 +66,8 @@ pub enum SfdlVersion {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SfdlContainer {
 	pub container_version: u32,
+	#[serde(skip)]
+	pub version: SfdlVersion,
 	pub description: String,
 	pub uploader: String,
 	pub encrypted: bool,
@@ -77,6 +80,7 @@ impl Default for SfdlContainer {
 	fn default() -> Self {
 		Self {
 			container_version: 10,
+			version: SfdlVersion::V3,
 			description: String::new(),
 			uploader: String::new(),
 			encrypted: false,
