@@ -44,35 +44,26 @@
 
 1. Benutzer ruft `rsfdl download <datei.sfdl>` auf.
 2. System oeffnet und parst die SFDL-Datei (-> SFDL-001).
-3. Falls verschluesselt: System entschluesselt den Container (-> SFDL-002).
-4. System loest den Inhalt auf (-> SFDL-003).
-5. System wendet Ausschlussmuster an (-> DL-002).
-6. System erstellt die Selektion (-> DL-001): Alle nicht-ausgeschlossenen Dateien.
-7. System prueft den Speicherplatz (-> DL-003).
-8. System startet den Download (-> DL-004) mit Fortschrittsanzeige auf stderr (-> CLI-CC).
-9. Nach Abschluss: optionale Verifikation (-> POST-001), Extraktion (-> POST-002).
-10. System gibt Ergebnis-Zusammenfassung auf stdout aus.
-11. Optional: Speed-Report auf stdout (-> POST-003).
+3. System loest den Inhalt auf (-> SFDL-003).
+4. System wendet Ausschlussmuster an (-> DL-002).
+5. System erstellt die Selektion (-> DL-001): Alle nicht-ausgeschlossenen Dateien.
+6. System prueft den Speicherplatz (-> DL-003).
+7. System startet den Download (-> DL-004) mit Fortschrittsanzeige auf stderr (-> CLI-CC).
+8. Nach Abschluss: optionale Verifikation (-> POST-001), Extraktion (-> POST-002).
+9. System gibt Ergebnis-Zusammenfassung auf stdout aus.
+10. Optional: Speed-Report auf stdout (-> POST-003).
 
 ## Alternative Flows
 
-### A1: Passwort erforderlich (nicht-interaktiv)
+### A1: Container verschluesselt
 
-**Trigger:** Container ist verschluesselt, kein Passwort passt, kein interaktives Terminal (Schritt 2)
+**Trigger:** Container hat Encrypted=true (Schritt 2)
 **Flow:**
 
-1. System gibt Fehlermeldung auf stderr aus.
-2. Exit-Code 3.
+1. System ermittelt das Passwort und entschluesselt den Container (-> include CLI-004).
+2. Use Case faehrt mit Schritt 3 fort.
 
-### A2: Falsches Passwort
-
-**Trigger:** `--password` angegeben, aber falsches Passwort (Schritt 2)
-**Flow:**
-
-1. System gibt Fehlermeldung auf stderr aus.
-2. Exit-Code 4.
-
-### A3: Datei nicht gefunden
+### A2: Datei nicht gefunden
 
 **Trigger:** SFDL-Datei existiert nicht (Schritt 2)
 **Flow:**
@@ -80,7 +71,7 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 1.
 
-### A4: Ungueltiges SFDL-Format
+### A3: Ungueltiges SFDL-Format
 
 **Trigger:** Datei kann nicht geparst werden (Schritt 2)
 **Flow:**
@@ -88,17 +79,7 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 2.
 
-### A5: Interaktiver Passwort-Prompt
-
-**Trigger:** Container ist verschluesselt, kein Passwort passt, stderr ist ein Terminal (Schritt 2)
-**Flow:**
-
-1. System zeigt Passwort-Prompt auf stdin.
-2. Benutzer gibt Passwort ein.
-3. System entschluesselt den Container.
-4. Use Case faehrt mit Schritt 3 fort.
-
-### A6: Nicht genug Speicherplatz
+### A4: Nicht genug Speicherplatz
 
 **Trigger:** `--strict-disk-check` aktiv und zu wenig Platz (Schritt 6)
 **Flow:**
@@ -106,7 +87,7 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 6.
 
-### A7: Teilweise fehlgeschlagen
+### A5: Teilweise fehlgeschlagen
 
 **Trigger:** Einige Dateien schlagen nach Retries fehl (Schritt 7)
 **Flow:**
@@ -114,7 +95,7 @@
 1. System listet fehlgeschlagene Dateien in der Zusammenfassung.
 2. Exit-Code 10.
 
-### A8: Alle Downloads fehlgeschlagen
+### A6: Alle Downloads fehlgeschlagen
 
 **Trigger:** Keine Datei konnte heruntergeladen werden (Schritt 7)
 **Flow:**
@@ -122,7 +103,7 @@
 1. System listet alle Fehler in der Zusammenfassung.
 2. Exit-Code 11.
 
-### A9: Abbruch durch Signal
+### A7: Abbruch durch Signal
 
 **Trigger:** Benutzer sendet SIGINT (Ctrl+C) oder SIGTERM (Schritt 7)
 **Flow:**
@@ -131,7 +112,7 @@
 2. SIGINT innerhalb 2s erneut: Sofortiger Abbruch.
 3. Exit-Code 12.
 
-### A10: CLI-Parameter ueberschreiben Settings
+### A8: CLI-Parameter ueberschreiben Settings
 
 **Trigger:** Benutzer gibt `--threads`, `--retries`, etc. an (Schritt 1)
 **Flow:**

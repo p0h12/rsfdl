@@ -30,28 +30,19 @@
 
 1. Benutzer ruft `rsfdl info <datei.sfdl>` auf.
 2. System oeffnet und parst die SFDL-Datei (-> SFDL-001).
-3. Falls verschluesselt: System entschluesselt den Container (-> SFDL-002).
-4. System gibt Container-Metadaten auf stdout aus.
+3. System gibt Container-Metadaten auf stdout aus.
 
 ## Alternative Flows
 
-### A1: Passwort erforderlich (nicht-interaktiv)
+### A1: Container verschluesselt
 
-**Trigger:** Container ist verschluesselt, kein Passwort passt, kein interaktives Terminal (Schritt 4)
+**Trigger:** Container hat Encrypted=true (Schritt 2)
 **Flow:**
 
-1. System gibt Fehlermeldung auf stderr aus.
-2. Exit-Code 3.
+1. System ermittelt das Passwort und entschluesselt den Container (-> include CLI-004).
+2. Use Case faehrt mit Schritt 3 fort.
 
-### A2: Falsches Passwort
-
-**Trigger:** `--password` angegeben, aber falsches Passwort (Schritt 3)
-**Flow:**
-
-1. System gibt Fehlermeldung auf stderr aus.
-2. Exit-Code 4.
-
-### A3: Datei nicht gefunden
+### A2: Datei nicht gefunden
 
 **Trigger:** SFDL-Datei existiert nicht (Schritt 2)
 **Flow:**
@@ -59,23 +50,13 @@
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 1.
 
-### A4: Ungueltiges SFDL-Format
+### A3: Ungueltiges SFDL-Format
 
 **Trigger:** Datei kann nicht geparst werden (Schritt 2)
 **Flow:**
 
 1. System gibt Fehlermeldung auf stderr aus.
 2. Exit-Code 2.
-
-### A5: Interaktiver Passwort-Prompt
-
-**Trigger:** Container ist verschluesselt, kein Passwort passt, stderr ist ein Terminal (Schritt 4)
-**Flow:**
-
-1. System zeigt Passwort-Prompt auf stdin.
-2. Benutzer gibt Passwort ein.
-3. System entschluesselt den Container.
-4. Use Case faehrt mit Schritt 5 fort.
 
 ## Postconditions
 
