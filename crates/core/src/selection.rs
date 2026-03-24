@@ -73,8 +73,8 @@ impl FileSelection {
 		self.selected
 			.iter()
 			.zip(&self.file_sizes)
-			.filter(|&(&sel, _)| sel)
-			.map(|&(_, &size)| size)
+			.filter(|(sel, _)| **sel)
+			.map(|(_, size)| *size)
 			.sum()
 	}
 
