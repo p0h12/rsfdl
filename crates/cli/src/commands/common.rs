@@ -53,7 +53,8 @@ pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(S
 	let LoadedContainer { mut container, status } = load_sfdl(&xml, &all_passwords).map_err(|e| e.to_string())?;
 
 	// CLI-004: Resolve password and decrypt if needed
-	let outcome = resolve_password_and_decrypt(&mut container, status, args.password.as_deref())?;
+	let is_terminal = std::io::IsTerminal::is_terminal(&std::io::stderr());
+	let outcome = resolve_password_and_decrypt(&mut container, status, args.password.as_deref(), is_terminal)?;
 
 	Ok((container, settings, outcome))
 }
@@ -71,6 +72,7 @@ fn resolve_password_and_decrypt(
 	container: &mut SfdlContainer,
 	status: DecryptionStatus,
 	password_flag: Option<&str>,
+	is_terminal: bool,
 ) -> Result<DecryptOutcome, String> {
 	match status {
 		// Not encrypted — nothing to do
@@ -89,7 +91,7 @@ fn resolve_password_and_decrypt(
 				pw.to_string()
 			}
 			// A2: Interactive prompt (terminal available)
-			else if std::io::IsTerminal::is_terminal(&std::io::stderr()) {
+			else if is_terminal {
 				eprintln!("File is encrypted. Enter password:");
 				rpassword::read_password().map_err(|e| format!("Failed to read password: {e}"))?
 			}
@@ -130,7 +132,7 @@ mod tests {
 	#[test]
 	fn cli004_not_encrypted_passthrough() {
 		let mut container = SfdlContainer::default();
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NotEncrypted, None).unwrap();
+		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NotEncrypted, None, false).unwrap();
 		assert!(matches!(result, DecryptionStatus::NotEncrypted));
 	}
 
@@ -138,17 +140,16 @@ mod tests {
 	#[test]
 	fn cli004_auto_decrypted_passthrough() {
 		let mut container = SfdlContainer::default();
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::AutoDecrypted { password: "test".into() }, None).unwrap();
+		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::AutoDecrypted { password: "test".into() }, None, false).unwrap();
 		assert!(matches!(result, DecryptionStatus::AutoDecrypted { .. }));
 	}
 
-	/// CLI-004 | A3: NeedsPassword without flag or terminal → error.
+	/// CLI-004 | A3: NeedsPassword without flag, no terminal → error.
 	#[test]
 	fn cli004_needs_password_no_flag_no_terminal() {
 		let mut container = SfdlContainer::default();
 		container.encrypted = true;
-		// In test context, stderr is not a terminal → should error
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, None);
+		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, None, false);
 		assert!(result.is_err());
 		assert!(result.unwrap_err().contains("encrypted"));
 	}
@@ -167,7 +168,7 @@ mod tests {
 			..SfdlContainer::default()
 		};
 
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("wrong"));
+		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("wrong"), false);
 		assert!(result.is_err());
 		assert!(result.unwrap_err().contains("Invalid password"));
 	}
@@ -177,7 +178,6 @@ mod tests {
 	fn cli004_correct_password_flag() {
 		use rsfdl_core::sfdl::models::Connection;
 
-		// Build an encrypted container with known ciphertext
 		let mut container = SfdlContainer {
 			encrypted: true,
 			connection: Connection {
@@ -187,7 +187,7 @@ mod tests {
 			..SfdlContainer::default()
 		};
 
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("test")).unwrap();
+		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("test"), false).unwrap();
 		assert!(matches!(result, DecryptionStatus::AutoDecrypted { .. }));
 		assert!(!container.encrypted);
 		assert_eq!(container.connection.host, "ftp.example.com");
@@ -197,10 +197,9 @@ mod tests {
 	#[test]
 	fn cli004_flag_priority_over_auto() {
 		let mut container = SfdlContainer::default();
-		// AutoDecrypted already happened, but flag is also present — auto wins (already decrypted)
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::AutoDecrypted { password: "auto".into() }, Some("manual")).unwrap();
+		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::AutoDecrypted { password: "auto".into() }, Some("manual"), false).unwrap();
 		if let DecryptionStatus::AutoDecrypted { password } = result {
-			assert_eq!(password, "auto"); // auto already succeeded, flag ignored
+			assert_eq!(password, "auto");
 		} else {
 			panic!("expected AutoDecrypted");
 		}
