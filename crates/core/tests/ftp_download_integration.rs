@@ -8,6 +8,7 @@ use std::path::Path;
 use tokio::sync::mpsc;
 
 use common::{FtpTestServer, create_ftp_file, generate_bulkfolder_sfdl_xml, generate_empty_sfdl_xml, generate_sfdl_xml, parse_sfdl_from_xml};
+use rsfdl_core::container::resolve_bulk_folders;
 use rsfdl_core::download::manager::DownloadManager;
 use rsfdl_core::download::progress::ProgressEvent;
 use rsfdl_core::settings::Settings;
@@ -345,14 +346,14 @@ async fn sfdl003_download_bulkfolder_single_dir() {
 	let ftp_root = tempfile::tempdir().unwrap();
 	let dest = tempfile::tempdir().unwrap();
 
-	// Create files in a directory that will be bulk-listed
 	create_ftp_file(ftp_root.path(), "releases/movie/part1.rar", &[0xAA; 512]);
 	create_ftp_file(ftp_root.path(), "releases/movie/part2.rar", &[0xBB; 256]);
 
 	let server = FtpTestServer::start(ftp_root.path().to_path_buf()).await;
 
 	let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/releases/movie/"]);
-	let container = parse_sfdl_from_xml(&xml);
+	let mut container = parse_sfdl_from_xml(&xml);
+	resolve_bulk_folders(&mut container, 10).await.unwrap();
 
 	let settings = test_settings(dest.path(), 2);
 	let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
@@ -387,7 +388,8 @@ async fn sfdl003_download_bulkfolder_recursive() {
 	let server = FtpTestServer::start(ftp_root.path().to_path_buf()).await;
 
 	let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/data/"]);
-	let container = parse_sfdl_from_xml(&xml);
+	let mut container = parse_sfdl_from_xml(&xml);
+	resolve_bulk_folders(&mut container, 10).await.unwrap();
 
 	let settings = test_settings(dest.path(), 3);
 	let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
@@ -418,7 +420,8 @@ async fn sfdl003_download_bulkfolder_multiple_folders() {
 	let server = FtpTestServer::start(ftp_root.path().to_path_buf()).await;
 
 	let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/movies/", "/extras/"]);
-	let container = parse_sfdl_from_xml(&xml);
+	let mut container = parse_sfdl_from_xml(&xml);
+	resolve_bulk_folders(&mut container, 10).await.unwrap();
 
 	let settings = test_settings(dest.path(), 2);
 	let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
@@ -446,7 +449,8 @@ async fn sfdl003_download_bulkfolder_empty_dir() {
 	let server = FtpTestServer::start(ftp_root.path().to_path_buf()).await;
 
 	let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/empty/"]);
-	let container = parse_sfdl_from_xml(&xml);
+	let mut container = parse_sfdl_from_xml(&xml);
+	resolve_bulk_folders(&mut container, 10).await.unwrap();
 
 	let settings = test_settings(dest.path(), 1);
 	let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);

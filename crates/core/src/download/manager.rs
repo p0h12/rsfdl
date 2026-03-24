@@ -10,7 +10,6 @@ use crate::download::item::{DownloadItem, DownloadStatus, ResumeAction};
 use crate::download::progress::ProgressEvent;
 use crate::error::DownloadError;
 use crate::ftp::client::FtpClient;
-use crate::ftp::listing::resolve_all_bulk_folders;
 use crate::settings::Settings;
 use crate::sfdl::models::SfdlContainer;
 
@@ -59,30 +58,14 @@ impl DownloadManager {
 
 	/// DL-004: Run the download session. Sends ProgressEvents to progress_tx.
 	///
-	/// Ideally the container should have BulkFolders resolved (SFDL-003) and
+	/// The container must have BulkFolders resolved (SFDL-003) and
 	/// unselected files filtered out (DL-001) before calling this.
-	/// As a fallback, unresolved BulkFolders are resolved during the run.
 	pub async fn run(self, progress_tx: mpsc::UnboundedSender<ProgressEvent>) -> Result<DownloadResult, DownloadError> {
 		let mut items: Vec<DownloadItem> = Vec::new();
 
 		for package in &self.container.packages {
-			// Direct file items
 			for file_item in &package.file_list {
 				items.push(DownloadItem::from_file_item(file_item, &self.dest_dir, &package.name, self.create_package_subfolder));
-			}
-
-			// Fallback: resolve unresolved BulkFolders
-			if package.bulk_folder_mode && !package.bulk_folder_list.is_empty() {
-				match resolve_all_bulk_folders(&self.container.connection, &package.bulk_folder_list, self.ftp_timeout_seconds).await {
-					Ok(resolved) => {
-						for file_item in &resolved {
-							items.push(DownloadItem::from_file_item(file_item, &self.dest_dir, &package.name, self.create_package_subfolder));
-						}
-					}
-					Err(e) => {
-						return Err(DownloadError::Ftp(e));
-					}
-				}
 			}
 		}
 
