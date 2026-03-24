@@ -26,6 +26,8 @@ pub struct DownloadManager {
 	container: SfdlContainer,
 	dest_dir: PathBuf,
 	max_threads: u32,
+	max_retries: u32,
+	retry_delay_seconds: u32,
 	strict_disk_check: bool,
 	resume_downloads: bool,
 	create_package_subfolder: bool,
@@ -46,6 +48,8 @@ impl DownloadManager {
 				container,
 				dest_dir: settings.download_directory.clone(),
 				max_threads: settings.max_threads,
+				max_retries: settings.max_retries,
+				retry_delay_seconds: settings.retry_delay_seconds,
 				strict_disk_check: settings.strict_disk_check,
 				resume_downloads: true,
 				create_package_subfolder: true,
@@ -177,6 +181,8 @@ impl DownloadManager {
 		let cancel = self.cancel_token.clone();
 		let resume_downloads = self.resume_downloads;
 		let ftp_timeout = self.ftp_timeout_seconds;
+		let max_retries = self.max_retries;
+		let retry_delay = self.retry_delay_seconds;
 
 		let mut handles = Vec::new();
 
@@ -187,7 +193,7 @@ impl DownloadManager {
 			let global_cancel = cancel.clone();
 			let file_tokens = file_tokens.clone();
 
-			// Create a child token for this file
+			// DL-006: Create a child token for this file
 			let file_cancel = global_cancel.child_token();
 			{
 				file_tokens.lock().await.insert(item.id, file_cancel.clone());
@@ -218,66 +224,104 @@ impl DownloadManager {
 					return DownloadStatus::Failed;
 				}
 
-				// DL-005: Determine resume offset
-				let resume_offset = if resume_downloads {
-					match item.check_local_state() {
-						ResumeAction::Resume(offset) => offset,
-						ResumeAction::AlreadyComplete => {
-							let _ = tx.send(ProgressEvent::Skipped {
-								item_id: item.id,
-								file_name: item.file_item.file_name.clone(),
-							});
-							return DownloadStatus::Skipped;
-						}
-						ResumeAction::DeleteAndRestart => {
-							let _ = tokio::fs::remove_file(&item.local_path).await;
-							0
-						}
-						ResumeAction::StartFresh => 0,
-					}
-				} else {
-					0
-				};
+				// DL-007: Retry loop
+				let mut attempt = 0u32;
 
-				// Connect
-				let mut client = match FtpClient::connect(&conn, ftp_timeout).await {
-					Ok(c) => c,
-					Err(e) => {
-						let _ = tx.send(ProgressEvent::Failed {
-							item_id: item.id,
-							error: e.to_string(),
-						});
-						return DownloadStatus::Failed;
-					}
-				};
-
-				// Send Started event
-				let _ = tx.send(ProgressEvent::Started {
-					item_id: item.id,
-					file_name: item.file_item.file_name.clone(),
-					total_bytes: item.file_item.file_size,
-				});
-
-				// Download (uses per-file cancel token)
-				let result = client.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &file_cancel).await;
-
-				client.disconnect().await;
-
-				match result {
-					Ok(_) => {
-						let _ = tx.send(ProgressEvent::Completed { item_id: item.id });
-						DownloadStatus::Completed
-					}
-					Err(DownloadError::Cancelled) => {
+				loop {
+					if file_cancel.is_cancelled() {
 						let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
-						DownloadStatus::Cancelled
+						return DownloadStatus::Cancelled;
 					}
-					Err(e) => {
-						let _ = tx.send(ProgressEvent::Failed {
-							item_id: item.id,
-							error: e.to_string(),
-						});
-						DownloadStatus::Failed
+
+					// DL-005: Determine resume offset (re-check each attempt)
+					let resume_offset = if resume_downloads {
+						match item.check_local_state() {
+							ResumeAction::Resume(offset) => offset,
+							ResumeAction::AlreadyComplete => {
+								let _ = tx.send(ProgressEvent::Skipped {
+									item_id: item.id,
+									file_name: item.file_item.file_name.clone(),
+								});
+								return DownloadStatus::Skipped;
+							}
+							ResumeAction::DeleteAndRestart => {
+								let _ = tokio::fs::remove_file(&item.local_path).await;
+								0
+							}
+							ResumeAction::StartFresh => 0,
+						}
+					} else {
+						0
+					};
+
+					// Connect
+					let client = FtpClient::connect(&conn, ftp_timeout).await;
+					let mut client = match client {
+						Ok(c) => c,
+						Err(e) => {
+							let dl_err = DownloadError::Ftp(e);
+							if dl_err.is_retryable() && attempt < max_retries {
+								attempt += 1;
+								let delay = calculate_retry_delay(retry_delay, attempt, dl_err.is_server_full());
+								let _ = tx.send(ProgressEvent::Retry {
+									item_id: item.id,
+									attempt,
+									max_retries,
+									delay_seconds: delay,
+									error: dl_err.to_string(),
+								});
+								tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
+								continue;
+							}
+							let _ = tx.send(ProgressEvent::Failed {
+								item_id: item.id,
+								error: format!("{} (after {} retries)", dl_err, attempt),
+							});
+							return DownloadStatus::Failed;
+						}
+					};
+
+					// Send Started event
+					let _ = tx.send(ProgressEvent::Started {
+						item_id: item.id,
+						file_name: item.file_item.file_name.clone(),
+						total_bytes: item.file_item.file_size,
+					});
+
+					// Download (uses per-file cancel token)
+					let result = client.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &file_cancel).await;
+
+					client.disconnect().await;
+
+					match result {
+						Ok(_) => {
+							let _ = tx.send(ProgressEvent::Completed { item_id: item.id });
+							return DownloadStatus::Completed;
+						}
+						Err(DownloadError::Cancelled) => {
+							let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
+							return DownloadStatus::Cancelled;
+						}
+						Err(e) => {
+							if e.is_retryable() && attempt < max_retries {
+								attempt += 1;
+								let delay = calculate_retry_delay(retry_delay, attempt, e.is_server_full());
+								let _ = tx.send(ProgressEvent::Retry {
+									item_id: item.id,
+									attempt,
+									max_retries,
+									delay_seconds: delay,
+									error: e.to_string(),
+								});
+								tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
+								continue;
+							}
+							let _ = tx.send(ProgressEvent::Failed {
+								item_id: item.id,
+								error: format!("{} (after {} retries)", e, attempt),
+							});
+							return DownloadStatus::Failed;
+						}
 					}
 				}
 			});
@@ -318,6 +362,20 @@ impl DownloadManager {
 			cancelled,
 			skipped,
 		})
+	}
+}
+
+/// BR-DL-015: Calculate retry delay with optional exponential backoff.
+///
+/// For ServerFull (421): doubles each attempt, capped at 120s.
+/// For other errors: constant delay from settings.
+fn calculate_retry_delay(base_delay: u32, attempt: u32, is_server_full: bool) -> u32 {
+	if is_server_full {
+		// Exponential backoff: base * 2^(attempt-1), capped at 120s
+		let delay = base_delay.saturating_mul(1u32.wrapping_shl(attempt.saturating_sub(1)));
+		delay.min(120)
+	} else {
+		base_delay
 	}
 }
 
@@ -435,5 +493,100 @@ mod tests {
 			skipped: 1,
 		};
 		assert_eq!(result.total_files, result.completed + result.failed + result.cancelled + result.skipped);
+	}
+
+	// =======================================================
+	// DL-007: Retry logic
+	// =======================================================
+
+	/// DL-007 | BR-DL-015: Constant delay for non-ServerFull errors.
+	#[test]
+	fn dl007_retry_delay_constant() {
+		assert_eq!(calculate_retry_delay(10, 1, false), 10);
+		assert_eq!(calculate_retry_delay(10, 2, false), 10);
+		assert_eq!(calculate_retry_delay(10, 5, false), 10);
+	}
+
+	/// DL-007 | BR-DL-015: Exponential backoff for ServerFull.
+	#[test]
+	fn dl007_retry_delay_backoff() {
+		// base=10, attempt 1: 10*2^0 = 10
+		assert_eq!(calculate_retry_delay(10, 1, true), 10);
+		// base=10, attempt 2: 10*2^1 = 20
+		assert_eq!(calculate_retry_delay(10, 2, true), 20);
+		// base=10, attempt 3: 10*2^2 = 40
+		assert_eq!(calculate_retry_delay(10, 3, true), 40);
+		// base=10, attempt 4: 10*2^3 = 80
+		assert_eq!(calculate_retry_delay(10, 4, true), 80);
+	}
+
+	/// DL-007 | BR-DL-015: Backoff capped at 120 seconds.
+	#[test]
+	fn dl007_retry_delay_capped_at_120() {
+		// base=10, attempt 5: 10*2^4 = 160 → capped to 120
+		assert_eq!(calculate_retry_delay(10, 5, true), 120);
+		assert_eq!(calculate_retry_delay(10, 10, true), 120);
+	}
+
+	/// DL-007 | BR-DL-010: ConnectionFailed is retryable.
+	#[test]
+	fn dl007_connection_failed_is_retryable() {
+		use crate::error::FtpError;
+		let err = DownloadError::Ftp(FtpError::ConnectionFailed("refused".into()));
+		assert!(err.is_retryable());
+	}
+
+	/// DL-007 | BR-DL-010: Timeout is retryable.
+	#[test]
+	fn dl007_timeout_is_retryable() {
+		use crate::error::FtpError;
+		let err = DownloadError::Ftp(FtpError::Timeout);
+		assert!(err.is_retryable());
+	}
+
+	/// DL-007 | BR-DL-010: AuthFailed is retryable (may be rate limit).
+	#[test]
+	fn dl007_auth_failed_is_retryable() {
+		use crate::error::FtpError;
+		let err = DownloadError::Ftp(FtpError::AuthFailed);
+		assert!(err.is_retryable());
+	}
+
+	/// DL-007 | A1: IO error is NOT retryable (permanent).
+	#[test]
+	fn dl007_io_error_not_retryable() {
+		let err = DownloadError::Io(std::io::Error::new(std::io::ErrorKind::NotFound, "missing"));
+		assert!(!err.is_retryable());
+	}
+
+	/// DL-007 | A1: Cancelled is NOT retryable.
+	#[test]
+	fn dl007_cancelled_not_retryable() {
+		assert!(!DownloadError::Cancelled.is_retryable());
+	}
+
+	/// DL-007 | A1: InsufficientDiskSpace is NOT retryable.
+	#[test]
+	fn dl007_disk_space_not_retryable() {
+		assert!(!DownloadError::InsufficientDiskSpace.is_retryable());
+	}
+
+	/// DL-007 | BR-DL-010: FileNotFound (550) is NOT retryable.
+	#[test]
+	fn dl007_file_not_found_not_retryable() {
+		use crate::error::FtpError;
+		let err = DownloadError::Ftp(FtpError::TransferError("FTP 550: FileNotFound".into()));
+		assert!(!err.is_retryable());
+	}
+
+	/// DL-007 | ServerFull detection for backoff.
+	#[test]
+	fn dl007_is_server_full() {
+		use crate::error::FtpError;
+		let err = DownloadError::Ftp(FtpError::ConnectionFailed("Server unavailable (421)".into()));
+		assert!(err.is_server_full());
+
+		let err2 = DownloadError::Ftp(FtpError::ConnectionFailed("refused".into()));
+		assert!(!err2.is_server_full());
 	}
 }

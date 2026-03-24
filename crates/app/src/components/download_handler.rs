@@ -135,6 +135,14 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 						cs.global_progress.files_done += 1;
 					});
 				}
+				ProgressEvent::Retry { item_id, attempt, max_retries, delay_seconds, error } => {
+					// DL-007: Update file status to show retry info
+					state.with_container_mut(container_id, |cs| {
+						if let Some(fs) = cs.file_states.get_mut(&item_id) {
+							fs.error = Some(format!("Retry {}/{} in {}s: {}", attempt, max_retries, delay_seconds, error));
+						}
+					});
+				}
 				ProgressEvent::Cancelled { item_id } => {
 					state.with_container_mut(container_id, |cs| {
 						if let Some(fs) = cs.file_states.get_mut(&item_id) {

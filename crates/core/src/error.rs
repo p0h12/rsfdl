@@ -97,6 +97,42 @@ pub enum DownloadError {
 	InsufficientDiskSpace,
 }
 
+impl DownloadError {
+	/// DL-007 / BR-DL-010: Whether this error type is retryable.
+	///
+	/// Retryable: ConnectionFailed, AuthFailed, Timeout (transient FTP errors)
+	/// Permanent: IO errors, Cancelled, InsufficientDiskSpace, FileNotFound (550)
+	pub fn is_retryable(&self) -> bool {
+		match self {
+			DownloadError::Ftp(ftp_err) => ftp_err.is_retryable(),
+			DownloadError::Io(_) => false,
+			DownloadError::Cancelled => false,
+			DownloadError::InsufficientDiskSpace => false,
+		}
+	}
+
+	/// Whether this is a ServerFull (421) error that warrants exponential backoff.
+	pub fn is_server_full(&self) -> bool {
+		matches!(self, DownloadError::Ftp(FtpError::ConnectionFailed(msg)) if msg.contains("421"))
+	}
+}
+
+impl FtpError {
+	/// Whether this FTP error is retryable.
+	pub fn is_retryable(&self) -> bool {
+		match self {
+			FtpError::ConnectionFailed(_) => true, // includes 421 ServerFull
+			FtpError::AuthFailed => true,           // may be temporary rate limit
+			FtpError::Timeout => true,
+			FtpError::TransferError(msg) => {
+				// 550 FileNotFound is permanent
+				!msg.contains("550") && !msg.contains("FileNotFound")
+			}
+			FtpError::ListingError(_) => false,
+		}
+	}
+}
+
 #[cfg(test)]
 mod tests {
 	use super::*;
