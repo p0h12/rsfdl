@@ -18,8 +18,8 @@ fn test_settings(dest_dir: &Path, threads: u32) -> Settings {
 	let mut s = Settings::default();
 	s.download_directory = dest_dir.to_path_buf();
 	s.max_threads = threads;
-	s.max_retries = 0;
-	s.retry_delay_seconds = 0;
+	s.max_retries = 2;
+	s.retry_delay_seconds = 1;
 	s
 }
 
