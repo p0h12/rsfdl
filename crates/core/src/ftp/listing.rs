@@ -95,20 +95,23 @@ fn normalize_path(path: &str) -> String {
 mod tests {
 	use super::*;
 
+	/// SFDL-003 | BR-SFDL-006: Normalize path removes double slashes.
 	#[test]
-	fn normalize_path_removes_double_slashes() {
+	fn sfdl003_normalize_path_removes_double_slashes() {
 		assert_eq!(normalize_path("/a//b///c"), "/a/b/c");
 		assert_eq!(normalize_path("/release/test/"), "/release/test/");
 		assert_eq!(normalize_path("//root//dir//file"), "/root/dir/file");
 	}
 
+	/// SFDL-003 | BR-SFDL-006: Preserve single slashes.
 	#[test]
-	fn normalize_path_preserves_single_slashes() {
+	fn sfdl003_normalize_path_preserves_single_slashes() {
 		assert_eq!(normalize_path("/a/b/c"), "/a/b/c");
 	}
 
+	/// SFDL-003 | Edge: Empty path stays empty.
 	#[test]
-	fn normalize_path_empty() {
+	fn sfdl003_normalize_path_empty() {
 		assert_eq!(normalize_path(""), "");
 	}
 }

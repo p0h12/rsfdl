@@ -160,23 +160,20 @@ pub async fn resolve_bulk_folders_for(mut state: AppState, container_id: u32) {
 		cs.phase = ContainerPhase::ResolvingBulk;
 	});
 
-	match rsfdl_core::container::resolve_bulk_folders(&mut container, timeout).await {
-		Ok(()) => {
-			let patterns = state.settings.read().exclusion_patterns.clone();
-			let selection = FileSelection::new(&container, &patterns);
-			state.with_container_mut(container_id, |cs| {
-				cs.container = container;
-				cs.selection = selection;
-				cs.phase = ContainerPhase::Ready;
-			});
-		}
-		Err(e) => {
-			state.error_message.set(Some(format!("Failed to resolve bulk folders: {e}")));
-			state.with_container_mut(container_id, |cs| {
-				cs.phase = ContainerPhase::Ready;
-			});
-		}
+	let warnings = rsfdl_core::container::resolve_bulk_folders(&mut container, timeout).await;
+
+	if !warnings.is_empty() {
+		state.error_message.set(Some(warnings.join("; ")));
 	}
+
+	let patterns = state.settings.read().exclusion_patterns.clone();
+	let selection = FileSelection::new(&container, &patterns);
+	state.with_container_mut(container_id, |cs| {
+		cs.container = container;
+		cs.selection = selection;
+		cs.phase = ContainerPhase::Ready;
+	});
+
 }
 
 /// Decrypt a container with the given password and update its state.

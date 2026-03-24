@@ -1,4 +1,4 @@
-use crate::ftp::listing::resolve_container_bulk_folders;
+use crate::ftp::listing::resolve_bulk_folder;
 use crate::selection::FileSelection;
 use crate::sfdl::crypto::{decrypt_container, try_passwords, validate_password};
 use crate::sfdl::models::SfdlContainer;
@@ -72,33 +72,54 @@ pub fn compute_file_selection(container: &SfdlContainer, patterns: &[String]) ->
 /// SFDL-003: Resolve BulkFolders via FTP and merge results into the container.
 ///
 /// After resolution, bulk folder entries are cleared and their files are added
-/// to the respective package's file list.
-pub async fn resolve_bulk_folders(container: &mut SfdlContainer, timeout: u32) -> Result<(), AppError> {
-	let has_bulk = container.packages.iter().any(|p| p.bulk_folder_mode && !p.bulk_folder_list.is_empty());
+/// to the respective package's file list. Individual BulkFolder failures are
+/// logged but don't abort resolution of other folders (A1/A3).
+///
+/// Returns list of warnings for failed folders.
+pub async fn resolve_bulk_folders(container: &mut SfdlContainer, timeout: u32) -> Vec<String> {
+	let mut warnings = Vec::new();
 
-	if !has_bulk {
-		return Ok(());
-	}
-
-	let resolved_files = resolve_container_bulk_folders(&container.connection, &container.packages, timeout).await?;
-
-	if !resolved_files.is_empty() {
-		// Group resolved files by package name
-		let mut files_by_package: std::collections::HashMap<String, Vec<crate::sfdl::models::FileItem>> = std::collections::HashMap::new();
-		for file in resolved_files {
-			files_by_package.entry(file.package_name.clone()).or_default().push(file);
+	for pkg in &mut container.packages {
+		if !pkg.bulk_folder_mode || pkg.bulk_folder_list.is_empty() {
+			continue;
 		}
 
-		for pkg in &mut container.packages {
-			if let Some(new_files) = files_by_package.remove(&pkg.name) {
-				pkg.file_list.extend(new_files);
+		let mut resolved_files = Vec::new();
+		let mut all_resolved = true;
+
+		for bulk in &pkg.bulk_folder_list {
+			match resolve_bulk_folder(&container.connection, bulk, timeout).await {
+				Ok(files) => {
+					if files.is_empty() {
+						// A2: Empty directory
+						tracing::info!(path = %bulk.bulk_folder_path, "BulkFolder directory is empty");
+					}
+					resolved_files.extend(files);
+				}
+				Err(e) => {
+					// A1/A3: FTP error — log warning, continue with others
+					let msg = format!("Failed to resolve {}: {}", bulk.bulk_folder_path, e);
+					tracing::warn!("{}", msg);
+					warnings.push(msg);
+					all_resolved = false;
+				}
 			}
+		}
+
+		pkg.file_list.extend(resolved_files);
+
+		if all_resolved {
 			pkg.bulk_folder_list.clear();
 			pkg.bulk_folder_mode = false;
 		}
 	}
 
-	Ok(())
+	warnings
+}
+
+/// Check if a container has unresolved BulkFolders.
+pub fn has_unresolved_bulk_folders(container: &SfdlContainer) -> bool {
+	container.packages.iter().any(|p| p.bulk_folder_mode && !p.bulk_folder_list.is_empty())
 }
 
 /// Filter a container to only keep selected files.
@@ -219,5 +240,51 @@ mod tests {
 
 		let result = decrypt_with_password(&mut container, "wrong");
 		assert!(matches!(result, Err(AppError::InvalidPassword)));
+	}
+
+	// =======================================================
+	// SFDL-003: BulkFolder detection
+	// =======================================================
+
+	/// SFDL-003 | Precondition: Container with BulkFolders detected.
+	#[test]
+	fn sfdl003_has_unresolved_bulk_folders() {
+		use crate::sfdl::models::BulkFolder;
+
+		let container = SfdlContainer {
+			packages: vec![Package {
+				name: "Pkg".into(),
+				bulk_folder_mode: true,
+				bulk_folder_list: vec![BulkFolder {
+					bulk_folder_path: "/data/".into(),
+					package_name: "Pkg".into(),
+				}],
+				..Package::default()
+			}],
+			..SfdlContainer::default()
+		};
+		assert!(has_unresolved_bulk_folders(&container));
+	}
+
+	/// SFDL-003 | Edge: No BulkFolders → false.
+	#[test]
+	fn sfdl003_no_bulk_folders() {
+		let container = make_container_with_files(&["a.rar"]);
+		assert!(!has_unresolved_bulk_folders(&container));
+	}
+
+	/// SFDL-003 | Edge: BulkFolder mode but empty list → false.
+	#[test]
+	fn sfdl003_bulk_mode_empty_list() {
+		let container = SfdlContainer {
+			packages: vec![Package {
+				name: "Pkg".into(),
+				bulk_folder_mode: true,
+				bulk_folder_list: vec![], // empty
+				..Package::default()
+			}],
+			..SfdlContainer::default()
+		};
+		assert!(!has_unresolved_bulk_folders(&container));
 	}
 }

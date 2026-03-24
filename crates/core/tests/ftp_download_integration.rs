@@ -355,7 +355,8 @@ async fn sfdl003_download_bulkfolder_single_dir() {
 
 	let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/releases/movie/"]);
 	let mut container = parse_sfdl_from_xml(&xml);
-	resolve_bulk_folders(&mut container, 10).await.unwrap();
+	let warnings = resolve_bulk_folders(&mut container, 10).await;
+	assert!(warnings.is_empty(), "unexpected warnings: {:?}", warnings);
 
 	let settings = test_settings(dest.path(), 2);
 	let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
@@ -391,7 +392,8 @@ async fn sfdl003_download_bulkfolder_recursive() {
 
 	let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/data/"]);
 	let mut container = parse_sfdl_from_xml(&xml);
-	resolve_bulk_folders(&mut container, 10).await.unwrap();
+	let warnings = resolve_bulk_folders(&mut container, 10).await;
+	assert!(warnings.is_empty(), "unexpected warnings: {:?}", warnings);
 
 	let settings = test_settings(dest.path(), 3);
 	let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
@@ -423,7 +425,8 @@ async fn sfdl003_download_bulkfolder_multiple_folders() {
 
 	let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/movies/", "/extras/"]);
 	let mut container = parse_sfdl_from_xml(&xml);
-	resolve_bulk_folders(&mut container, 10).await.unwrap();
+	let warnings = resolve_bulk_folders(&mut container, 10).await;
+	assert!(warnings.is_empty(), "unexpected warnings: {:?}", warnings);
 
 	let settings = test_settings(dest.path(), 2);
 	let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
@@ -452,7 +455,8 @@ async fn sfdl003_download_bulkfolder_empty_dir() {
 
 	let xml = generate_bulkfolder_sfdl_xml(server.port(), &["/empty/"]);
 	let mut container = parse_sfdl_from_xml(&xml);
-	resolve_bulk_folders(&mut container, 10).await.unwrap();
+	let warnings = resolve_bulk_folders(&mut container, 10).await;
+	assert!(warnings.is_empty(), "unexpected warnings: {:?}", warnings);
 
 	let settings = test_settings(dest.path(), 1);
 	let (manager, _cancel, _file_cancel) = DownloadManager::new(container, &settings);
