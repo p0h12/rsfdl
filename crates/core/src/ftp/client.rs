@@ -126,18 +126,20 @@ impl FtpClient {
 			tokio::fs::File::create(local_path).await?
 		};
 
-		// Chunked read loop
-		let mut buf = [0u8; 32768]; // 32KB buffer
+		// DL-006: Chunked read loop with immediate cancellation via select!
+		let mut buf = [0u8; 32768]; // BR-DL-008: 32KB buffer
 		let mut total_written = resume_offset;
 
 		loop {
-			// Check cancellation
-			if cancel_token.is_cancelled() {
-				drop(data_stream);
-				return Err(DownloadError::Cancelled);
-			}
-
-			let n = data_stream.read(&mut buf).await.map_err(|e| DownloadError::Io(std::io::Error::other(e)))?;
+			let n = tokio::select! {
+				result = data_stream.read(&mut buf) => {
+					result.map_err(|e| DownloadError::Io(std::io::Error::other(e)))?
+				}
+				_ = cancel_token.cancelled() => {
+					drop(data_stream);
+					return Err(DownloadError::Cancelled);
+				}
+			};
 
 			if n == 0 {
 				break; // EOF

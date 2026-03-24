@@ -320,3 +320,120 @@ impl DownloadManager {
 		})
 	}
 }
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+	use crate::sfdl::models::{Connection, FileItem, Package};
+
+	fn test_container(files: Vec<(&str, u64)>) -> SfdlContainer {
+		SfdlContainer {
+			connection: Connection {
+				host: "127.0.0.1".into(),
+				port: 1, // unreachable port
+				..Connection::default()
+			},
+			packages: vec![Package {
+				name: "Pkg".into(),
+				file_list: files
+					.into_iter()
+					.map(|(name, size)| FileItem {
+						file_name: name.into(),
+						file_size: size,
+						full_path: format!("/{name}"),
+						..FileItem::default()
+					})
+					.collect(),
+				..Package::default()
+			}],
+			..SfdlContainer::default()
+		}
+	}
+
+	fn test_settings(dir: &std::path::Path) -> Settings {
+		let mut s = Settings::default();
+		s.download_directory = dir.to_path_buf();
+		s.max_threads = 2;
+		s.ftp_timeout_seconds = 1;
+		s
+	}
+
+	/// DL-006 | Variante B: Global cancel before downloads start → all cancelled.
+	#[tokio::test]
+	async fn dl006_global_cancel_before_start() {
+		let dir = tempfile::tempdir().unwrap();
+		let container = test_container(vec![("a.rar", 1000), ("b.rar", 2000)]);
+		let settings = test_settings(dir.path());
+
+		let (manager, cancel_token, _file_cancel) = DownloadManager::new(container, &settings);
+		let (tx, _rx) = mpsc::unbounded_channel();
+
+		// Cancel immediately before run
+		cancel_token.cancel();
+
+		let result = manager.run(tx).await.unwrap();
+
+		assert_eq!(result.total_files, 2);
+		assert_eq!(result.cancelled, 2);
+		assert_eq!(result.completed, 0);
+		assert_eq!(result.failed, 0);
+	}
+
+	/// DL-006 | BR-DL-013: Completed (skipped) tasks are not affected by cancel.
+	#[tokio::test]
+	async fn dl006_skip_not_affected_by_cancel() {
+		let dir = tempfile::tempdir().unwrap();
+
+		// Create a "complete" local file so it gets skipped
+		let pkg_dir = dir.path().join("Pkg");
+		std::fs::create_dir_all(&pkg_dir).unwrap();
+		std::fs::write(pkg_dir.join("done.rar"), vec![0u8; 500]).unwrap();
+
+		let container = test_container(vec![("done.rar", 500), ("pending.rar", 1000)]);
+		let settings = test_settings(dir.path());
+
+		let (manager, cancel_token, _file_cancel) = DownloadManager::new(container, &settings);
+		let (tx, _rx) = mpsc::unbounded_channel();
+
+		// Cancel immediately — skipped file should still be counted as skipped
+		cancel_token.cancel();
+
+		let result = manager.run(tx).await.unwrap();
+
+		assert_eq!(result.total_files, 2);
+		assert_eq!(result.skipped, 1); // done.rar was already complete
+		assert_eq!(result.cancelled, 1); // pending.rar was cancelled
+		assert_eq!(result.completed, 0);
+	}
+
+	/// DL-006 | BR-DL-014: Empty file list with cancel is a no-op.
+	#[tokio::test]
+	async fn dl006_cancel_empty_list() {
+		let dir = tempfile::tempdir().unwrap();
+		let container = test_container(vec![]);
+		let settings = test_settings(dir.path());
+
+		let (manager, cancel_token, _file_cancel) = DownloadManager::new(container, &settings);
+		let (tx, _rx) = mpsc::unbounded_channel();
+
+		cancel_token.cancel();
+
+		let result = manager.run(tx).await.unwrap();
+
+		assert_eq!(result.total_files, 0);
+		assert_eq!(result.cancelled, 0);
+	}
+
+	/// DL-006 | DownloadResult: counts are correct for mixed statuses.
+	#[test]
+	fn dl006_download_result_fields() {
+		let result = DownloadResult {
+			total_files: 10,
+			completed: 5,
+			failed: 2,
+			cancelled: 2,
+			skipped: 1,
+		};
+		assert_eq!(result.total_files, result.completed + result.failed + result.cancelled + result.skipped);
+	}
+}
