@@ -17,11 +17,15 @@ fn cmd() -> Command {
 fn fast_settings() -> (tempfile::TempDir, String) {
 	let dir = tempfile::tempdir().unwrap();
 	let path = dir.path().join("settings.toml");
-	fs::write(&path, r#"
+	fs::write(
+		&path,
+		r#"
 max_retries = 1
 retry_delay_seconds = 1
 ftp_timeout_seconds = 2
-"#).unwrap();
+"#,
+	)
+	.unwrap();
 	let path_str = path.to_str().unwrap().to_string();
 	(dir, path_str)
 }
@@ -105,7 +109,11 @@ async fn cli_download_connection_error() {
 	let (_cfg_dir, cfg_path) = fast_settings();
 
 	tokio::task::spawn_blocking(move || {
-		cmd().args(["download", &sfdl_str, "-d", &dest_str, "--config-file", &cfg_path]).assert().failure().stderr(predicate::str::contains("1 failed"));
+		cmd()
+			.args(["download", &sfdl_str, "-d", &dest_str, "--config-file", &cfg_path])
+			.assert()
+			.failure()
+			.stderr(predicate::str::contains("1 failed"));
 	})
 	.await
 	.unwrap();

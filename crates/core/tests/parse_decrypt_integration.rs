@@ -1,4 +1,4 @@
-use rsfdl_core::container::{load_sfdl, DecryptionStatus};
+use rsfdl_core::container::{DecryptionStatus, load_sfdl};
 use rsfdl_core::sfdl::crypto::decrypt_container;
 use rsfdl_core::sfdl::parser::parse_sfdl;
 

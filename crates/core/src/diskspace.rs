@@ -67,8 +67,7 @@ pub fn query_available_space(path: &Path) -> Result<u64, DownloadError> {
 	use std::ffi::CString;
 	use std::os::unix::ffi::OsStrExt;
 
-	let c_path = CString::new(path.as_os_str().as_bytes())
-		.map_err(|e| DownloadError::Io(std::io::Error::new(std::io::ErrorKind::InvalidInput, e)))?;
+	let c_path = CString::new(path.as_os_str().as_bytes()).map_err(|e| DownloadError::Io(std::io::Error::new(std::io::ErrorKind::InvalidInput, e)))?;
 
 	unsafe {
 		let mut stat: libc::statvfs = std::mem::zeroed();
@@ -87,13 +86,7 @@ pub fn query_available_space(path: &Path) -> Result<u64, DownloadError> {
 	let mut free_bytes: u64 = 0;
 
 	unsafe {
-		if windows_sys::Win32::Storage::FileSystem::GetDiskFreeSpaceExW(
-			wide.as_ptr(),
-			&mut free_bytes as *mut u64,
-			std::ptr::null_mut(),
-			std::ptr::null_mut(),
-		) == 0
-		{
+		if windows_sys::Win32::Storage::FileSystem::GetDiskFreeSpaceExW(wide.as_ptr(), &mut free_bytes as *mut u64, std::ptr::null_mut(), std::ptr::null_mut()) == 0 {
 			return Err(DownloadError::Io(std::io::Error::last_os_error()));
 		}
 	}

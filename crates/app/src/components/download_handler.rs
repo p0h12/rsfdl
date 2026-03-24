@@ -86,7 +86,9 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 						cs.global_progress.total_bytes_all += total_bytes;
 					});
 				}
-				ProgressEvent::BytesWritten { item_id, bytes_delta, total_written, .. } => {
+				ProgressEvent::BytesWritten {
+					item_id, bytes_delta, total_written, ..
+				} => {
 					pending_bytes += bytes_delta;
 
 					let now = Instant::now();
@@ -135,7 +137,13 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 						cs.global_progress.files_done += 1;
 					});
 				}
-				ProgressEvent::Retry { item_id, attempt, max_retries, delay_seconds, error } => {
+				ProgressEvent::Retry {
+					item_id,
+					attempt,
+					max_retries,
+					delay_seconds,
+					error,
+				} => {
 					// DL-007: Update file status to show retry info
 					state.with_container_mut(container_id, |cs| {
 						if let Some(fs) = cs.file_states.get_mut(&item_id) {
@@ -151,7 +159,13 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 						cs.global_progress.files_done += 1;
 					});
 				}
-				ProgressEvent::AllDone { total_files, completed, failed, cancelled, skipped } => {
+				ProgressEvent::AllDone {
+					total_files,
+					completed,
+					failed,
+					cancelled,
+					skipped,
+				} => {
 					if pending_bytes > 0 {
 						state.with_container_mut(container_id, |cs| {
 							cs.global_progress.total_written_all += pending_bytes;
@@ -159,7 +173,13 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 					}
 					state.with_container_mut(container_id, |cs| {
 						cs.phase = ContainerPhase::Done;
-						cs.summary = Some(DownloadSummary { total_files, completed, failed, cancelled, skipped });
+						cs.summary = Some(DownloadSummary {
+							total_files,
+							completed,
+							failed,
+							cancelled,
+							skipped,
+						});
 					});
 
 					// Queue: Auto-start next container if none is downloading

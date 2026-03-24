@@ -1,6 +1,6 @@
 use dioxus::prelude::*;
 
-use rsfdl_core::container::{load_sfdl, DecryptionStatus};
+use rsfdl_core::container::{DecryptionStatus, load_sfdl};
 use rsfdl_core::selection::FileSelection;
 
 use crate::icons;
@@ -173,7 +173,6 @@ pub async fn resolve_bulk_folders_for(mut state: AppState, container_id: u32) {
 		cs.selection = selection;
 		cs.phase = ContainerPhase::Ready;
 	});
-
 }
 
 /// Decrypt a container with the given password and update its state.

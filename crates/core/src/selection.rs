@@ -40,17 +40,10 @@ impl FileSelection {
 				selected.push(!is_excluded(&file.file_name, patterns));
 				file_sizes.push(file.file_size);
 			}
-			package_ranges.push(PackageRange {
-				start,
-				count: pkg.file_list.len(),
-			});
+			package_ranges.push(PackageRange { start, count: pkg.file_list.len() });
 		}
 
-		Self {
-			selected,
-			file_sizes,
-			package_ranges,
-		}
+		Self { selected, file_sizes, package_ranges }
 	}
 
 	/// Total number of files (selected + unselected).
@@ -70,12 +63,7 @@ impl FileSelection {
 
 	/// BR-DL-002: Total size of selected files in bytes.
 	pub fn selected_size(&self) -> u64 {
-		self.selected
-			.iter()
-			.zip(&self.file_sizes)
-			.filter(|(sel, _)| **sel)
-			.map(|(_, size)| *size)
-			.sum()
+		self.selected.iter().zip(&self.file_sizes).filter(|(sel, _)| **sel).map(|(_, size)| *size).sum()
 	}
 
 	/// Whether at least one file is selected (download can start).
@@ -268,10 +256,7 @@ mod tests {
 	/// DL-001 | Step 5: Toggle package — deselects all when all are selected.
 	#[test]
 	fn dl001_toggle_package_deselect() {
-		let container = make_container(vec![
-			("Pkg1", vec![("a.rar", 100), ("b.rar", 200)]),
-			("Pkg2", vec![("c.rar", 300)]),
-		]);
+		let container = make_container(vec![("Pkg1", vec![("a.rar", 100), ("b.rar", 200)]), ("Pkg2", vec![("c.rar", 300)])]);
 		let mut sel = FileSelection::new(&container, &[]);
 
 		sel.toggle_package(0);

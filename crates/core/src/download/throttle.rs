@@ -4,8 +4,8 @@
 //! Each worker gets a [`ThrottleHandle`] that sleeps after block writes
 //! if the speed exceeds the per-thread limit.
 
-use std::sync::atomic::{AtomicU32, Ordering};
 use std::sync::Arc;
+use std::sync::atomic::{AtomicU32, Ordering};
 use std::time::{Duration, Instant};
 
 /// Shared throttle state across all download workers.

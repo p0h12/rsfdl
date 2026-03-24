@@ -295,7 +295,9 @@ impl DownloadManager {
 
 					// DL-008: Register active thread for bandwidth throttle
 					throttle_handle.start();
-					let result = client.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &file_cancel, &mut throttle_handle).await;
+					let result = client
+						.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &file_cancel, &mut throttle_handle)
+						.await;
 					throttle_handle.finish();
 
 					client.disconnect().await;

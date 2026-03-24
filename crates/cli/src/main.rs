@@ -91,7 +91,14 @@ async fn main() {
 			let passwords = load_password_file(args.password_file.as_deref());
 			commands::info::run(&args, &passwords, json);
 		}
-		Commands::List { args, resolve, json, exclude, no_exclude, show_excluded } => {
+		Commands::List {
+			args,
+			resolve,
+			json,
+			exclude,
+			no_exclude,
+			show_excluded,
+		} => {
 			let passwords = load_password_file(args.password_file.as_deref());
 			commands::list::run(&args, &passwords, resolve, json, &exclude, no_exclude, show_excluded).await;
 		}

@@ -177,11 +177,7 @@ impl ContainerState {
 	/// Display name derived from container description or file path.
 	pub fn display_name(&self) -> &str {
 		let desc = &self.container.description;
-		if !desc.is_empty() {
-			desc
-		} else {
-			self.file_path.rsplit('/').next().unwrap_or(&self.file_path)
-		}
+		if !desc.is_empty() { desc } else { self.file_path.rsplit('/').next().unwrap_or(&self.file_path) }
 	}
 
 	/// Whether this container is encrypted.

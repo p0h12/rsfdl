@@ -86,53 +86,31 @@ fn info_encrypted_wrong_password_fails() {
 /// CLI-001 | A3: Nonexistent file → exit code 1.
 #[test]
 fn info_nonexistent_file_fails() {
-	cmd()
-		.args(["info", "/tmp/nonexistent_file_12345.sfdl"])
-		.assert()
-		.failure()
-		.code(1);
+	cmd().args(["info", "/tmp/nonexistent_file_12345.sfdl"]).assert().failure().code(1);
 }
 
 /// CLI-001 | A4: Invalid SFDL → exit code 2.
 #[test]
 fn info_invalid_file_fails() {
-	cmd()
-		.args(["info", &fixture("invalid.sfdl")])
-		.assert()
-		.failure()
-		.code(2);
+	cmd().args(["info", &fixture("invalid.sfdl")]).assert().failure().code(2);
 }
 
 /// CLI-001 | A2: Wrong password → exit code 4.
 #[test]
 fn info_wrong_password_exit_code() {
-	cmd()
-		.args(["info", &fixture("encrypted_v3.sfdl"), "-p", "wrong"])
-		.assert()
-		.failure()
-		.code(4);
+	cmd().args(["info", &fixture("encrypted_v3.sfdl"), "-p", "wrong"]).assert().failure().code(4);
 }
 
 /// CLI-001 | A1: Encrypted without password → exit code 3.
 #[test]
 fn info_password_required_exit_code() {
-	cmd()
-		.args(["info", &fixture("encrypted_v3.sfdl")])
-		.assert()
-		.failure()
-		.code(3);
+	cmd().args(["info", &fixture("encrypted_v3.sfdl")]).assert().failure().code(3);
 }
 
 /// CLI-001 | BR-CLI-001-001: --json produces valid JSON.
 #[test]
 fn info_json_output() {
-	let output = cmd()
-		.args(["info", &fixture("unencrypted_v3.sfdl"), "--json"])
-		.assert()
-		.success()
-		.get_output()
-		.stdout
-		.clone();
+	let output = cmd().args(["info", &fixture("unencrypted_v3.sfdl"), "--json"]).assert().success().get_output().stdout.clone();
 
 	let json: serde_json::Value = serde_json::from_slice(&output).expect("stdout should be valid JSON");
 	assert_eq!(json["description"], "Test.Release.2026.1080p");
@@ -188,11 +166,7 @@ fn list_encrypted_v3_with_password() {
 /// CLI-002 | BR-CLI-002-002: Summary shows excluded count.
 #[test]
 fn list_shows_excluded_count() {
-	cmd()
-		.args(["list", &fixture("unencrypted_v3.sfdl")])
-		.assert()
-		.success()
-		.stdout(predicate::str::contains("0 excluded"));
+	cmd().args(["list", &fixture("unencrypted_v3.sfdl")]).assert().success().stdout(predicate::str::contains("0 excluded"));
 }
 
 /// CLI-002 | A3: --exclude adds patterns, excluded files hidden by default.
@@ -233,13 +207,7 @@ fn list_no_exclude() {
 /// CLI-002 | BR-CLI-001-001: --json produces valid JSON with summary.
 #[test]
 fn list_json_output() {
-	let output = cmd()
-		.args(["list", &fixture("unencrypted_v3.sfdl"), "--json"])
-		.assert()
-		.success()
-		.get_output()
-		.stdout
-		.clone();
+	let output = cmd().args(["list", &fixture("unencrypted_v3.sfdl"), "--json"]).assert().success().get_output().stdout.clone();
 
 	let json: serde_json::Value = serde_json::from_slice(&output).expect("stdout should be valid JSON");
 	assert_eq!(json["packages"][0]["name"], "Package1");

@@ -137,7 +137,13 @@ pub async fn run(args: &SfdlArgs, password_list: &[String], dest: Option<&str>, 
 				files_done += 1;
 				global_bar.set_prefix(format!("[{}/{} files]", files_done, files_total));
 			}
-			ProgressEvent::Retry { item_id, attempt, max_retries, delay_seconds, error } => {
+			ProgressEvent::Retry {
+				item_id,
+				attempt,
+				max_retries,
+				delay_seconds,
+				error,
+			} => {
 				if let Some(bar) = bars.get(&item_id) {
 					bar.set_message(format!("retry {}/{} in {}s: {}", attempt, max_retries, delay_seconds, error));
 				}

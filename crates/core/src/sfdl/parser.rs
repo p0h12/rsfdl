@@ -400,10 +400,7 @@ fn parse_v2(xml: &str) -> Result<SfdlContainer, SfdlError> {
 	// BR-SFDL-001: Validate SFDLFileVersion number (6-9 = v2)
 	let version_num: u32 = raw.version.trim().parse().unwrap_or(0);
 	if !(6..=9).contains(&version_num) {
-		return Err(SfdlError::ParseError(format!(
-			"Unsupported SFDLFileVersion '{}'. Expected 6-9 for SFDL v2.",
-			raw.version
-		)));
+		return Err(SfdlError::ParseError(format!("Unsupported SFDLFileVersion '{}'. Expected 6-9 for SFDL v2.", raw.version)));
 	}
 
 	Ok(SfdlContainer {

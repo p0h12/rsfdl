@@ -4,15 +4,7 @@ use rsfdl_core::format_bytes;
 use super::common::{SfdlArgs, load_and_decrypt};
 use super::info::classify_exit_code;
 
-pub async fn run(
-	args: &SfdlArgs,
-	password_list: &[String],
-	resolve: bool,
-	json: bool,
-	cli_exclude: &[String],
-	no_exclude: bool,
-	show_excluded: bool,
-) {
+pub async fn run(args: &SfdlArgs, password_list: &[String], resolve: bool, json: bool, cli_exclude: &[String], no_exclude: bool, show_excluded: bool) {
 	let (mut container, settings, _outcome) = match load_and_decrypt(args, password_list) {
 		Ok(result) => result,
 		Err(e) => {
@@ -43,13 +35,8 @@ pub async fn run(
 	}
 }
 
-fn print_text(
-	container: &rsfdl_core::sfdl::models::SfdlContainer,
-	patterns: &[String],
-	show_excluded: bool,
-) {
+fn print_text(container: &rsfdl_core::sfdl::models::SfdlContainer, patterns: &[String], show_excluded: bool) {
 	let mut total_files = 0usize;
-	let mut total_bytes = 0u64;
 	let mut excluded_count = 0usize;
 	let mut bulk_count = 0usize;
 
@@ -69,7 +56,6 @@ fn print_text(
 				println!("  {:<55} {:>10}", file.file_name, format_bytes(file.file_size));
 			}
 			total_files += 1;
-			total_bytes += file.file_size;
 		}
 
 		for bulk in &pkg.bulk_folder_list {

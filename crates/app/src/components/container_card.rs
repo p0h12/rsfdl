@@ -24,11 +24,7 @@ pub fn ContainerCard(container_id: ContainerId) -> Element {
 	let is_downloading = phase == ContainerPhase::Downloading;
 
 	// Card state icon
-	let icon_svg = if phase == ContainerPhase::NeedsPassword {
-		icons::LOCK
-	} else {
-		icons::FILE_ARCHIVE
-	};
+	let icon_svg = if phase == ContainerPhase::NeedsPassword { icons::LOCK } else { icons::FILE_ARCHIVE };
 	let icon_class = if phase == ContainerPhase::NeedsPassword {
 		"background: var(--color-warning-bg); color: var(--color-warning);"
 	} else {
@@ -168,11 +164,7 @@ pub fn ContainerCard(container_id: ContainerId) -> Element {
 }
 
 fn badge_class(version: &str) -> &str {
-	if version == "v3" {
-		"badge-v3"
-	} else {
-		"badge-v2"
-	}
+	if version == "v3" { "badge-v3" } else { "badge-v2" }
 }
 
 #[component]
