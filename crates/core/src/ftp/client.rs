@@ -2,15 +2,16 @@ use std::path::Path;
 use std::time::Duration;
 
 use futures_lite::AsyncReadExt;
+use suppaftp::async_native_tls::TlsConnector;
 use suppaftp::types::FileType;
-use suppaftp::{AsyncNativeTlsFtpStream, Mode};
+use suppaftp::{AsyncNativeTlsConnector, AsyncNativeTlsFtpStream, Mode};
 use tokio::sync::mpsc;
 use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::download::progress::ProgressEvent;
 use crate::error::{DownloadError, FtpError};
-use crate::sfdl::models::{Connection, HashType, SslProtocol};
+use crate::sfdl::models::{Connection, FtpsMode, HashType};
 
 /// Entry from an FTP directory listing.
 #[derive(Debug, Clone)]
@@ -29,25 +30,41 @@ pub struct FtpClient {
 impl FtpClient {
 	/// Connect and authenticate using SFDL Connection settings.
 	/// `timeout_seconds` controls the connect timeout (0 = no timeout).
+	///
+	/// Supports plain FTP, Explicit FTPS (AUTH TLS), and Implicit FTPS
+	/// based on the container's `SslProtocol` field.
 	pub async fn connect(conn: &Connection, timeout_seconds: u32) -> Result<Self, FtpError> {
-		// Warn if container requires TLS (not yet implemented)
-		if conn.ssl_protocol != SslProtocol::None {
-			tracing::warn!(
-					protocol = ?conn.ssl_protocol,
-					"Container requires TLS ({:?}), but TLS is not yet supported. Connecting without encryption.",
-					conn.ssl_protocol,
-			);
-		}
-
 		let addr = format!("{}:{}", conn.host, conn.port);
+		let ftps_mode = conn.ssl_protocol.ftps_mode();
+		let timeout = Duration::from_secs(timeout_seconds as u64);
 
-		let mut stream = if timeout_seconds > 0 {
-			tokio::time::timeout(Duration::from_secs(timeout_seconds as u64), AsyncNativeTlsFtpStream::connect(&addr))
-				.await
-				.map_err(|_| FtpError::Timeout)?
-				.map_err(FtpError::from)?
-		} else {
-			AsyncNativeTlsFtpStream::connect(&addr).await.map_err(FtpError::from)?
+		let mut stream = match ftps_mode {
+			FtpsMode::None => Self::plain_connect(&addr, timeout_seconds).await?,
+			FtpsMode::Explicit => {
+				// Connect plain TCP, then upgrade via AUTH TLS
+				let plain = Self::plain_connect(&addr, timeout_seconds).await?;
+				let tls_ctx = Self::build_tls_connector(&conn.host);
+				tracing::debug!(host = %conn.host, "Upgrading to Explicit FTPS (AUTH TLS)");
+				if timeout_seconds > 0 {
+					tokio::time::timeout(timeout, plain.into_secure(tls_ctx, &conn.host))
+						.await
+						.map_err(|_| FtpError::Timeout)?
+						.map_err(FtpError::from)?
+				} else {
+					plain.into_secure(tls_ctx, &conn.host).await.map_err(FtpError::from)?
+				}
+			}
+			FtpsMode::Implicit => {
+				// Connect directly over TLS (legacy implicit FTPS)
+				let tls_ctx = Self::build_tls_connector(&conn.host);
+				tracing::debug!(host = %conn.host, "Connecting via Implicit FTPS");
+				let connect_fut = AsyncNativeTlsFtpStream::connect_secure_implicit(&addr, tls_ctx, &conn.host);
+				if timeout_seconds > 0 {
+					tokio::time::timeout(timeout, connect_fut).await.map_err(|_| FtpError::Timeout)?.map_err(FtpError::from)?
+				} else {
+					connect_fut.await.map_err(FtpError::from)?
+				}
+			}
 		};
 
 		// TODO: Respect conn.data_connection_type (Active, ExtendedPassive, etc.)
@@ -62,9 +79,35 @@ impl FtpClient {
 		};
 		stream.login(user, pass).await.map_err(FtpError::from)?;
 
-		tracing::debug!(host = %conn.host, port = conn.port, "FTP connected");
+		tracing::debug!(
+			host = %conn.host, port = conn.port,
+			ftps = ?ftps_mode,
+			"FTP connected"
+		);
 
 		Ok(Self { stream })
+	}
+
+	/// Establish a plain (unencrypted) TCP connection to the FTP server.
+	async fn plain_connect(addr: &str, timeout_seconds: u32) -> Result<AsyncNativeTlsFtpStream, FtpError> {
+		if timeout_seconds > 0 {
+			tokio::time::timeout(Duration::from_secs(timeout_seconds as u64), AsyncNativeTlsFtpStream::connect(addr))
+				.await
+				.map_err(|_| FtpError::Timeout)?
+				.map_err(FtpError::from)
+		} else {
+			AsyncNativeTlsFtpStream::connect(addr).await.map_err(FtpError::from)
+		}
+	}
+
+	/// Build a TLS connector that accepts invalid/self-signed certificates.
+	///
+	/// SFDL FTP servers typically use self-signed certificates,
+	/// matching SFDL.NET's default behavior of not validating certs.
+	fn build_tls_connector(domain: &str) -> AsyncNativeTlsConnector {
+		let tls = TlsConnector::new().danger_accept_invalid_certs(true);
+		tracing::debug!(domain, "Built TLS connector (accepting self-signed certs)");
+		AsyncNativeTlsConnector::from(tls)
 	}
 
 	/// List directory contents, parsing LIST output.

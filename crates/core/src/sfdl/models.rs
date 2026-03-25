@@ -44,6 +44,29 @@ pub enum SslProtocol {
 	Ssl3,
 }
 
+/// FTPS connection mode derived from SslProtocol.
+///
+/// Matches SFDL.NET behavior (FTPHelper.vb):
+/// - Tls/Tls11/Tls12 → FtpES (Explicit FTPS via AUTH TLS)
+/// - Ssl2/Ssl3 → FtpS (Implicit FTPS, direct TLS connection)
+/// - None → plain FTP
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum FtpsMode {
+	None,
+	Explicit,
+	Implicit,
+}
+
+impl SslProtocol {
+	pub fn ftps_mode(&self) -> FtpsMode {
+		match self {
+			SslProtocol::Tls | SslProtocol::Tls11 | SslProtocol::Tls12 => FtpsMode::Explicit,
+			SslProtocol::Ssl2 | SslProtocol::Ssl3 => FtpsMode::Implicit,
+			SslProtocol::None => FtpsMode::None,
+		}
+	}
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
 pub enum HashType {
 	MD5,
@@ -148,4 +171,36 @@ pub struct FileItem {
 pub struct BulkFolder {
 	pub bulk_folder_path: String,
 	pub package_name: String,
+}
+
+#[cfg(test)]
+mod tests {
+	use super::*;
+
+	/// FTPS-001: SslProtocol::None maps to plain FTP.
+	#[test]
+	fn ftps_mode_none() {
+		assert_eq!(SslProtocol::None.ftps_mode(), FtpsMode::None);
+	}
+
+	/// FTPS-001: TLS variants map to Explicit FTPS (AUTH TLS).
+	#[test]
+	fn ftps_mode_explicit_tls_variants() {
+		assert_eq!(SslProtocol::Tls.ftps_mode(), FtpsMode::Explicit);
+		assert_eq!(SslProtocol::Tls11.ftps_mode(), FtpsMode::Explicit);
+		assert_eq!(SslProtocol::Tls12.ftps_mode(), FtpsMode::Explicit);
+	}
+
+	/// FTPS-001: SSL variants map to Implicit FTPS (direct TLS).
+	#[test]
+	fn ftps_mode_implicit_ssl_variants() {
+		assert_eq!(SslProtocol::Ssl2.ftps_mode(), FtpsMode::Implicit);
+		assert_eq!(SslProtocol::Ssl3.ftps_mode(), FtpsMode::Implicit);
+	}
+
+	/// FTPS-001: Default SslProtocol is None → plain FTP.
+	#[test]
+	fn ftps_mode_default_is_plain() {
+		assert_eq!(SslProtocol::default().ftps_mode(), FtpsMode::None);
+	}
 }

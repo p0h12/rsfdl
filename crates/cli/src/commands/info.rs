@@ -1,6 +1,6 @@
 use rsfdl_core::container::DecryptionStatus;
 use rsfdl_core::format_bytes;
-use rsfdl_core::sfdl::models::{SfdlContainer, SfdlVersion, SslProtocol};
+use rsfdl_core::sfdl::models::{FtpsMode, SfdlContainer, SfdlVersion};
 
 use super::common::{SfdlArgs, load_and_decrypt};
 
@@ -34,9 +34,10 @@ fn print_text(c: &SfdlContainer, outcome: &DecryptionStatus) {
 		DecryptionStatus::NeedsPassword => "yes (not decrypted)".to_string(),
 	};
 
-	let ssl_label = match c.connection.ssl_protocol {
-		SslProtocol::None => "FTP",
-		_ => "FTPS",
+	let ssl_label = match c.connection.ssl_protocol.ftps_mode() {
+		FtpsMode::None => "FTP",
+		FtpsMode::Explicit => "FTPS (explicit)",
+		FtpsMode::Implicit => "FTPS (implicit)",
 	};
 
 	let file_count: usize = c.packages.iter().map(|p| p.file_list.len()).sum();
@@ -64,9 +65,10 @@ fn print_json(c: &SfdlContainer, outcome: &DecryptionStatus) {
 	let total_bytes: u64 = c.packages.iter().flat_map(|p| p.file_list.iter()).map(|f| f.file_size).sum();
 
 	let was_encrypted = !matches!(outcome, DecryptionStatus::NotEncrypted);
-	let protocol = match c.connection.ssl_protocol {
-		SslProtocol::None => "FTP",
-		_ => "FTPS",
+	let protocol = match c.connection.ssl_protocol.ftps_mode() {
+		FtpsMode::None => "FTP",
+		FtpsMode::Explicit => "FTPS-explicit",
+		FtpsMode::Implicit => "FTPS-implicit",
 	};
 
 	let json = serde_json::json!({

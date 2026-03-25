@@ -4561,6 +4561,7 @@ dependencies = [
  "unftp-sbe-fs",
  "unrar",
  "uuid",
+ "windows-sys 0.59.0",
  "zip",
 ]
 

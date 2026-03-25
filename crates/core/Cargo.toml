@@ -18,7 +18,7 @@ base64 = "0.22"
 rand = "0.9"
 
 # FTP
-suppaftp = { version = "6", features = ["async-native-tls", "async"] }
+suppaftp = { version = "6", features = ["async-native-tls", "async", "deprecated"] }
 
 # Async
 tokio = { workspace = true }
@@ -37,14 +37,14 @@ regex = "1"
 # Platform
 libc = "0.2"
 
-[target.'cfg(windows)'.dependencies]
-windows-sys = { version = "0.59", features = ["Win32_Storage_FileSystem"] }
-
 # Utilities
 uuid = { version = "1", features = ["v4"] }
 dirs = "6"
 thiserror = { workspace = true }
 tracing = { workspace = true }
+
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.59", features = ["Win32_Storage_FileSystem"] }
 
 [dev-dependencies]
 tempfile = "3"
