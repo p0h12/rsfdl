@@ -280,13 +280,29 @@ impl AppState {
 		id
 	}
 
-	/// Remove a container by ID.
+	/// Remove a container by ID. Cancels any active download first.
 	pub fn remove_container(&mut self, id: ContainerId) {
+		{
+			let containers = self.containers.read();
+			if let Some(cs) = containers.iter().find(|c| c.id == id)
+				&& let Some(token) = &cs.cancel_token
+			{
+				token.cancel();
+			}
+		}
 		self.containers.write().retain(|c| c.id != id);
 	}
 
-	/// Remove all containers.
+	/// Remove all containers. Cancels any active downloads first.
 	pub fn remove_all(&mut self) {
+		{
+			let containers = self.containers.read();
+			for cs in containers.iter() {
+				if let Some(token) = &cs.cancel_token {
+					token.cancel();
+				}
+			}
+		}
 		self.containers.write().clear();
 	}
 

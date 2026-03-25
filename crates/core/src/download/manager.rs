@@ -233,6 +233,7 @@ impl DownloadManager {
 
 				// DL-007: Retry loop
 				let mut attempt = 0u32;
+				let mut started_sent = false;
 
 				loop {
 					if file_cancel.is_cancelled() {
@@ -289,12 +290,15 @@ impl DownloadManager {
 						}
 					};
 
-					// Send Started event
-					let _ = tx.send(ProgressEvent::Started {
-						item_id: item.id,
-						file_name: item.file_item.file_name.clone(),
-						total_bytes: item.file_item.file_size,
-					});
+					// Send Started event (only on first attempt)
+					if !started_sent {
+						let _ = tx.send(ProgressEvent::Started {
+							item_id: item.id,
+							file_name: item.file_item.file_name.clone(),
+							total_bytes: item.file_item.file_size,
+						});
+						started_sent = true;
+					}
 
 					// DL-008: Register active thread for bandwidth throttle
 					throttle_handle.start();
@@ -472,7 +476,8 @@ fn emit_verification_result(item_id: Uuid, v: &verification::HashVerification, t
 fn calculate_retry_delay(base_delay: u32, attempt: u32, is_server_full: bool) -> u32 {
 	if is_server_full {
 		// Exponential backoff: base * 2^(attempt-1), capped at 120s
-		let delay = base_delay.saturating_mul(1u32.wrapping_shl(attempt.saturating_sub(1)));
+		let shift = attempt.saturating_sub(1).min(31);
+		let delay = base_delay.saturating_mul(1u32 << shift);
 		delay.min(120)
 	} else {
 		base_delay
@@ -513,7 +518,7 @@ mod tests {
 			download_directory: dir.to_path_buf(),
 			max_threads: 2,
 			max_retries: 0,
-			retry_delay_seconds: 0,
+			retry_delay_seconds: 1,
 			ftp_timeout_seconds: 1,
 			..Settings::default()
 		}
@@ -647,12 +652,12 @@ mod tests {
 		assert!(err.is_retryable());
 	}
 
-	/// DL-007 | BR-DL-010: AuthFailed is retryable (may be rate limit).
+	/// DL-007 | BR-DL-010: AuthFailed is NOT retryable (wrong credentials).
 	#[test]
-	fn dl007_auth_failed_is_retryable() {
+	fn dl007_auth_failed_not_retryable() {
 		use crate::error::FtpError;
 		let err = DownloadError::Ftp(FtpError::AuthFailed);
-		assert!(err.is_retryable());
+		assert!(!err.is_retryable());
 	}
 
 	/// DL-007 | A1: IO error is NOT retryable (permanent).

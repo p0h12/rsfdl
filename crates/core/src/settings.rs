@@ -67,6 +67,10 @@ pub fn validate(settings: &Settings) -> Vec<(String, String)> {
 		errors.push(("retry_delay_seconds".into(), format!("must be 1–3600, got {}", settings.retry_delay_seconds)));
 	}
 
+	if settings.ftp_timeout_seconds > 300 {
+		errors.push(("ftp_timeout_seconds".into(), format!("must be 0–300, got {}", settings.ftp_timeout_seconds)));
+	}
+
 	for (i, pattern) in settings.exclusion_patterns.iter().enumerate() {
 		if pattern.is_empty() {
 			errors.push((format!("exclusion_patterns[{}]", i), "pattern must not be empty".into()));
@@ -92,6 +96,7 @@ pub fn fix_invalid(settings: &mut Settings) -> Vec<String> {
 			"max_threads" => settings.max_threads = defaults.max_threads,
 			"max_retries" => settings.max_retries = defaults.max_retries,
 			"retry_delay_seconds" => settings.retry_delay_seconds = defaults.retry_delay_seconds,
+			"ftp_timeout_seconds" => settings.ftp_timeout_seconds = defaults.ftp_timeout_seconds,
 			_ => continue,
 		}
 		corrected.push(field.clone());

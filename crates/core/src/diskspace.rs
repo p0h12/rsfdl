@@ -36,7 +36,7 @@ pub fn calculate_required(items: &[(u64, u64)]) -> u64 {
 /// BR-DL-006: Add 1% safety buffer, minimum 10 MB.
 pub fn add_safety_buffer(raw_bytes: u64) -> u64 {
 	let buffer = ((raw_bytes as f64) * BUFFER_PERCENT) as u64;
-	raw_bytes + buffer.max(MIN_BUFFER_BYTES)
+	raw_bytes.saturating_add(buffer.max(MIN_BUFFER_BYTES))
 }
 
 /// Check disk space: query available space and compare with required.

@@ -137,8 +137,9 @@ fn resolve_password_and_decrypt(container: &mut SfdlContainer, status: Decryptio
 
 			// A4: Wrong password → InvalidPassword
 			rsfdl_core::container::decrypt_with_password(container, &pw).map_err(|e| match e {
-				AppError::InvalidPassword => CliError::InvalidPassword,
-				_ => CliError::InvalidPassword,
+				AppError::InvalidPassword | AppError::Decrypt(_) => CliError::InvalidPassword,
+				AppError::Parse(ref pe) => CliError::ParseError(pe.to_string()),
+				AppError::Ftp(ref fe) => CliError::ParseError(fe.to_string()),
 			})?;
 
 			Ok(DecryptionStatus::AutoDecrypted { password: pw })

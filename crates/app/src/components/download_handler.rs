@@ -129,11 +129,13 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 					});
 				}
 				ProgressEvent::Failed { item_id, error } => {
+					let leftover = std::mem::replace(&mut pending_bytes, 0);
 					state.with_container_mut(container_id, |cs| {
 						if let Some(fs) = cs.file_states.get_mut(&item_id) {
 							fs.status = FileStatus::Failed;
 							fs.error = Some(error);
 						}
+						cs.global_progress.total_written_all += leftover;
 						cs.global_progress.files_done += 1;
 					});
 				}
@@ -152,10 +154,12 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 					});
 				}
 				ProgressEvent::Cancelled { item_id } => {
+					let leftover = std::mem::replace(&mut pending_bytes, 0);
 					state.with_container_mut(container_id, |cs| {
 						if let Some(fs) = cs.file_states.get_mut(&item_id) {
 							fs.status = FileStatus::Cancelled;
 						}
+						cs.global_progress.total_written_all += leftover;
 						cs.global_progress.files_done += 1;
 					});
 				}

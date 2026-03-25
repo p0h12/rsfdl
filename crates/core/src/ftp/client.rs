@@ -130,7 +130,7 @@ impl FtpClient {
 	/// Get remote file size via SIZE command.
 	pub async fn file_size(&mut self, path: &str) -> Result<u64, FtpError> {
 		let size = self.stream.size(path).await.map_err(FtpError::from)?;
-		Ok(size as u64)
+		u64::try_from(size).map_err(|_| FtpError::TransferError(format!("Server returned invalid file size: {}", size)))
 	}
 
 	/// Change working directory.
@@ -158,7 +158,13 @@ impl FtpClient {
 		// Set resume offset if needed
 		if resume_offset > 0 {
 			tracing::debug!(item_id = %item_id, offset = resume_offset, "Resuming download");
-			self.stream.resume_transfer(resume_offset as usize).await.map_err(FtpError::from)?;
+			let offset_usize = usize::try_from(resume_offset).map_err(|_| {
+				DownloadError::Io(std::io::Error::new(
+					std::io::ErrorKind::InvalidInput,
+					format!("Resume offset {} exceeds platform usize limit", resume_offset),
+				))
+			})?;
+			self.stream.resume_transfer(offset_usize).await.map_err(FtpError::from)?;
 		}
 
 		// Open data stream

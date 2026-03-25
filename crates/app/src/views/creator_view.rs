@@ -27,11 +27,17 @@ pub fn CreatorView() -> Element {
 	rsx! {
 			div { class: "flex flex-col flex-1 overflow-hidden",
 					// Sub-header
-					div { class: "flex items-center justify-between px-4 py-3 bg-gray-100 border-b",
-							h2 { class: "text-lg font-bold text-gray-900", "Create SFDL" }
+					div {
+							class: "flex items-center justify-between px-4 py-3",
+							style: "background: var(--color-surface); border-bottom: 1px solid var(--color-border);",
+							h2 {
+									class: "text-lg font-bold",
+									style: "color: var(--color-text-primary);",
+									"Create SFDL"
+							}
 							div { class: "flex items-center gap-2",
 									button {
-											class: "px-4 py-1.5 bg-green-600 hover:bg-green-700 text-white rounded text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed",
+											class: "btn btn-accent",
 											disabled: is_busy,
 											onclick: {
 													move |_| {
@@ -69,7 +75,7 @@ pub fn CreatorView() -> Element {
 											if is_busy { "Creating..." } else { "Create SFDL" }
 									}
 									button {
-											class: "px-3 py-1.5 bg-gray-200 hover:bg-gray-300 rounded text-sm",
+											class: "btn btn-ghost",
 											onclick: move |_| {
 													state.current_view.set(AppView::Main);
 											},
@@ -82,15 +88,20 @@ pub fn CreatorView() -> Element {
 					div { class: "flex-1 overflow-y-auto p-6 space-y-6",
 
 							// FTP Connection
-							div {
-									h3 { class: "text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3",
+							div { class: "settings-card",
+									h3 {
+											class: "sg-title",
 											"FTP Connection"
 									}
 									div { class: "grid grid-cols-3 gap-4",
 											div { class: "col-span-2",
-													label { class: "block text-sm font-medium text-gray-700 mb-1", "Host" }
+													label {
+															class: "block text-sm font-medium mb-1",
+															style: "color: var(--color-text-primary);",
+															"Host"
+													}
 													input {
-															class: "w-full px-3 py-2 border rounded text-sm",
+															class: "themed-input w-full",
 															r#type: "text",
 															placeholder: "ftp.example.com",
 															value: "{host}",
@@ -98,14 +109,20 @@ pub fn CreatorView() -> Element {
 													}
 											}
 											div {
-													label { class: "block text-sm font-medium text-gray-700 mb-1", "Port" }
+													label {
+															class: "block text-sm font-medium mb-1",
+															style: "color: var(--color-text-primary);",
+															"Port"
+													}
 													input {
-															class: "w-24 px-3 py-2 border rounded text-sm",
+															class: "themed-input w-24",
 															r#type: "number",
+															min: "1",
+															max: "65535",
 															value: "{port}",
 															onchange: move |e| {
 																	if let Ok(n) = e.value().parse::<u16>() {
-																			port.set(n);
+																			port.set(n.max(1));
 																	}
 															},
 													}
@@ -113,9 +130,13 @@ pub fn CreatorView() -> Element {
 									}
 									div { class: "grid grid-cols-2 gap-4 mt-3",
 											div {
-													label { class: "block text-sm font-medium text-gray-700 mb-1", "Username" }
+													label {
+															class: "block text-sm font-medium mb-1",
+															style: "color: var(--color-text-primary);",
+															"Username"
+													}
 													input {
-															class: "w-full px-3 py-2 border rounded text-sm",
+															class: "themed-input w-full",
 															r#type: "text",
 															placeholder: "ftpuser",
 															value: "{username}",
@@ -123,11 +144,15 @@ pub fn CreatorView() -> Element {
 													}
 											}
 											div {
-													label { class: "block text-sm font-medium text-gray-700 mb-1", "Password" }
+													label {
+															class: "block text-sm font-medium mb-1",
+															style: "color: var(--color-text-primary);",
+															"Password"
+													}
 													input {
-															class: "w-full px-3 py-2 border rounded text-sm",
+															class: "themed-input w-full",
 															r#type: "password",
-															placeholder: "••••••",
+															placeholder: "\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}\u{2022}",
 															value: "{password}",
 															oninput: move |e| password.set(e.value()),
 													}
@@ -136,14 +161,19 @@ pub fn CreatorView() -> Element {
 							}
 
 							// Content
-							div {
-									h3 { class: "text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3",
+							div { class: "settings-card",
+									h3 {
+											class: "sg-title",
 											"Content"
 									}
 									div {
-											label { class: "block text-sm font-medium text-gray-700 mb-1", "Remote Path" }
+											label {
+													class: "block text-sm font-medium mb-1",
+													style: "color: var(--color-text-primary);",
+													"Remote Path"
+											}
 											input {
-													class: "w-full px-3 py-2 border rounded text-sm",
+													class: "themed-input w-full",
 													r#type: "text",
 													placeholder: "/releases/movie/",
 													value: "{remote_path}",
@@ -160,8 +190,16 @@ pub fn CreatorView() -> Element {
 															onchange: move |_| bulk_folder_mode.set(true),
 													}
 													div {
-															span { class: "text-sm font-medium text-gray-700", "BulkFolder" }
-															span { class: "block text-xs text-gray-500", "Store path only, no FTP listing" }
+															span {
+																	class: "text-sm font-medium",
+																	style: "color: var(--color-text-primary);",
+																	"BulkFolder"
+															}
+															span {
+																	class: "block text-xs",
+																	style: "color: var(--color-text-tertiary);",
+																	"Store path only, no FTP listing"
+															}
 													}
 											}
 											label { class: "flex items-center gap-2 cursor-pointer",
@@ -173,23 +211,36 @@ pub fn CreatorView() -> Element {
 															onchange: move |_| bulk_folder_mode.set(false),
 													}
 													div {
-															span { class: "text-sm font-medium text-gray-700", "FileList" }
-															span { class: "block text-xs text-gray-500", "Connect to FTP and list files with sizes" }
+															span {
+																	class: "text-sm font-medium",
+																	style: "color: var(--color-text-primary);",
+																	"FileList"
+															}
+															span {
+																	class: "block text-xs",
+																	style: "color: var(--color-text-tertiary);",
+																	"Connect to FTP and list files with sizes"
+															}
 													}
 											}
 									}
 							}
 
 							// Metadata
-							div {
-									h3 { class: "text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3",
+							div { class: "settings-card",
+									h3 {
+											class: "sg-title",
 											"Metadata"
 									}
 									div { class: "grid grid-cols-3 gap-4",
 											div { class: "col-span-2",
-													label { class: "block text-sm font-medium text-gray-700 mb-1", "Description" }
+													label {
+															class: "block text-sm font-medium mb-1",
+															style: "color: var(--color-text-primary);",
+															"Description"
+													}
 													input {
-															class: "w-full px-3 py-2 border rounded text-sm",
+															class: "themed-input w-full",
 															r#type: "text",
 															placeholder: "Movie.2026.1080p",
 															value: "{description}",
@@ -197,9 +248,13 @@ pub fn CreatorView() -> Element {
 													}
 											}
 											div {
-													label { class: "block text-sm font-medium text-gray-700 mb-1", "Threads" }
+													label {
+															class: "block text-sm font-medium mb-1",
+															style: "color: var(--color-text-primary);",
+															"Threads"
+													}
 													input {
-															class: "w-24 px-3 py-2 border rounded text-sm",
+															class: "themed-input w-24",
 															r#type: "number",
 															min: "1",
 															max: "10",
@@ -213,9 +268,13 @@ pub fn CreatorView() -> Element {
 											}
 									}
 									div { class: "mt-3",
-											label { class: "block text-sm font-medium text-gray-700 mb-1", "Uploader" }
+											label {
+													class: "block text-sm font-medium mb-1",
+													style: "color: var(--color-text-primary);",
+													"Uploader"
+											}
 											input {
-													class: "w-full px-3 py-2 border rounded text-sm",
+													class: "themed-input w-full",
 													r#type: "text",
 													value: "{uploader}",
 													oninput: move |e| uploader.set(e.value()),
@@ -224,20 +283,27 @@ pub fn CreatorView() -> Element {
 							}
 
 							// Encryption
-							div {
-									h3 { class: "text-sm font-semibold text-gray-500 uppercase tracking-wide mb-3",
+							div { class: "settings-card",
+									h3 {
+											class: "sg-title",
 											"Encryption (optional)"
 									}
 									div {
-											label { class: "block text-sm font-medium text-gray-700 mb-1", "Password" }
+											label {
+													class: "block text-sm font-medium mb-1",
+													style: "color: var(--color-text-primary);",
+													"Password"
+											}
 											input {
-													class: "w-full px-3 py-2 border rounded text-sm",
+													class: "themed-input w-full",
 													r#type: "password",
 													placeholder: "Leave empty for no encryption",
 													value: "{encrypt_password}",
 													oninput: move |e| encrypt_password.set(e.value()),
 											}
-											p { class: "text-xs text-gray-500 mt-1",
+											p {
+													class: "text-xs mt-1",
+													style: "color: var(--color-text-tertiary);",
 													"AES-128-CBC encryption, same as SFDL.NET"
 											}
 									}

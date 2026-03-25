@@ -125,7 +125,7 @@ impl FtpError {
 	pub fn is_retryable(&self) -> bool {
 		match self {
 			FtpError::ConnectionFailed(_) => true, // includes 421 ServerFull
-			FtpError::AuthFailed => true,          // may be temporary rate limit
+			FtpError::AuthFailed => false,         // wrong credentials — retrying won't help
 			FtpError::Timeout => true,
 			FtpError::TransferError(msg) => {
 				// 550 FileNotFound is permanent

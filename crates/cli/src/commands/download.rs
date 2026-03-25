@@ -199,10 +199,8 @@ pub async fn run(
 					files_done += 1;
 					global_bar.set_prefix(format!("[{}/{} files]", files_done, files_total));
 				}
-				ProgressEvent::Skipped { file_name, total_bytes, .. } => {
+				ProgressEvent::Skipped { file_name, .. } => {
 					files_done += 1;
-					global_written += total_bytes;
-					global_bar.set_position(global_written);
 					global_bar.set_prefix(format!("[{}/{} files]", files_done, files_total));
 					eprintln!("  [SKIP] {}", file_name);
 				}
@@ -258,41 +256,64 @@ pub async fn run(
 
 	// Print summary
 	let elapsed = started_at.elapsed();
-	if let Some((total_files, completed, failed, cancelled, skipped)) = final_result {
-		eprintln!(
-			"\nDone: {} total, {} completed, {} skipped, {} failed, {} cancelled ({:.1}s)",
-			total_files,
-			completed,
-			skipped,
-			failed,
-			cancelled,
-			elapsed.as_secs_f64()
-		);
 
-		// POST-002: Auto-extraction
-		if settings.auto_extract {
-			run_extraction(&settings, quiet).await;
+	// If AllDone was never received (channel closed early), check manager result first
+	if final_result.is_none() {
+		match manager_handle.await {
+			Ok(Err(e)) => {
+				eprintln!("Error: {}", e);
+				let exit_code = match e {
+					DownloadError::InsufficientDiskSpace => EXIT_INSUFFICIENT_DISK_SPACE,
+					_ => 1,
+				};
+				std::process::exit(exit_code);
+			}
+			Err(e) => {
+				eprintln!("Error: {}", e);
+				std::process::exit(1);
+			}
+			Ok(Ok(_)) => {
+				// Manager succeeded but no AllDone — unexpected
+				eprintln!("Warning: download session ended without summary");
+			}
 		}
+		return;
+	}
 
-		// POST-003: Speed report
-		if !no_speedreport {
-			write_speedreport(&settings, &container_name, &uploader, total_files, completed, failed, skipped, bytes_transferred, elapsed);
-		}
+	let (total_files, completed, failed, cancelled, skipped) = final_result.unwrap();
+	eprintln!(
+		"\nDone: {} total, {} completed, {} skipped, {} failed, {} cancelled ({:.1}s)",
+		total_files,
+		completed,
+		skipped,
+		failed,
+		cancelled,
+		elapsed.as_secs_f64()
+	);
 
-		// Determine exit code per BR-CLI-007
-		let exit_code = if cancelled > 0 {
-			EXIT_SIGNAL_ABORT // A7: Signal abort
-		} else if failed > 0 && completed == 0 {
-			EXIT_ALL_FAILED // A6: All downloads failed
-		} else if failed > 0 {
-			EXIT_PARTIAL_FAILURE // A5: Partial failure
-		} else {
-			0
-		};
+	// POST-002: Auto-extraction
+	if settings.auto_extract {
+		run_extraction(&settings, quiet).await;
+	}
 
-		if exit_code != 0 {
-			std::process::exit(exit_code);
-		}
+	// POST-003: Speed report
+	if !no_speedreport {
+		write_speedreport(&settings, &container_name, &uploader, total_files, completed, failed, skipped, bytes_transferred, elapsed);
+	}
+
+	// Determine exit code per BR-CLI-007
+	let exit_code = if cancelled > 0 {
+		EXIT_SIGNAL_ABORT // A7: Signal abort
+	} else if failed > 0 && completed == 0 {
+		EXIT_ALL_FAILED // A6: All downloads failed
+	} else if failed > 0 {
+		EXIT_PARTIAL_FAILURE // A5: Partial failure
+	} else {
+		0
+	};
+
+	if exit_code != 0 {
+		std::process::exit(exit_code);
 	}
 
 	// Check manager result for errors (e.g. disk space)
@@ -300,7 +321,6 @@ pub async fn run(
 		Ok(Ok(_)) => {}
 		Ok(Err(e)) => {
 			eprintln!("Error: {}", e);
-			// A4: Insufficient disk space (typed match)
 			let exit_code = match e {
 				DownloadError::InsufficientDiskSpace => EXIT_INSUFFICIENT_DISK_SPACE,
 				_ => 1,

@@ -9,21 +9,26 @@ use crate::state::{AppState, AppView};
 ///
 /// Layout sections: Allgemein, Download-Verhalten, Nachbearbeitung,
 /// Ausschlussmuster, Auto-Passwörter, Footer (Abbrechen/Speichern).
+///
+/// Uses a draft signal so that "Abbrechen" discards changes. Only "Speichern"
+/// writes the draft back to the shared `state.settings` and persists to disk.
 #[component]
 pub fn SettingsView() -> Element {
 	let mut state = use_context::<AppState>();
-	let settings = state.settings.read();
-	let download_dir = settings.download_directory.display().to_string();
-	let max_threads = settings.max_threads;
-	let max_speed = settings.max_speed_kbps;
-	let max_retries = settings.max_retries;
-	let retry_delay = settings.retry_delay_seconds;
-	let auto_extract = settings.auto_extract;
-	let delete_after_extract = settings.delete_archives_after_extract;
-	let strict_disk = settings.strict_disk_check;
-	let exclusion_patterns = settings.exclusion_patterns.clone();
-	let auto_passwords = settings.auto_passwords.clone();
-	drop(settings);
+	let mut draft = use_signal(|| state.settings.read().clone());
+
+	let d = draft.read();
+	let download_dir = d.download_directory.display().to_string();
+	let max_threads = d.max_threads;
+	let max_speed = d.max_speed_kbps;
+	let max_retries = d.max_retries;
+	let retry_delay = d.retry_delay_seconds;
+	let auto_extract = d.auto_extract;
+	let delete_after_extract = d.delete_archives_after_extract;
+	let strict_disk = d.strict_disk_check;
+	let exclusion_patterns = d.exclusion_patterns.clone();
+	let auto_passwords = d.auto_passwords.clone();
+	drop(d);
 
 	rsx! {
 			div { class: "flex-1 overflow-y-auto",
@@ -63,7 +68,7 @@ pub fn SettingsView() -> Element {
 													onclick: move |_| {
 															spawn(async move {
 																	if let Some(folder) = rfd::AsyncFileDialog::new().pick_folder().await {
-																			state.settings.write().download_directory = folder.path().to_path_buf();
+																			draft.write().download_directory = folder.path().to_path_buf();
 																	}
 															});
 													},
@@ -71,24 +76,24 @@ pub fn SettingsView() -> Element {
 											}
 									}
 									// BR-UI-013: Inline validation with clamping
-									NumberRow { label: "Max. parallele Downloads", value: max_threads, min: 1, max: 20, on_change: move |v: u32| { state.settings.write().max_threads = v; } }
-									NumberRow { label: "Max. Geschwindigkeit (KB/s)", sub: "0 = unbegrenzt", value: max_speed, min: 0, max: 999999, on_change: move |v: u32| { state.settings.write().max_speed_kbps = v; } }
+									NumberRow { label: "Max. parallele Downloads", value: max_threads, min: 1, max: 20, on_change: move |v: u32| { draft.write().max_threads = v; } }
+									NumberRow { label: "Max. Geschwindigkeit (KB/s)", sub: "0 = unbegrenzt", value: max_speed, min: 0, max: 999999, on_change: move |v: u32| { draft.write().max_speed_kbps = v; } }
 							}
 
 							// Download-Verhalten
 							div { class: "settings-card",
 									div { class: "sg-title", "Download-Verhalten" }
-									NumberRow { label: "Max. Wiederholungen", value: max_retries, min: 0, max: 50, on_change: move |v: u32| { state.settings.write().max_retries = v; } }
-									NumberRow { label: "Retry-Wartezeit (Sek.)", value: retry_delay, min: 1, max: 3600, on_change: move |v: u32| { state.settings.write().retry_delay_seconds = v; } }
+									NumberRow { label: "Max. Wiederholungen", value: max_retries, min: 0, max: 50, on_change: move |v: u32| { draft.write().max_retries = v; } }
+									NumberRow { label: "Retry-Wartezeit (Sek.)", value: retry_delay, min: 1, max: 3600, on_change: move |v: u32| { draft.write().retry_delay_seconds = v; } }
 									// BR-UI-014: Toggle switches for booleans
-									ToggleRow { label: "Strikte Speicherplatzprüfung", value: strict_disk, on_toggle: move |_| { let mut s = state.settings.write(); s.strict_disk_check = !s.strict_disk_check; } }
+									ToggleRow { label: "Strikte Speicherplatzprüfung", value: strict_disk, on_toggle: move |_| { let mut s = draft.write(); s.strict_disk_check = !s.strict_disk_check; } }
 							}
 
 							// Nachbearbeitung
 							div { class: "settings-card",
 									div { class: "sg-title", "Nachbearbeitung" }
-									ToggleRow { label: "Auto-Extraktion", sub: "Archive nach Download entpacken", value: auto_extract, on_toggle: move |_| { let mut s = state.settings.write(); s.auto_extract = !s.auto_extract; } }
-									ToggleRow { label: "Archive nach Extraktion löschen", value: delete_after_extract, on_toggle: move |_| { let mut s = state.settings.write(); s.delete_archives_after_extract = !s.delete_archives_after_extract; } }
+									ToggleRow { label: "Auto-Extraktion", sub: "Archive nach Download entpacken", value: auto_extract, on_toggle: move |_| { let mut s = draft.write(); s.auto_extract = !s.auto_extract; } }
+									ToggleRow { label: "Archive nach Extraktion löschen", value: delete_after_extract, on_toggle: move |_| { let mut s = draft.write(); s.delete_archives_after_extract = !s.delete_archives_after_extract; } }
 							}
 
 							// A5: Ausschlussmuster (BR-UI-016)
@@ -97,10 +102,10 @@ pub fn SettingsView() -> Element {
 									TagList {
 											tags: exclusion_patterns,
 											on_add: move |tag: String| {
-													state.settings.write().exclusion_patterns.push(tag);
+													draft.write().exclusion_patterns.push(tag);
 											},
 											on_remove: move |idx: usize| {
-													state.settings.write().exclusion_patterns.remove(idx);
+													draft.write().exclusion_patterns.remove(idx);
 											},
 											placeholder: "Neues Muster hinzufügen...",
 											masked: false,
@@ -113,10 +118,10 @@ pub fn SettingsView() -> Element {
 									TagList {
 											tags: auto_passwords,
 											on_add: move |tag: String| {
-													state.settings.write().auto_passwords.push(tag);
+													draft.write().auto_passwords.push(tag);
 											},
 											on_remove: move |idx: usize| {
-													state.settings.write().auto_passwords.remove(idx);
+													draft.write().auto_passwords.remove(idx);
 											},
 											placeholder: "Neues Passwort...",
 											masked: true,
@@ -125,7 +130,7 @@ pub fn SettingsView() -> Element {
 
 							// Footer: Abbrechen / Speichern
 							div { class: "flex justify-end gap-2 mt-5 pb-8",
-									// A3: Cancel → back without disk save
+									// A3: Cancel → back without applying changes (draft is discarded)
 									button {
 											class: "btn btn-ghost",
 											onclick: move |_| { state.current_view.set(AppView::Main); },
@@ -134,6 +139,8 @@ pub fn SettingsView() -> Element {
 									button {
 											class: "btn btn-accent",
 											onclick: move |_| {
+													// Apply draft to shared state, then save to disk
+													*state.settings.write() = draft.read().clone();
 													// A2: Stay on Settings if save fails
 													if try_save_settings(state) {
 															state.current_view.set(AppView::Main);

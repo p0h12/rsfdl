@@ -39,7 +39,9 @@ impl Throttle {
 
 	/// BR-DL-018: Unregister a finished thread. Returns updated count.
 	pub fn thread_finished(&self) -> u32 {
-		self.active_threads.fetch_sub(1, Ordering::Relaxed) - 1
+		let prev = self.active_threads.fetch_sub(1, Ordering::Relaxed);
+		debug_assert!(prev > 0, "thread_finished called with no active threads");
+		prev.saturating_sub(1)
 	}
 
 	/// Current per-thread speed limit in bytes per second.

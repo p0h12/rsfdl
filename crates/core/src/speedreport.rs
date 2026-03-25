@@ -88,7 +88,7 @@ fn render(template: &str, stats: &SessionStats) -> String {
 				}
 			}
 		}
-		let c = rest.chars().next().unwrap();
+		let Some(c) = rest.chars().next() else { break };
 		out.push(c);
 		rest = &rest[c.len_utf8()..];
 	}

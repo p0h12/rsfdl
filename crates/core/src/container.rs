@@ -86,9 +86,9 @@ pub async fn resolve_bulk_folders(container: &mut SfdlContainer, timeout: u32) -
 		}
 
 		let mut resolved_files = Vec::new();
-		let mut all_resolved = true;
+		let mut resolved_indices = Vec::new();
 
-		for bulk in &pkg.bulk_folder_list {
+		for (i, bulk) in pkg.bulk_folder_list.iter().enumerate() {
 			match resolve_bulk_folder(&container.connection, bulk, timeout).await {
 				Ok(files) => {
 					if files.is_empty() {
@@ -96,21 +96,24 @@ pub async fn resolve_bulk_folders(container: &mut SfdlContainer, timeout: u32) -
 						tracing::info!(path = %bulk.bulk_folder_path, "BulkFolder directory is empty");
 					}
 					resolved_files.extend(files);
+					resolved_indices.push(i);
 				}
 				Err(e) => {
 					// A1/A3: FTP error — log warning, continue with others
 					let msg = format!("Failed to resolve {}: {}", bulk.bulk_folder_path, e);
 					tracing::warn!("{}", msg);
 					warnings.push(msg);
-					all_resolved = false;
 				}
 			}
 		}
 
 		pkg.file_list.extend(resolved_files);
 
-		if all_resolved {
-			pkg.bulk_folder_list.clear();
+		// Remove successfully resolved folders (in reverse to preserve indices)
+		for i in resolved_indices.into_iter().rev() {
+			pkg.bulk_folder_list.remove(i);
+		}
+		if pkg.bulk_folder_list.is_empty() {
 			pkg.bulk_folder_mode = false;
 		}
 	}
@@ -126,7 +129,13 @@ pub fn has_unresolved_bulk_folders(container: &SfdlContainer) -> bool {
 /// Filter a container to only keep selected files.
 ///
 /// Removes files where the corresponding entry in the selection is `false`.
+/// The selection must have been built from the same container state.
 pub fn filter_container(container: &mut SfdlContainer, selection: &FileSelection) {
+	debug_assert_eq!(
+		selection.total_count(),
+		container.packages.iter().map(|p| p.file_list.len()).sum::<usize>(),
+		"FileSelection must match the container's file count"
+	);
 	let selected = selection.as_slice();
 	let mut idx = 0;
 	for package in &mut container.packages {

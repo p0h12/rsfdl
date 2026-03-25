@@ -92,7 +92,7 @@ pub fn check_multipart_complete(archive: &DetectedArchive) -> Result<(), String>
 
 	let mut missing = Vec::new();
 	for i in 1..=max {
-		if !part_numbers.contains(&i) {
+		if part_numbers.binary_search(&i).is_err() {
 			missing.push(i);
 		}
 	}
