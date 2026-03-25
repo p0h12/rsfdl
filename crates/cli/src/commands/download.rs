@@ -131,20 +131,26 @@ pub async fn run(
 	// Progress display
 	let started_at = Instant::now();
 	let mut final_result = None;
+	let mut bytes_transferred: u64 = 0;
 
 	if quiet {
-		// BR-CLI-008: Quiet mode — drain events until AllDone
+		// BR-CLI-008: Quiet mode — drain events, track bytes for speed report
 		while let Some(event) = rx.recv().await {
-			if let ProgressEvent::AllDone {
-				total_files,
-				completed,
-				failed,
-				cancelled,
-				skipped,
-			} = event
-			{
-				final_result = Some((total_files, completed, failed, cancelled, skipped));
-				break;
+			match event {
+				ProgressEvent::BytesWritten { bytes_delta, .. } => {
+					bytes_transferred += bytes_delta;
+				}
+				ProgressEvent::AllDone {
+					total_files,
+					completed,
+					failed,
+					cancelled,
+					skipped,
+				} => {
+					final_result = Some((total_files, completed, failed, cancelled, skipped));
+					break;
+				}
+				_ => {}
 			}
 		}
 	} else {
@@ -183,6 +189,7 @@ pub async fn run(
 						bar.set_position(total_written);
 					}
 					global_written += bytes_delta;
+					bytes_transferred += bytes_delta;
 					global_bar.set_position(global_written);
 				}
 				ProgressEvent::Completed { item_id } => {
@@ -269,7 +276,7 @@ pub async fn run(
 
 		// POST-003: Speed report
 		if !no_speedreport {
-			write_speedreport(&settings, &container_name, &uploader, total_files, completed, failed, skipped, total_bytes, elapsed);
+			write_speedreport(&settings, &container_name, &uploader, total_files, completed, failed, skipped, bytes_transferred, elapsed);
 		}
 
 		// Determine exit code per BR-CLI-007
