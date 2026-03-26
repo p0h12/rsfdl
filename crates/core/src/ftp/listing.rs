@@ -2,37 +2,48 @@ use crate::error::FtpError;
 use crate::ftp::client::FtpClient;
 use crate::sfdl::models::{BulkFolder, Connection, FileItem, HashType};
 
-/// Resolve a single BulkFolder into FileItems by recursively listing the FTP directory.
+/// Resolve a single BulkFolder using an existing FTP connection.
+pub(crate) async fn resolve_with_client(client: &mut FtpClient, bulk: &BulkFolder) -> Result<Vec<FileItem>, FtpError> {
+	let mut items = Vec::new();
+	recursive_list(client, &bulk.bulk_folder_path, bulk, &mut items).await?;
+	Ok(items)
+}
+
+/// Resolve a single BulkFolder (connects and disconnects internally).
 pub async fn resolve_bulk_folder(conn: &Connection, bulk: &BulkFolder, timeout_seconds: u32) -> Result<Vec<FileItem>, FtpError> {
 	let mut client = FtpClient::connect(conn, timeout_seconds).await?;
-	let mut items = Vec::new();
-
-	recursive_list(&mut client, &bulk.bulk_folder_path, bulk, &mut items).await?;
-
+	let items = resolve_with_client(&mut client, bulk).await?;
 	client.disconnect().await;
 	Ok(items)
 }
 
 /// Resolve all BulkFolders for an entire container and return the resolved FileItems.
 /// This is a standalone function for preview purposes (before starting downloads).
+/// Uses a single FTP connection for all folders.
 pub async fn resolve_container_bulk_folders(conn: &Connection, packages: &[crate::sfdl::models::Package], timeout_seconds: u32) -> Result<Vec<FileItem>, FtpError> {
+	let mut client = FtpClient::connect(conn, timeout_seconds).await?;
 	let mut all_items = Vec::new();
 	for pkg in packages {
 		if pkg.bulk_folder_mode && !pkg.bulk_folder_list.is_empty() {
-			let items = resolve_all_bulk_folders(conn, &pkg.bulk_folder_list, timeout_seconds).await?;
-			all_items.extend(items);
+			for folder in &pkg.bulk_folder_list {
+				let items = resolve_with_client(&mut client, folder).await?;
+				all_items.extend(items);
+			}
 		}
 	}
+	client.disconnect().await;
 	Ok(all_items)
 }
 
-/// Resolve all BulkFolders sequentially (one connection per folder).
+/// Resolve all BulkFolders using a single FTP connection.
 pub async fn resolve_all_bulk_folders(conn: &Connection, folders: &[BulkFolder], timeout_seconds: u32) -> Result<Vec<FileItem>, FtpError> {
+	let mut client = FtpClient::connect(conn, timeout_seconds).await?;
 	let mut all_items = Vec::new();
 	for folder in folders {
-		let items = resolve_bulk_folder(conn, folder, timeout_seconds).await?;
+		let items = resolve_with_client(&mut client, folder).await?;
 		all_items.extend(items);
 	}
+	client.disconnect().await;
 	Ok(all_items)
 }
 

@@ -1,4 +1,5 @@
-use crate::ftp::listing::resolve_bulk_folder;
+use crate::ftp::client::FtpClient;
+use crate::ftp::listing::resolve_with_client;
 use crate::selection::FileSelection;
 use crate::sfdl::crypto::{decrypt_container, try_passwords, validate_password};
 use crate::sfdl::models::SfdlContainer;
@@ -80,6 +81,20 @@ pub fn compute_file_selection(container: &SfdlContainer, patterns: &[String]) ->
 pub async fn resolve_bulk_folders(container: &mut SfdlContainer, timeout: u32) -> Vec<String> {
 	let mut warnings = Vec::new();
 
+	let has_bulk = container.packages.iter().any(|p| p.bulk_folder_mode && !p.bulk_folder_list.is_empty());
+	if !has_bulk {
+		return warnings;
+	}
+
+	// Connect once for all BulkFolder resolution
+	let mut client = match FtpClient::connect(&container.connection, timeout).await {
+		Ok(c) => c,
+		Err(e) => {
+			warnings.push(format!("Failed to connect for BulkFolder resolution: {e}"));
+			return warnings;
+		}
+	};
+
 	for pkg in &mut container.packages {
 		if !pkg.bulk_folder_mode || pkg.bulk_folder_list.is_empty() {
 			continue;
@@ -89,7 +104,7 @@ pub async fn resolve_bulk_folders(container: &mut SfdlContainer, timeout: u32) -
 		let mut resolved_indices = Vec::new();
 
 		for (i, bulk) in pkg.bulk_folder_list.iter().enumerate() {
-			match resolve_bulk_folder(&container.connection, bulk, timeout).await {
+			match resolve_with_client(&mut client, bulk).await {
 				Ok(files) => {
 					if files.is_empty() {
 						// A2: Empty directory
@@ -118,6 +133,7 @@ pub async fn resolve_bulk_folders(container: &mut SfdlContainer, timeout: u32) -
 		}
 	}
 
+	client.disconnect().await;
 	warnings
 }
 
