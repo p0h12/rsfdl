@@ -683,7 +683,7 @@ mod tests {
 	#[test]
 	fn dl007_file_not_found_not_retryable() {
 		use crate::error::FtpError;
-		let err = DownloadError::Ftp(FtpError::TransferError("FTP 550: FileNotFound".into()));
+		let err = DownloadError::Ftp(FtpError::FileNotFound("FTP 550".into()));
 		assert!(!err.is_retryable());
 	}
 
@@ -691,8 +691,9 @@ mod tests {
 	#[test]
 	fn dl007_is_server_full() {
 		use crate::error::FtpError;
-		let err = DownloadError::Ftp(FtpError::ConnectionFailed("Server unavailable (421)".into()));
+		let err = DownloadError::Ftp(FtpError::ServerFull);
 		assert!(err.is_server_full());
+		assert!(err.is_retryable());
 
 		let err2 = DownloadError::Ftp(FtpError::ConnectionFailed("refused".into()));
 		assert!(!err2.is_server_full());

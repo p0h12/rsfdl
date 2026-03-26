@@ -41,6 +41,12 @@ pub enum FtpError {
 	#[error("Authentication failed")]
 	AuthFailed,
 
+	#[error("Server full (421)")]
+	ServerFull,
+
+	#[error("File not found: {0}")]
+	FileNotFound(String),
+
 	#[error("Transfer error: {0}")]
 	TransferError(String),
 
@@ -60,7 +66,8 @@ impl From<suppaftp::FtpError> for FtpError {
 				let code = resp.status.code();
 				match code {
 					430 | 530 => FtpError::AuthFailed,
-					421 => FtpError::ConnectionFailed(format!("Server unavailable ({})", code)),
+					421 => FtpError::ServerFull,
+					550 => FtpError::FileNotFound(format!("FTP {}: {}", code, resp.status)),
 					_ => FtpError::TransferError(format!("FTP {}: {}", code, resp.status)),
 				}
 			}
@@ -103,8 +110,8 @@ pub enum DownloadError {
 impl DownloadError {
 	/// DL-007 / BR-DL-010: Whether this error type is retryable.
 	///
-	/// Retryable: ConnectionFailed, AuthFailed, Timeout (transient FTP errors)
-	/// Permanent: IO errors, Cancelled, InsufficientDiskSpace, FileNotFound (550)
+	/// Retryable: ConnectionFailed, ServerFull, Timeout (transient FTP errors)
+	/// Permanent: IO errors, Cancelled, InsufficientDiskSpace, AuthFailed, FileNotFound
 	pub fn is_retryable(&self) -> bool {
 		match self {
 			DownloadError::Ftp(ftp_err) => ftp_err.is_retryable(),
@@ -116,7 +123,7 @@ impl DownloadError {
 
 	/// Whether this is a ServerFull (421) error that warrants exponential backoff.
 	pub fn is_server_full(&self) -> bool {
-		matches!(self, DownloadError::Ftp(FtpError::ConnectionFailed(msg)) if msg.contains("421"))
+		matches!(self, DownloadError::Ftp(FtpError::ServerFull))
 	}
 }
 
@@ -124,13 +131,12 @@ impl FtpError {
 	/// Whether this FTP error is retryable.
 	pub fn is_retryable(&self) -> bool {
 		match self {
-			FtpError::ConnectionFailed(_) => true, // includes 421 ServerFull
-			FtpError::AuthFailed => false,         // wrong credentials — retrying won't help
+			FtpError::ConnectionFailed(_) => true,
+			FtpError::ServerFull => true,
 			FtpError::Timeout => true,
-			FtpError::TransferError(msg) => {
-				// 550 FileNotFound is permanent
-				!msg.contains("550") && !msg.contains("FileNotFound")
-			}
+			FtpError::TransferError(_) => true,
+			FtpError::AuthFailed => false,
+			FtpError::FileNotFound(_) => false,
 			FtpError::ListingError(_) => false,
 		}
 	}
@@ -165,6 +171,30 @@ mod tests {
 		let suppa_err = suppaftp::FtpError::UnexpectedResponse(resp);
 		let our_err: FtpError = suppa_err.into();
 		assert!(matches!(our_err, FtpError::AuthFailed));
+	}
+
+	#[test]
+	fn suppaftp_421_maps_to_server_full() {
+		let resp = suppaftp::types::Response {
+			status: suppaftp::Status::from(421),
+			body: Vec::new(),
+		};
+		let suppa_err = suppaftp::FtpError::UnexpectedResponse(resp);
+		let our_err: FtpError = suppa_err.into();
+		assert!(matches!(our_err, FtpError::ServerFull));
+		assert!(our_err.is_retryable());
+	}
+
+	#[test]
+	fn suppaftp_550_maps_to_file_not_found() {
+		let resp = suppaftp::types::Response {
+			status: suppaftp::Status::from(550),
+			body: Vec::new(),
+		};
+		let suppa_err = suppaftp::FtpError::UnexpectedResponse(resp);
+		let our_err: FtpError = suppa_err.into();
+		assert!(matches!(our_err, FtpError::FileNotFound(_)));
+		assert!(!our_err.is_retryable());
 	}
 
 	// --- UC-14: ExtractionError ---
