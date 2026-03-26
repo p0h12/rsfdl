@@ -10,7 +10,7 @@ use crate::download::item::{DownloadItem, DownloadStatus, ResumeAction};
 use crate::download::progress::ProgressEvent;
 use crate::download::throttle::Throttle;
 use crate::error::DownloadError;
-use crate::ftp::client::FtpClient;
+use crate::ftp::client::{DownloadContext, FtpClient};
 use crate::settings::Settings;
 use crate::sfdl::models::{Connection, HashType, SfdlContainer};
 use crate::verification::{self, VerificationOutcome};
@@ -351,9 +351,15 @@ async fn download_single_file(
 
 		// DL-008: Register active thread for bandwidth throttle
 		throttle_handle.start();
-		let result = client
-			.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &cancel_token, &mut throttle_handle)
-			.await;
+		let result = {
+			let mut ctx = DownloadContext {
+				item_id: item.id,
+				progress_tx: &tx,
+				cancel_token: &cancel_token,
+				throttle: &mut throttle_handle,
+			};
+			client.download_file(&item.file_item.full_path, &item.local_path, resume_offset, &mut ctx).await
+		};
 		throttle_handle.finish();
 
 		match result {

@@ -10,8 +10,17 @@ use tokio_util::sync::CancellationToken;
 use uuid::Uuid;
 
 use crate::download::progress::ProgressEvent;
+use crate::download::throttle::ThrottleHandle;
 use crate::error::{DownloadError, FtpError};
 use crate::sfdl::models::{Connection, FtpsMode, HashType};
+
+/// Context for a single file download (progress, cancellation, throttling).
+pub struct DownloadContext<'a> {
+	pub item_id: Uuid,
+	pub progress_tx: &'a mpsc::UnboundedSender<ProgressEvent>,
+	pub cancel_token: &'a CancellationToken,
+	pub throttle: &'a mut ThrottleHandle,
+}
 
 /// Entry from an FTP directory listing.
 #[derive(Debug, Clone)]
@@ -141,23 +150,13 @@ impl FtpClient {
 
 	/// Download a file with streaming, resume, progress reporting, cancellation, and throttling.
 	/// Returns total bytes written (including resume offset).
-	#[allow(clippy::too_many_arguments)]
-	pub async fn download_file(
-		&mut self,
-		remote_path: &str,
-		local_path: &Path,
-		resume_offset: u64,
-		item_id: Uuid,
-		progress_tx: &mpsc::UnboundedSender<ProgressEvent>,
-		cancel_token: &CancellationToken,
-		throttle: &mut crate::download::throttle::ThrottleHandle,
-	) -> Result<u64, DownloadError> {
+	pub async fn download_file(&mut self, remote_path: &str, local_path: &Path, resume_offset: u64, ctx: &mut DownloadContext<'_>) -> Result<u64, DownloadError> {
 		// Set binary transfer mode
 		self.stream.transfer_type(FileType::Binary).await.map_err(FtpError::from)?;
 
 		// Set resume offset if needed
 		if resume_offset > 0 {
-			tracing::debug!(item_id = %item_id, offset = resume_offset, "Resuming download");
+			tracing::debug!(item_id = %ctx.item_id, offset = resume_offset, "Resuming download");
 			let offset_usize = usize::try_from(resume_offset).map_err(|_| {
 				DownloadError::Io(std::io::Error::new(
 					std::io::ErrorKind::InvalidInput,
@@ -186,7 +185,7 @@ impl FtpClient {
 				result = data_stream.read(&mut buf) => {
 					result.map_err(|e| DownloadError::Io(std::io::Error::other(e)))?
 				}
-				_ = cancel_token.cancelled() => {
+				_ = ctx.cancel_token.cancelled() => {
 					drop(data_stream);
 					return Err(DownloadError::Cancelled);
 				}
@@ -199,14 +198,14 @@ impl FtpClient {
 			tokio::io::AsyncWriteExt::write_all(&mut file, &buf[..n]).await?;
 			total_written += n as u64;
 
-			let _ = progress_tx.send(ProgressEvent::BytesWritten {
-				item_id,
+			let _ = ctx.progress_tx.send(ProgressEvent::BytesWritten {
+				item_id: ctx.item_id,
 				bytes_delta: n as u64,
 				total_written,
 			});
 
 			// DL-008: Throttle if over speed limit
-			throttle.on_bytes_written(n as u64).await;
+			ctx.throttle.on_bytes_written(n as u64).await;
 		}
 
 		// Finalize the RETR transfer
