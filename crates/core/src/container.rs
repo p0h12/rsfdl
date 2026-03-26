@@ -131,7 +131,7 @@ pub fn has_unresolved_bulk_folders(container: &SfdlContainer) -> bool {
 /// Removes files where the corresponding entry in the selection is `false`.
 /// The selection must have been built from the same container state.
 pub fn filter_container(container: &mut SfdlContainer, selection: &FileSelection) {
-	debug_assert_eq!(
+	assert_eq!(
 		selection.total_count(),
 		container.packages.iter().map(|p| p.file_list.len()).sum::<usize>(),
 		"FileSelection must match the container's file count"
