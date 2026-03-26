@@ -80,7 +80,7 @@ pub async fn verify_file_with_server_hash(local_path: &Path, hash_type: HashType
 ///
 /// BR-POST-001: Supports SHA1, MD5, CRC32.
 pub async fn compute_hash(path: &Path, hash_type: HashType) -> Result<String, VerificationError> {
-	let mut file = tokio::fs::File::open(path).await.map_err(VerificationError::Io)?;
+	let mut file = tokio::fs::File::open(path).await?;
 
 	let mut buf = [0u8; 65536];
 
@@ -89,7 +89,7 @@ pub async fn compute_hash(path: &Path, hash_type: HashType) -> Result<String, Ve
 			use md5::Digest;
 			let mut hasher = Md5::new();
 			loop {
-				let n = file.read(&mut buf).await.map_err(VerificationError::Io)?;
+				let n = file.read(&mut buf).await?;
 				if n == 0 {
 					break;
 				}
@@ -101,7 +101,7 @@ pub async fn compute_hash(path: &Path, hash_type: HashType) -> Result<String, Ve
 			use sha1::Digest;
 			let mut hasher = Sha1::new();
 			loop {
-				let n = file.read(&mut buf).await.map_err(VerificationError::Io)?;
+				let n = file.read(&mut buf).await?;
 				if n == 0 {
 					break;
 				}
@@ -112,7 +112,7 @@ pub async fn compute_hash(path: &Path, hash_type: HashType) -> Result<String, Ve
 		HashType::CRC => {
 			let mut hasher = Crc32Hasher::new();
 			loop {
-				let n = file.read(&mut buf).await.map_err(VerificationError::Io)?;
+				let n = file.read(&mut buf).await?;
 				if n == 0 {
 					break;
 				}

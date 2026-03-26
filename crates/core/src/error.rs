@@ -229,7 +229,7 @@ mod tests {
 #[derive(Debug, Error)]
 pub enum VerificationError {
 	#[error("IO error during verification: {0}")]
-	Io(std::io::Error),
+	Io(#[from] std::io::Error),
 
 	#[error("FTP error during server hash query: {0}")]
 	Ftp(#[from] FtpError),
