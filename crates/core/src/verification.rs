@@ -76,52 +76,61 @@ pub async fn verify_file_with_server_hash(local_path: &Path, hash_type: HashType
 	})
 }
 
+/// Unified hasher over MD5, SHA1, and CRC32.
+enum Hasher {
+	Md5(Md5),
+	Sha1(Sha1),
+	Crc32(Crc32Hasher),
+}
+
+impl Hasher {
+	fn new(hash_type: HashType) -> Option<Self> {
+		use md5::Digest as _;
+		match hash_type {
+			HashType::MD5 => Some(Self::Md5(Md5::new())),
+			HashType::SHA1 => Some(Self::Sha1(Sha1::new())),
+			HashType::CRC => Some(Self::Crc32(Crc32Hasher::new())),
+			HashType::None => None,
+		}
+	}
+
+	fn update(&mut self, data: &[u8]) {
+		match self {
+			Self::Md5(h) => md5::Digest::update(h, data),
+			Self::Sha1(h) => sha1::Digest::update(h, data),
+			Self::Crc32(h) => h.update(data),
+		}
+	}
+
+	fn finalize_hex(self) -> String {
+		match self {
+			Self::Md5(h) => format!("{:x}", md5::Digest::finalize(h)),
+			Self::Sha1(h) => format!("{:x}", sha1::Digest::finalize(h)),
+			Self::Crc32(h) => format!("{:08x}", h.finalize()),
+		}
+	}
+}
+
 /// Compute a hash of the file at `path` using the specified algorithm.
 ///
 /// BR-POST-001: Supports SHA1, MD5, CRC32.
 pub async fn compute_hash(path: &Path, hash_type: HashType) -> Result<String, VerificationError> {
-	let mut file = tokio::fs::File::open(path).await?;
+	let Some(mut hasher) = Hasher::new(hash_type) else {
+		return Ok(String::new());
+	};
 
+	let mut file = tokio::fs::File::open(path).await?;
 	let mut buf = [0u8; 65536];
 
-	match hash_type {
-		HashType::MD5 => {
-			use md5::Digest;
-			let mut hasher = Md5::new();
-			loop {
-				let n = file.read(&mut buf).await?;
-				if n == 0 {
-					break;
-				}
-				hasher.update(&buf[..n]);
-			}
-			Ok(format!("{:x}", hasher.finalize()))
+	loop {
+		let n = file.read(&mut buf).await?;
+		if n == 0 {
+			break;
 		}
-		HashType::SHA1 => {
-			use sha1::Digest;
-			let mut hasher = Sha1::new();
-			loop {
-				let n = file.read(&mut buf).await?;
-				if n == 0 {
-					break;
-				}
-				hasher.update(&buf[..n]);
-			}
-			Ok(format!("{:x}", hasher.finalize()))
-		}
-		HashType::CRC => {
-			let mut hasher = Crc32Hasher::new();
-			loop {
-				let n = file.read(&mut buf).await?;
-				if n == 0 {
-					break;
-				}
-				hasher.update(&buf[..n]);
-			}
-			Ok(format!("{:08x}", hasher.finalize()))
-		}
-		HashType::None => Ok(String::new()),
+		hasher.update(&buf[..n]);
 	}
+
+	Ok(hasher.finalize_hex())
 }
 
 /// BR-POST-001: Select the strongest hash type from FEAT capabilities.
