@@ -190,5 +190,8 @@ pub fn write_sfdl_to_file(dir: &Path, xml: &str) -> PathBuf {
 
 /// Helper to build an SfdlContainer from generated XML.
 pub fn parse_sfdl_from_xml(xml: &str) -> rsfdl_core::sfdl::models::SfdlContainer {
-	rsfdl_core::sfdl::parser::parse_sfdl(xml).expect("parse generated SFDL")
+	match rsfdl_core::sfdl::parser::parse_sfdl(xml).expect("parse generated SFDL") {
+		rsfdl_core::sfdl::models::SfdlFile::Decrypted(c) => c,
+		rsfdl_core::sfdl::models::SfdlFile::Encrypted(_) => panic!("expected decrypted test SFDL"),
+	}
 }

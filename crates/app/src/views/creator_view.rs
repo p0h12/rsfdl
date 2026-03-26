@@ -2,8 +2,8 @@ use dioxus::prelude::*;
 
 use rsfdl_core::sfdl::builder::build_bulk_package;
 use rsfdl_core::sfdl::crypto::encrypt_container;
-use rsfdl_core::sfdl::models::{Connection, SfdlContainer};
-use rsfdl_core::sfdl::parser::serialize_v3;
+use rsfdl_core::sfdl::models::{Connection, SfdlContainer, SfdlFile};
+use rsfdl_core::sfdl::parser::serialize_sfdl;
 
 use crate::state::{AppState, AppView};
 
@@ -371,7 +371,7 @@ async fn create_sfdl(
 	};
 
 	// Build container
-	let mut container = SfdlContainer {
+	let container = SfdlContainer {
 		description,
 		uploader,
 		max_download_threads: threads,
@@ -387,13 +387,15 @@ async fn create_sfdl(
 		..SfdlContainer::default()
 	};
 
-	// Optionally encrypt
-	if !encrypt_password.is_empty() {
-		encrypt_container(&mut container, &encrypt_password);
-	}
+	// Optionally encrypt; wrap into SfdlFile for serialization
+	let sfdl_file = if !encrypt_password.is_empty() {
+		SfdlFile::Encrypted(encrypt_container(container, &encrypt_password))
+	} else {
+		SfdlFile::Decrypted(container)
+	};
 
 	// Serialize
-	let xml = match serialize_v3(&container) {
+	let xml = match serialize_sfdl(&sfdl_file) {
 		Ok(xml) => xml,
 		Err(e) => {
 			state.error_message.set(Some(format!("Serialization failed: {e}")));

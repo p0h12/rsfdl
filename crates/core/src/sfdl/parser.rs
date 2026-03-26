@@ -3,6 +3,7 @@ use quick_xml::se::to_string as xml_to_string;
 use serde::{Deserialize, Serialize};
 
 use crate::error::SfdlError;
+use crate::sfdl::crypto::EncryptedSfdl;
 use crate::sfdl::models::*;
 
 /// Detects the SFDL version from raw XML content.
@@ -16,34 +17,47 @@ pub fn detect_version(xml: &str) -> Result<SfdlVersion, SfdlError> {
 	}
 }
 
-/// Parses an SFDL file (v2 or v3) into a unified SfdlContainer.
-pub fn parse_sfdl(xml: &str) -> Result<SfdlContainer, SfdlError> {
+/// Parses an SFDL file (v2 or v3) into a typed [`SfdlFile`].
+///
+/// Returns [`SfdlFile::Encrypted`] when the XML `<Encrypted>` flag is `true`,
+/// and [`SfdlFile::Decrypted`] for plaintext containers.
+pub fn parse_sfdl(xml: &str) -> Result<SfdlFile, SfdlError> {
 	let version = detect_version(xml)?;
-	let container = match version {
+	let (container, was_encrypted) = match version {
 		SfdlVersion::V3 => parse_v3(xml)?,
 		SfdlVersion::V2 => parse_v2(xml)?,
 	};
-	// A3: Validate required fields
-	validate_container(&container)?;
-	Ok(container)
+	// A3: Validate structural requirements (applies to all containers)
+	validate_structural(&container)?;
+	if was_encrypted {
+		Ok(SfdlFile::Encrypted(EncryptedSfdl(container)))
+	} else {
+		// A3: For unencrypted containers also validate connection fields
+		validate_decrypted(&container)?;
+		Ok(SfdlFile::Decrypted(container))
+	}
 }
 
 /// SFDL-001 / A4: Read and parse an SFDL file from disk.
-pub fn load_sfdl_file(path: &std::path::Path) -> Result<SfdlContainer, SfdlError> {
+pub fn load_sfdl_file(path: &std::path::Path) -> Result<SfdlFile, SfdlError> {
 	let xml = std::fs::read_to_string(path).map_err(|e| SfdlError::FileError(format!("{}: {}", path.display(), e)))?;
 	parse_sfdl(&xml)
 }
 
-/// A3: Validate required fields on a parsed (unencrypted) container.
-///
-/// For encrypted containers, most fields are ciphertext and can't be validated
-/// until after decryption — so we only validate structural requirements.
-fn validate_container(container: &SfdlContainer) -> Result<(), SfdlError> {
+/// Validates structural requirements that apply to all containers (encrypted or not).
+fn validate_structural(container: &SfdlContainer) -> Result<(), SfdlError> {
 	if container.packages.is_empty() {
 		return Err(SfdlError::ParseError("SFDL file has no packages".into()));
 	}
-	// For unencrypted containers, host must be present
-	if !container.encrypted && container.connection.host.is_empty() {
+	Ok(())
+}
+
+/// Validates fields that must be present in a decrypted (plaintext) container.
+///
+/// Encrypted containers skip this — their fields are ciphertext and can only
+/// be validated after decryption.
+fn validate_decrypted(container: &SfdlContainer) -> Result<(), SfdlError> {
+	if container.connection.host.is_empty() {
 		return Err(SfdlError::ParseError("SFDL file missing connection host".into()));
 	}
 	Ok(())
@@ -168,7 +182,7 @@ struct RawBulkFolderV3 {
 	package_name: String,
 }
 
-fn parse_v3(xml: &str) -> Result<SfdlContainer, SfdlError> {
+fn parse_v3(xml: &str) -> Result<(SfdlContainer, bool), SfdlError> {
 	let raw: RawContainerV3 = from_str(xml).map_err(|e| SfdlError::ParseError(e.to_string()))?;
 
 	// BR-SFDL-001: Validate ContainerVersion number
@@ -179,12 +193,12 @@ fn parse_v3(xml: &str) -> Result<SfdlContainer, SfdlError> {
 		)));
 	}
 
-	Ok(SfdlContainer {
+	let was_encrypted = raw.encrypted;
+	let container = SfdlContainer {
 		container_version: raw.container_version,
 		version: SfdlVersion::V3,
 		description: raw.description,
 		uploader: raw.uploader,
-		encrypted: raw.encrypted,
 		max_download_threads: raw.max_download_threads,
 		connection: Connection {
 			host: raw.connection.host,
@@ -238,24 +252,36 @@ fn parse_v3(xml: &str) -> Result<SfdlContainer, SfdlError> {
 					.unwrap_or_default(),
 			})
 			.collect(),
-	})
+	};
+	Ok((container, was_encrypted))
 }
 
 // --- v3 serialization ---
 
-/// Serializes an SfdlContainer to SFDL v3 XML.
-pub fn serialize_v3(container: &SfdlContainer) -> Result<String, SfdlError> {
-	let raw = to_raw_v3(container);
+/// Serializes an `SfdlContainer` to SFDL v3 XML.
+///
+/// The `encrypted` flag is written into the `<Encrypted>` element — callers
+/// must pass `true` when serializing an [`EncryptedSfdl`] container.
+pub fn serialize_v3(container: &SfdlContainer, encrypted: bool) -> Result<String, SfdlError> {
+	let raw = to_raw_v3(container, encrypted);
 	let xml_body = xml_to_string(&raw).map_err(|e| SfdlError::SerializeError(e.to_string()))?;
 	Ok(format!("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n{}", xml_body))
 }
 
-fn to_raw_v3(c: &SfdlContainer) -> RawContainerV3 {
+/// Serializes an [`SfdlFile`] to SFDL v3 XML, setting the `<Encrypted>` flag correctly.
+pub fn serialize_sfdl(file: &SfdlFile) -> Result<String, SfdlError> {
+	match file {
+		SfdlFile::Encrypted(enc) => serialize_v3(enc.inner(), true),
+		SfdlFile::Decrypted(container) => serialize_v3(container, false),
+	}
+}
+
+fn to_raw_v3(c: &SfdlContainer, encrypted: bool) -> RawContainerV3 {
 	RawContainerV3 {
 		container_version: c.container_version,
 		description: c.description.clone(),
 		uploader: c.uploader.clone(),
-		encrypted: c.encrypted,
+		encrypted,
 		max_download_threads: c.max_download_threads,
 		connection: RawConnectionV3 {
 			host: c.connection.host.clone(),
@@ -394,7 +420,7 @@ struct RawBulkFolderV2 {
 	package_name: String,
 }
 
-fn parse_v2(xml: &str) -> Result<SfdlContainer, SfdlError> {
+fn parse_v2(xml: &str) -> Result<(SfdlContainer, bool), SfdlError> {
 	let raw: RawSfdlV2 = from_str(xml).map_err(|e| SfdlError::ParseError(e.to_string()))?;
 
 	// BR-SFDL-001: Validate SFDLFileVersion number (6-9 = v2)
@@ -403,12 +429,12 @@ fn parse_v2(xml: &str) -> Result<SfdlContainer, SfdlError> {
 		return Err(SfdlError::ParseError(format!("Unsupported SFDLFileVersion '{}'. Expected 6-9 for SFDL v2.", raw.version)));
 	}
 
-	Ok(SfdlContainer {
+	let was_encrypted = raw.encrypted;
+	let container = SfdlContainer {
 		container_version: 2,
 		version: SfdlVersion::V2,
 		description: raw.description,
 		uploader: raw.uploader,
-		encrypted: raw.encrypted,
 		max_download_threads: raw.max_download_threads,
 		connection: Connection {
 			host: raw.connection_info.host,
@@ -445,7 +471,8 @@ fn parse_v2(xml: &str) -> Result<SfdlContainer, SfdlError> {
 					.unwrap_or_default(),
 			})
 			.collect(),
-	})
+	};
+	Ok((container, was_encrypted))
 }
 
 #[cfg(test)]
@@ -470,12 +497,15 @@ mod tests {
 	/// SFDL-001 | Main Success: Parse unencrypted v3 container with all fields.
 	#[test]
 	fn sfdl001_parse_unencrypted_v3() {
-		let container = parse_sfdl(UNENCRYPTED_V3).unwrap();
+		let file = parse_sfdl(UNENCRYPTED_V3).unwrap();
+		let container = match file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
 
 		assert_eq!(container.container_version, 10);
 		assert_eq!(container.description, "Test.Release.2026.1080p");
 		assert_eq!(container.uploader, "testuser");
-		assert!(!container.encrypted);
 		assert_eq!(container.max_download_threads, 3);
 
 		// Connection
@@ -522,12 +552,15 @@ mod tests {
 	/// SFDL-001 | Main Success: Parse unencrypted v2 container.
 	#[test]
 	fn sfdl001_parse_unencrypted_v2() {
-		let container = parse_sfdl(UNENCRYPTED_V2).unwrap();
+		let file = parse_sfdl(UNENCRYPTED_V2).unwrap();
+		let container = match file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
 
 		assert_eq!(container.container_version, 2);
 		assert_eq!(container.description, "Test.Release.v2");
 		assert_eq!(container.uploader, "testuser");
-		assert!(!container.encrypted);
 
 		assert_eq!(container.connection.host, "ftp.example.com");
 		assert_eq!(container.connection.port, 21);
@@ -542,13 +575,17 @@ mod tests {
 		assert_eq!(pkg.bulk_folder_list[0].bulk_folder_path, "/releases/test/");
 	}
 
-	/// SFDL-001 | Main Success: Parse encrypted v3 container (fields are Base64).
+	/// SFDL-001 | Main Success: Parse encrypted v3 container — returns SfdlFile::Encrypted.
 	#[test]
 	fn sfdl001_parse_encrypted_v3_raw() {
-		let container = parse_sfdl(ENCRYPTED_V3).unwrap();
+		let file = parse_sfdl(ENCRYPTED_V3).unwrap();
+		let enc = match file {
+			SfdlFile::Encrypted(e) => e,
+			SfdlFile::Decrypted(_) => panic!("expected Encrypted"),
+		};
 
+		let container = enc.inner();
 		assert_eq!(container.container_version, 10);
-		assert!(container.encrypted);
 		// Fields should be Base64 strings (not yet decrypted)
 		assert_ne!(container.description, "Test.Release.2026.1080p");
 		assert_ne!(container.connection.host, "ftp.example.com");
@@ -559,11 +596,14 @@ mod tests {
 	/// SFDL-001 | Main Success: Parse v3 BulkFolder container.
 	#[test]
 	fn sfdl001_parse_bulkfolder_v3() {
-		let container = parse_sfdl(BULKFOLDER_V3).unwrap();
+		let file = parse_sfdl(BULKFOLDER_V3).unwrap();
+		let container = match file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
 
 		assert_eq!(container.container_version, 10);
 		assert_eq!(container.description, "BulkFolder.Test.2026");
-		assert!(!container.encrypted);
 
 		// Package
 		assert_eq!(container.packages.len(), 1);
@@ -583,7 +623,11 @@ mod tests {
 	/// SFDL-001 | Main Success: BulkFolder container has correct connection data.
 	#[test]
 	fn sfdl001_parse_bulkfolder_v3_connection() {
-		let container = parse_sfdl(BULKFOLDER_V3).unwrap();
+		let file = parse_sfdl(BULKFOLDER_V3).unwrap();
+		let container = match file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
 
 		assert_eq!(container.connection.host, "ftp.example.com");
 		assert_eq!(container.connection.port, 21);
@@ -592,13 +636,17 @@ mod tests {
 		assert!(container.connection.auth_required);
 	}
 
-	/// SFDL-001 | Main Success: Parse encrypted v3 BulkFolder (fields encrypted).
+	/// SFDL-001 | Main Success: Parse encrypted v3 BulkFolder — returns SfdlFile::Encrypted.
 	#[test]
 	fn sfdl001_parse_encrypted_bulkfolder_v3_raw() {
-		let container = parse_sfdl(ENCRYPTED_BULKFOLDER_V3).unwrap();
+		let file = parse_sfdl(ENCRYPTED_BULKFOLDER_V3).unwrap();
+		let enc = match file {
+			SfdlFile::Encrypted(e) => e,
+			SfdlFile::Decrypted(_) => panic!("expected Encrypted"),
+		};
 
+		let container = enc.inner();
 		assert_eq!(container.container_version, 10);
-		assert!(container.encrypted);
 
 		// Fields should be Base64-encoded ciphertext
 		assert_ne!(container.description, "BulkFolder.Test.2026");
@@ -617,14 +665,22 @@ mod tests {
 	/// SFDL-001 | Main Success: Parsed v3 container has SfdlVersion::V3.
 	#[test]
 	fn sfdl001_v3_has_version_field() {
-		let container = parse_sfdl(UNENCRYPTED_V3).unwrap();
+		let file = parse_sfdl(UNENCRYPTED_V3).unwrap();
+		let container = match file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
 		assert_eq!(container.version, SfdlVersion::V3);
 	}
 
 	/// SFDL-001 | Main Success: Parsed v2 container has SfdlVersion::V2.
 	#[test]
 	fn sfdl001_v2_has_version_field() {
-		let container = parse_sfdl(UNENCRYPTED_V2).unwrap();
+		let file = parse_sfdl(UNENCRYPTED_V2).unwrap();
+		let container = match file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
 		assert_eq!(container.version, SfdlVersion::V2);
 	}
 
@@ -729,6 +785,7 @@ mod tests {
 		// Encrypted containers may have empty host (it's ciphertext that failed to set)
 		let result = parse_sfdl(xml);
 		assert!(result.is_ok());
+		assert!(matches!(result.unwrap(), SfdlFile::Encrypted(_)));
 	}
 
 	/// SFDL-001 | A4: load_sfdl_file with nonexistent path returns FileError.
@@ -746,7 +803,11 @@ mod tests {
 		let path = dir.path().join("test.sfdl");
 		std::fs::write(&path, UNENCRYPTED_V3).unwrap();
 
-		let container = load_sfdl_file(&path).unwrap();
+		let file = load_sfdl_file(&path).unwrap();
+		let container = match file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
 		assert_eq!(container.description, "Test.Release.2026.1080p");
 		assert_eq!(container.version, SfdlVersion::V3);
 	}
@@ -777,14 +838,21 @@ mod tests {
 	/// CR-005 | Main Success: Serialize and re-parse v3 FileList container.
 	#[test]
 	fn cr005_serialize_v3_round_trip_filelist() {
-		let original = parse_sfdl(UNENCRYPTED_V3).unwrap();
-		let xml = serialize_v3(&original).unwrap();
-		let reparsed = parse_sfdl(&xml).unwrap();
+		let file = parse_sfdl(UNENCRYPTED_V3).unwrap();
+		let original = match &file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
+		let xml = serialize_v3(original, false).unwrap();
+		let reparsed_file = parse_sfdl(&xml).unwrap();
+		let reparsed = match &reparsed_file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted after round-trip"),
+		};
 
 		assert_eq!(reparsed.container_version, original.container_version);
 		assert_eq!(reparsed.description, original.description);
 		assert_eq!(reparsed.uploader, original.uploader);
-		assert_eq!(reparsed.encrypted, original.encrypted);
 		assert_eq!(reparsed.max_download_threads, original.max_download_threads);
 		assert_eq!(reparsed.connection.host, original.connection.host);
 		assert_eq!(reparsed.connection.port, original.connection.port);
@@ -804,9 +872,17 @@ mod tests {
 	/// CR-005 | Main Success: Serialize and re-parse v3 BulkFolder container.
 	#[test]
 	fn cr005_serialize_v3_round_trip_bulkfolder() {
-		let original = parse_sfdl(BULKFOLDER_V3).unwrap();
-		let xml = serialize_v3(&original).unwrap();
-		let reparsed = parse_sfdl(&xml).unwrap();
+		let file = parse_sfdl(BULKFOLDER_V3).unwrap();
+		let original = match &file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted"),
+		};
+		let xml = serialize_v3(original, false).unwrap();
+		let reparsed_file = parse_sfdl(&xml).unwrap();
+		let reparsed = match &reparsed_file {
+			SfdlFile::Decrypted(c) => c,
+			SfdlFile::Encrypted(_) => panic!("expected Decrypted after round-trip"),
+		};
 
 		assert_eq!(reparsed.description, original.description);
 		assert_eq!(reparsed.uploader, original.uploader);
@@ -824,17 +900,33 @@ mod tests {
 	#[test]
 	fn cr005_serialize_v3_has_xml_header() {
 		let container = SfdlContainer::default();
-		let xml = serialize_v3(&container).unwrap();
+		let xml = serialize_v3(&container, false).unwrap();
 		assert!(xml.starts_with("<?xml version=\"1.0\" encoding=\"utf-8\"?>"));
+	}
+
+	/// CR-005 | Main Success: serialize_sfdl dispatches correctly for Decrypted variant.
+	#[test]
+	fn cr005_serialize_sfdl_decrypted() {
+		let file = parse_sfdl(UNENCRYPTED_V3).unwrap();
+		let xml = serialize_sfdl(&file).unwrap();
+		assert!(xml.contains("<Encrypted>false</Encrypted>"));
+	}
+
+	/// CR-005 | Main Success: serialize_sfdl dispatches correctly for Encrypted variant.
+	#[test]
+	fn cr005_serialize_sfdl_encrypted() {
+		let file = parse_sfdl(ENCRYPTED_V3).unwrap();
+		let xml = serialize_sfdl(&file).unwrap();
+		assert!(xml.contains("<Encrypted>true</Encrypted>"));
 	}
 
 	/// CR-005 | Full Pipeline: Build, encrypt, serialize, parse, decrypt, verify.
 	#[test]
 	fn cr005_serialize_v3_full_pipeline() {
-		use crate::sfdl::crypto::{decrypt_container, encrypt_container};
+		use crate::sfdl::crypto::encrypt_container;
 
 		// Build a container from scratch
-		let mut container = SfdlContainer {
+		let container = SfdlContainer {
 			description: "Pipeline.Test.2026".into(),
 			uploader: "rsfdl".into(),
 			connection: Connection {
@@ -857,19 +949,25 @@ mod tests {
 			..SfdlContainer::default()
 		};
 
-		// Encrypt → serialize → parse → decrypt → verify
-		encrypt_container(&mut container, "mypassword");
-		assert!(container.encrypted);
+		// Encrypt (consumes container, returns EncryptedSfdl)
+		let encrypted = encrypt_container(container, "mypassword");
 
-		let xml = serialize_v3(&container).unwrap();
-		let mut reparsed = parse_sfdl(&xml).unwrap();
-		assert!(reparsed.encrypted);
+		// Serialize the encrypted container
+		let xml = serialize_v3(encrypted.inner(), true).unwrap();
 
-		decrypt_container(&mut reparsed, "mypassword").unwrap();
-		assert_eq!(reparsed.description, "Pipeline.Test.2026");
-		assert_eq!(reparsed.connection.host, "ftp.test.com");
-		assert_eq!(reparsed.connection.username, "user");
-		assert_eq!(reparsed.packages[0].name, "TestPkg");
-		assert_eq!(reparsed.packages[0].bulk_folder_list[0].bulk_folder_path, "/data/release/");
+		// Parse — should yield SfdlFile::Encrypted
+		let reparsed = parse_sfdl(&xml).unwrap();
+		let enc = match reparsed {
+			SfdlFile::Encrypted(e) => e,
+			SfdlFile::Decrypted(_) => panic!("expected Encrypted after serializing encrypted container"),
+		};
+
+		// Decrypt and verify
+		let decrypted = enc.decrypt("mypassword").unwrap();
+		assert_eq!(decrypted.description, "Pipeline.Test.2026");
+		assert_eq!(decrypted.connection.host, "ftp.test.com");
+		assert_eq!(decrypted.connection.username, "user");
+		assert_eq!(decrypted.packages[0].name, "TestPkg");
+		assert_eq!(decrypted.packages[0].bulk_folder_list[0].bulk_folder_path, "/data/release/");
 	}
 }

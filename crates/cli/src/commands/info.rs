@@ -31,7 +31,6 @@ fn print_text(c: &SfdlContainer, outcome: &DecryptionStatus) {
 	let encrypted_label = match outcome {
 		DecryptionStatus::NotEncrypted => "no".to_string(),
 		DecryptionStatus::AutoDecrypted { .. } => "yes (auto-decrypted)".to_string(),
-		DecryptionStatus::NeedsPassword => "yes (not decrypted)".to_string(),
 	};
 
 	let ssl_label = match c.connection.ssl_protocol.ftps_mode() {

@@ -1,7 +1,8 @@
 use clap::Args;
-use rsfdl_core::container::{DecryptionStatus, LoadedContainer, load_sfdl};
+use rsfdl_core::container::{DecryptionStatus, LoadResult, load_sfdl};
 use rsfdl_core::error::AppError;
 use rsfdl_core::settings::{self, Settings};
+use rsfdl_core::sfdl::crypto::EncryptedSfdl;
 use rsfdl_core::sfdl::models::SfdlContainer;
 
 /// Shared CLI arguments for SFDL file operations.
@@ -87,7 +88,7 @@ pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(S
 		all
 	};
 
-	let LoadedContainer { mut container, status } = load_sfdl(&xml, &auto_list).map_err(|e| match &e {
+	let load_result = load_sfdl(&xml, &auto_list).map_err(|e| match &e {
 		AppError::InvalidPassword => CliError::InvalidPassword,
 		AppError::Decrypt(_) => CliError::InvalidPassword,
 		AppError::Parse(_) => CliError::ParseError(e.to_string()),
@@ -96,7 +97,18 @@ pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(S
 
 	// CLI-004: Resolve password and decrypt if needed
 	let is_terminal = std::io::IsTerminal::is_terminal(&std::io::stderr());
-	let outcome = resolve_password_and_decrypt(&mut container, status, args.password.as_deref(), is_terminal)?;
+	let (container, outcome) = match load_result {
+		LoadResult::Ready(container, status) => {
+			if matches!(status, DecryptionStatus::AutoDecrypted { .. }) {
+				eprintln!("Auto-decrypted with password from list");
+			}
+			(container, status)
+		}
+		LoadResult::NeedsPassword(encrypted) => {
+			let (container, pw) = resolve_password_and_decrypt(encrypted, args.password.as_deref(), is_terminal)?;
+			(container, DecryptionStatus::AutoDecrypted { password: pw })
+		}
+	};
 
 	Ok((container, settings, outcome))
 }
@@ -105,46 +117,33 @@ pub fn load_and_decrypt(args: &SfdlArgs, auto_passwords: &[String]) -> Result<(S
 ///
 /// Implements BR-CLI-018 priority chain:
 /// 1. --password flag (if provided)
-/// 2. Auto-password list (already tried by load_sfdl, reflected in status)
-/// 3. Interactive prompt (if terminal available)
-/// 4. Error (exit code 3)
-fn resolve_password_and_decrypt(container: &mut SfdlContainer, status: DecryptionStatus, password_flag: Option<&str>, is_terminal: bool) -> Result<DecryptOutcome, CliError> {
-	match status {
-		// Not encrypted — nothing to do
-		DecryptionStatus::NotEncrypted => Ok(DecryptionStatus::NotEncrypted),
-
-		// Main Success: Auto-password matched
-		DecryptionStatus::AutoDecrypted { password } => {
-			eprintln!("Auto-decrypted with password from list");
-			Ok(DecryptionStatus::AutoDecrypted { password })
-		}
-
-		// Need to find a password
-		DecryptionStatus::NeedsPassword => {
-			// A1: --password flag
-			let pw = if let Some(pw) = password_flag {
-				pw.to_string()
-			}
-			// A2: Interactive prompt (terminal available)
-			else if is_terminal {
-				eprintln!("File is encrypted. Enter password:");
-				rpassword::read_password().map_err(|_| CliError::PasswordRequired)?
-			}
-			// A3: No password available (non-interactive)
-			else {
-				return Err(CliError::PasswordRequired);
-			};
-
-			// A4: Wrong password → InvalidPassword
-			rsfdl_core::container::decrypt_with_password(container, &pw).map_err(|e| match e {
-				AppError::InvalidPassword | AppError::Decrypt(_) => CliError::InvalidPassword,
-				AppError::Parse(ref pe) => CliError::ParseError(pe.to_string()),
-				AppError::Ftp(ref fe) => CliError::ParseError(fe.to_string()),
-			})?;
-
-			Ok(DecryptionStatus::AutoDecrypted { password: pw })
-		}
+/// 2. Interactive prompt (if terminal available)
+/// 3. Error (exit code 3)
+///
+/// Returns the decrypted container and the password used.
+fn resolve_password_and_decrypt(encrypted: EncryptedSfdl, password_flag: Option<&str>, is_terminal: bool) -> Result<(SfdlContainer, String), CliError> {
+	// A1: --password flag
+	let pw = if let Some(pw) = password_flag {
+		pw.to_string()
 	}
+	// A2: Interactive prompt (terminal available)
+	else if is_terminal {
+		eprintln!("File is encrypted. Enter password:");
+		rpassword::read_password().map_err(|_| CliError::PasswordRequired)?
+	}
+	// A3: No password available (non-interactive)
+	else {
+		return Err(CliError::PasswordRequired);
+	};
+
+	// A4: Wrong password → InvalidPassword
+	let container = rsfdl_core::container::decrypt_with_password(encrypted, &pw).map_err(|e| match e {
+		AppError::InvalidPassword | AppError::Decrypt(_) => CliError::InvalidPassword,
+		AppError::Parse(ref pe) => CliError::ParseError(pe.to_string()),
+		AppError::Ftp(ref fe) => CliError::ParseError(fe.to_string()),
+	})?;
+
+	Ok((container, pw))
 }
 
 pub fn load_password_file(path: Option<&str>) -> Vec<String> {
@@ -196,112 +195,55 @@ mod tests {
 	// CLI-004: Password resolution
 	// -------------------------------------------------------
 
-	/// CLI-004 | Main Success: NotEncrypted passes through.
-	#[test]
-	fn cli004_not_encrypted_passthrough() {
-		let mut container = SfdlContainer::default();
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NotEncrypted, None, false).unwrap();
-		assert!(matches!(result, DecryptionStatus::NotEncrypted));
-	}
+	use rsfdl_core::sfdl::crypto::EncryptedSfdl;
+	use rsfdl_core::sfdl::models::Connection;
 
-	/// CLI-004 | Main Success: AutoDecrypted passes through.
-	#[test]
-	fn cli004_auto_decrypted_passthrough() {
-		let mut container = SfdlContainer::default();
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::AutoDecrypted { password: "test".into() }, None, false).unwrap();
-		assert!(matches!(result, DecryptionStatus::AutoDecrypted { .. }));
+	/// Build an EncryptedSfdl with the host encrypted under password "test".
+	/// Ciphertext "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=" decrypts to
+	/// "ftp.example.com" with password "test".
+	fn make_encrypted() -> EncryptedSfdl {
+		EncryptedSfdl::from_container(SfdlContainer {
+			connection: Connection {
+				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
+				..Connection::default()
+			},
+			..SfdlContainer::default()
+		})
 	}
 
 	/// CLI-004 | A3: NeedsPassword without flag, no terminal → PasswordRequired.
 	#[test]
 	fn cli004_needs_password_no_flag_no_terminal() {
-		let mut container = SfdlContainer {
-			encrypted: true,
-			..SfdlContainer::default()
-		};
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, None, false);
+		let result = resolve_password_and_decrypt(make_encrypted(), None, false);
 		assert!(matches!(result.unwrap_err(), CliError::PasswordRequired));
 	}
 
 	/// CLI-004 | A4: Wrong password → InvalidPassword.
 	#[test]
 	fn cli004_wrong_password() {
-		use rsfdl_core::sfdl::models::Connection;
-
-		let mut container = SfdlContainer {
-			encrypted: true,
-			connection: Connection {
-				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
-				..Connection::default()
-			},
-			..SfdlContainer::default()
-		};
-
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("wrong"), false);
+		let result = resolve_password_and_decrypt(make_encrypted(), Some("wrong"), false);
 		assert!(matches!(result.unwrap_err(), CliError::InvalidPassword));
 	}
 
-	/// CLI-004 | A1: Correct --password flag → decrypts.
+	/// CLI-004 | A1: Correct --password flag → decrypts and returns container + password.
 	#[test]
 	fn cli004_correct_password_flag() {
-		use rsfdl_core::sfdl::models::Connection;
-
-		let mut container = SfdlContainer {
-			encrypted: true,
-			connection: Connection {
-				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
-				..Connection::default()
-			},
-			..SfdlContainer::default()
-		};
-
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("test"), false).unwrap();
-		assert!(matches!(result, DecryptionStatus::AutoDecrypted { .. }));
-		assert!(!container.encrypted);
+		let (container, pw) = resolve_password_and_decrypt(make_encrypted(), Some("test"), false).unwrap();
+		assert_eq!(pw, "test");
 		assert_eq!(container.connection.host, "ftp.example.com");
 	}
 
-	/// CLI-004 | A1: --password flag is used when NeedsPassword and flag given.
+	/// CLI-004 | A1: --password flag value is returned as the used password.
 	#[test]
 	fn cli004_flag_used_when_needs_password() {
-		use rsfdl_core::sfdl::models::Connection;
-
-		let mut container = SfdlContainer {
-			encrypted: true,
-			connection: Connection {
-				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
-				..Connection::default()
-			},
-			..SfdlContainer::default()
-		};
-
-		// NeedsPassword + flag → tries flag password
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("test"), false).unwrap();
-		if let DecryptionStatus::AutoDecrypted { password } = result {
-			assert_eq!(password, "test");
-		} else {
-			panic!("expected AutoDecrypted with flag password");
-		}
+		let (_, pw) = resolve_password_and_decrypt(make_encrypted(), Some("test"), false).unwrap();
+		assert_eq!(pw, "test");
 	}
 
-	/// CLI-004 | A3: NeedsPassword with no flag and no terminal → PasswordRequired.
-	/// This is the scenario when --password is given but wrong (auto-list was skipped),
-	/// and there's no terminal fallback.
+	/// CLI-004 | A3: Wrong flag password → InvalidPassword (no fallback to auto-list).
 	#[test]
 	fn cli004_no_fallback_after_flag_fails() {
-		use rsfdl_core::sfdl::models::Connection;
-
-		let mut container = SfdlContainer {
-			encrypted: true,
-			connection: Connection {
-				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
-				..Connection::default()
-			},
-			..SfdlContainer::default()
-		};
-
-		// Wrong flag password → InvalidPassword (no fallback to auto-list)
-		let result = resolve_password_and_decrypt(&mut container, DecryptionStatus::NeedsPassword, Some("wrong"), false);
+		let result = resolve_password_and_decrypt(make_encrypted(), Some("wrong"), false);
 		assert!(matches!(result.unwrap_err(), CliError::InvalidPassword));
 	}
 }

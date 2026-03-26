@@ -1,5 +1,7 @@
 use serde::{Deserialize, Serialize};
 
+use crate::sfdl::crypto::EncryptedSfdl;
+
 // --- Enums ---
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, Serialize, Deserialize)]
@@ -86,6 +88,17 @@ pub enum SfdlVersion {
 
 // --- Core data models ---
 
+/// Parsed SFDL file — either encrypted (needs password) or decrypted (ready to use).
+#[derive(Debug, Clone)]
+pub enum SfdlFile {
+	Encrypted(EncryptedSfdl),
+	Decrypted(SfdlContainer),
+}
+
+/// An SFDL container with decrypted fields, ready for download.
+///
+/// This type guarantees that all string fields contain plaintext.
+/// To obtain one from an encrypted SFDL file, use [`EncryptedSfdl::decrypt`].
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SfdlContainer {
 	pub container_version: u32,
@@ -93,7 +106,6 @@ pub struct SfdlContainer {
 	pub version: SfdlVersion,
 	pub description: String,
 	pub uploader: String,
-	pub encrypted: bool,
 	pub max_download_threads: u32,
 	pub connection: Connection,
 	pub packages: Vec<Package>,
@@ -106,7 +118,6 @@ impl Default for SfdlContainer {
 			version: SfdlVersion::V3,
 			description: String::new(),
 			uploader: String::new(),
-			encrypted: false,
 			max_download_threads: 3,
 			connection: Connection::default(),
 			packages: Vec::new(),

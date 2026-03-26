@@ -1,7 +1,8 @@
 use dioxus::prelude::*;
 
-use rsfdl_core::container::{DecryptionStatus, load_sfdl};
+use rsfdl_core::container::{LoadResult, load_sfdl};
 use rsfdl_core::selection::FileSelection;
+use rsfdl_core::sfdl::crypto::EncryptedSfdl;
 
 use crate::icons;
 use crate::state::{AppState, AppView, ContainerPhase, Theme};
@@ -135,17 +136,19 @@ pub fn process_sfdl_content(mut state: AppState, file_path: &str, xml_content: &
 	let auto_passwords = state.settings.read().auto_passwords.clone();
 
 	match load_sfdl(xml_content, &auto_passwords) {
-		Ok(loaded) => match loaded.status {
-			DecryptionStatus::NotEncrypted | DecryptionStatus::AutoDecrypted { .. } => {
-				let container_id = state.add_container(file_path.to_string(), loaded.container, ContainerPhase::Ready);
-				spawn(async move {
-					resolve_bulk_folders_for(state, container_id).await;
-				});
-			}
-			DecryptionStatus::NeedsPassword => {
-				state.add_container(file_path.to_string(), loaded.container, ContainerPhase::NeedsPassword);
-			}
-		},
+		Ok(LoadResult::Ready(container, _status)) => {
+			let container_id = state.add_container(file_path.to_string(), container, ContainerPhase::Ready);
+			spawn(async move {
+				resolve_bulk_folders_for(state, container_id).await;
+			});
+		}
+		Ok(LoadResult::NeedsPassword(enc)) => {
+			let placeholder = enc.inner().clone();
+			let container_id = state.add_container(file_path.to_string(), placeholder, ContainerPhase::NeedsPassword);
+			state.with_container_mut(container_id, |cs| {
+				cs.encrypted_sfdl = Some(enc);
+			});
+		}
 		Err(e) => {
 			state.error_message.set(Some(format!("Parse error: {e}")));
 		}
@@ -204,10 +207,9 @@ pub enum DecryptOutcome {
 /// UI-002: Attempt to decrypt a container with the given password (pure logic).
 ///
 /// Returns a DecryptOutcome without touching UI state, for testability.
-pub fn attempt_decrypt(container: &rsfdl_core::sfdl::models::SfdlContainer, password: &str, exclusion_patterns: &[String]) -> DecryptOutcome {
-	let mut c = container.clone();
-	match rsfdl_core::container::decrypt_with_password(&mut c, password) {
-		Ok(()) => {
+pub fn attempt_decrypt(enc: EncryptedSfdl, password: &str, exclusion_patterns: &[String]) -> DecryptOutcome {
+	match rsfdl_core::container::decrypt_with_password(enc, password) {
+		Ok(c) => {
 			let selection = FileSelection::new(&c, exclusion_patterns);
 			DecryptOutcome::Success { container: Box::new(c), selection }
 		}
@@ -221,21 +223,25 @@ pub fn attempt_decrypt(container: &rsfdl_core::sfdl::models::SfdlContainer, pass
 /// Delegates to [`attempt_decrypt`] for the core logic, then applies the
 /// outcome to the Dioxus state. On success, triggers BulkFolder resolution.
 pub fn try_decrypt_container(mut state: AppState, container_id: u32, password: &str) {
-	let container = {
+	let enc = {
 		let list = state.containers.read();
 		let Some(cs) = list.iter().find(|c| c.id == container_id) else {
 			return;
 		};
-		cs.container.clone()
+		let Some(enc) = cs.encrypted_sfdl.clone() else {
+			return;
+		};
+		enc
 	};
 
 	let patterns = state.settings.read().exclusion_patterns.clone();
-	match attempt_decrypt(&container, password, &patterns) {
+	match attempt_decrypt(enc, password, &patterns) {
 		DecryptOutcome::Success { container: decrypted, selection } => {
 			state.with_container_mut(container_id, |cs| {
 				cs.container = *decrypted;
 				cs.selection = selection;
 				cs.phase = ContainerPhase::Ready;
+				cs.encrypted_sfdl = None;
 				cs.password_error = None;
 			});
 			spawn(async move {
@@ -258,44 +264,43 @@ pub fn try_decrypt_container(mut state: AppState, container_id: u32, password: &
 #[cfg(test)]
 mod tests {
 	use super::*;
+	use rsfdl_core::sfdl::crypto::EncryptedSfdl;
 	use rsfdl_core::sfdl::models::{Connection, SfdlContainer};
 
-	fn encrypted_container() -> SfdlContainer {
-		SfdlContainer {
-			encrypted: true,
+	fn make_encrypted() -> EncryptedSfdl {
+		EncryptedSfdl::from_container(SfdlContainer {
 			connection: Connection {
 				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
 				..Connection::default()
 			},
 			..SfdlContainer::default()
-		}
+		})
 	}
 
 	/// UI-002 | Main Success: Correct password decrypts container.
 	#[test]
 	fn ui002_correct_password_decrypts() {
-		let c = encrypted_container();
-		let result = attempt_decrypt(&c, "test", &[]);
+		let enc = make_encrypted();
+		let result = attempt_decrypt(enc, "test", &[]);
 		assert!(matches!(result, DecryptOutcome::Success { .. }));
 		if let DecryptOutcome::Success { container, .. } = result {
-			assert!(!container.encrypted);
-			assert_eq!(container.connection.host, "ftp.example.com"); // Box auto-derefs
+			assert_eq!(container.connection.host, "ftp.example.com");
 		}
 	}
 
 	/// UI-002 | A1: Wrong password returns InvalidPassword.
 	#[test]
 	fn ui002_wrong_password() {
-		let c = encrypted_container();
-		let result = attempt_decrypt(&c, "wrong", &[]);
+		let enc = make_encrypted();
+		let result = attempt_decrypt(enc, "wrong", &[]);
 		assert!(matches!(result, DecryptOutcome::InvalidPassword));
 	}
 
 	/// UI-002 | Main Success: Decryption computes file selection.
 	#[test]
 	fn ui002_decrypt_computes_selection() {
-		let c = encrypted_container();
-		let result = attempt_decrypt(&c, "test", &[]);
+		let enc = make_encrypted();
+		let result = attempt_decrypt(enc, "test", &[]);
 		if let DecryptOutcome::Success { selection, .. } = result {
 			// Default container has no files, so selection is empty
 			assert_eq!(selection.total_count(), 0);
@@ -304,14 +309,13 @@ mod tests {
 		}
 	}
 
-	/// UI-002 | A1: Wrong password preserves original container state.
+	/// UI-002 | A1: Wrong password with clone preserves original.
 	#[test]
 	fn ui002_wrong_password_preserves_container() {
-		let c = encrypted_container();
-		let _ = attempt_decrypt(&c, "wrong", &[]);
-		// Original container unchanged (it was passed by reference)
-		assert!(c.encrypted);
-		assert_eq!(c.connection.host, "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=");
+		let enc = make_encrypted();
+		let enc_clone = enc.clone();
+		let _ = attempt_decrypt(enc_clone, "wrong", &[]);
+		assert_eq!(enc.inner().connection.host, "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=");
 	}
 
 	// -------------------------------------------------------

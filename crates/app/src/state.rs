@@ -11,6 +11,7 @@ use uuid::Uuid;
 
 use rsfdl_core::selection::FileSelection;
 use rsfdl_core::settings::Settings;
+use rsfdl_core::sfdl::crypto::EncryptedSfdl;
 use rsfdl_core::sfdl::models::SfdlContainer;
 
 // ---------------------------------------------------------------------------
@@ -133,6 +134,7 @@ pub struct ContainerState {
 	pub expanded: bool,
 
 	// Password state (when phase == NeedsPassword)
+	pub encrypted_sfdl: Option<EncryptedSfdl>,
 	pub password_error: Option<String>,
 
 	// File selection (when phase >= Ready)
@@ -187,7 +189,7 @@ impl ContainerState {
 
 	/// Whether this container is encrypted.
 	pub fn is_encrypted(&self) -> bool {
-		self.container.encrypted
+		self.encrypted_sfdl.is_some()
 	}
 
 	/// SFDL version string (e.g. "v3").
@@ -267,6 +269,7 @@ impl AppState {
 			container,
 			phase,
 			expanded: true,
+			encrypted_sfdl: None,
 			password_error: None,
 			selection,
 			file_states: HashMap::new(),
@@ -400,6 +403,7 @@ mod tests {
 			container,
 			phase: ContainerPhase::Ready,
 			expanded: true,
+			encrypted_sfdl: None,
 			password_error: None,
 			selection,
 			file_states: HashMap::new(),

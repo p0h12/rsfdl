@@ -1,17 +1,11 @@
 use crate::ftp::client::FtpClient;
 use crate::ftp::listing::resolve_with_client;
 use crate::selection::FileSelection;
-use crate::sfdl::crypto::{decrypt_container, try_passwords, validate_password};
-use crate::sfdl::models::SfdlContainer;
+use crate::sfdl::crypto::EncryptedSfdl;
+use crate::sfdl::models::{SfdlContainer, SfdlFile};
 use crate::sfdl::parser::parse_sfdl;
 
 use crate::error::AppError;
-
-/// Result of loading and attempting auto-decryption of an SFDL container.
-pub struct LoadedContainer {
-	pub container: SfdlContainer,
-	pub status: DecryptionStatus,
-}
 
 /// How decryption was resolved during loading.
 #[derive(Debug)]
@@ -20,48 +14,45 @@ pub enum DecryptionStatus {
 	NotEncrypted,
 	/// Auto-decrypted using a password from the provided list.
 	AutoDecrypted { password: String },
-	/// Encrypted but no auto-password matched — manual password required.
-	NeedsPassword,
+}
+
+/// Result of loading and attempting auto-decryption of an SFDL file.
+pub enum LoadResult {
+	/// Container is decrypted and ready to use.
+	Ready(SfdlContainer, DecryptionStatus),
+	/// Container is encrypted — caller must provide a password.
+	NeedsPassword(EncryptedSfdl),
 }
 
 /// SFDL-001 + SFDL-002: Parse SFDL XML and attempt auto-decryption.
 ///
-/// If the container is encrypted and a matching password is found in `auto_passwords`,
-/// decryption is performed automatically. Otherwise `DecryptionStatus::NeedsPassword`
-/// is returned and the caller must use [`decrypt_with_password`] to proceed.
-pub fn load_sfdl(xml: &str, auto_passwords: &[String]) -> Result<LoadedContainer, AppError> {
-	let mut container = parse_sfdl(xml)?;
+/// Returns [`LoadResult::Ready`] if the file is unencrypted or a matching
+/// auto-password was found. Returns [`LoadResult::NeedsPassword`] if the
+/// caller must use [`decrypt_with_password`] to proceed.
+pub fn load_sfdl(xml: &str, auto_passwords: &[String]) -> Result<LoadResult, AppError> {
+	let sfdl = parse_sfdl(xml)?;
 
-	if !container.encrypted {
-		return Ok(LoadedContainer {
-			container,
-			status: DecryptionStatus::NotEncrypted,
-		});
+	match sfdl {
+		SfdlFile::Decrypted(container) => Ok(LoadResult::Ready(container, DecryptionStatus::NotEncrypted)),
+		SfdlFile::Encrypted(enc) => {
+			if let Some(pw) = enc.try_passwords(auto_passwords) {
+				let container = enc.decrypt(&pw)?;
+				Ok(LoadResult::Ready(container, DecryptionStatus::AutoDecrypted { password: pw }))
+			} else {
+				Ok(LoadResult::NeedsPassword(enc))
+			}
+		}
 	}
-
-	if let Some(pw) = try_passwords(&container, auto_passwords) {
-		decrypt_container(&mut container, &pw)?;
-		return Ok(LoadedContainer {
-			container,
-			status: DecryptionStatus::AutoDecrypted { password: pw },
-		});
-	}
-
-	Ok(LoadedContainer {
-		container,
-		status: DecryptionStatus::NeedsPassword,
-	})
 }
 
-/// SFDL-002: Decrypt a container with a user-provided password.
+/// SFDL-002: Decrypt an encrypted container with a user-provided password.
 ///
-/// Validates the password first, then decrypts all encrypted fields in-place.
-pub fn decrypt_with_password(container: &mut SfdlContainer, password: &str) -> Result<(), AppError> {
-	if !validate_password(container, password) {
+/// Validates the password first, then decrypts all fields.
+pub fn decrypt_with_password(encrypted: EncryptedSfdl, password: &str) -> Result<SfdlContainer, AppError> {
+	if !encrypted.validate_password(password) {
 		return Err(AppError::InvalidPassword);
 	}
-	decrypt_container(container, password)?;
-	Ok(())
+	Ok(encrypted.decrypt(password)?)
 }
 
 /// DL-001 + DL-002: Compute file selection with exclusion patterns.
@@ -248,23 +239,26 @@ mod tests {
 </Container>"#;
 
 		let result = load_sfdl(xml, &[]).unwrap();
-		assert!(matches!(result.status, DecryptionStatus::NotEncrypted));
-		assert_eq!(result.container.description, "Test");
+		let LoadResult::Ready(container, status) = result else {
+			panic!("expected Ready");
+		};
+		assert!(matches!(status, DecryptionStatus::NotEncrypted));
+		assert_eq!(container.description, "Test");
 	}
 
 	/// SFDL-002 | A2: decrypt_with_password with wrong password returns InvalidPassword.
 	#[test]
 	fn sfdl002_decrypt_with_password_invalid() {
-		let mut container = SfdlContainer {
-			encrypted: true,
+		use crate::sfdl::crypto::EncryptedSfdl;
+		let encrypted = EncryptedSfdl::from_container(SfdlContainer {
 			connection: Connection {
 				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
 				..Connection::default()
 			},
 			..SfdlContainer::default()
-		};
+		});
 
-		let result = decrypt_with_password(&mut container, "wrong");
+		let result = decrypt_with_password(encrypted, "wrong");
 		assert!(matches!(result, Err(AppError::InvalidPassword)));
 	}
 

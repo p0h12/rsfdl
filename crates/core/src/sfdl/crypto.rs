@@ -53,29 +53,46 @@ fn decrypt_string_with_encoding(ciphertext_b64: &str, password_bytes: &[u8]) -> 
 	String::from_utf8(plaintext.to_vec()).map_err(|e| CryptoError::DecryptionFailed(e.to_string()))
 }
 
-/// Validates a password by attempting to decrypt the host field
-/// and checking if the result looks like a valid hostname.
-pub fn validate_password(container: &SfdlContainer, password: &str) -> bool {
-	if !container.encrypted {
-		return true;
+/// An encrypted SFDL container. Must be decrypted before use.
+///
+/// String fields contain AES-128-CBC ciphertext. Use [`EncryptedSfdl::decrypt`]
+/// to obtain a usable [`SfdlContainer`].
+#[derive(Debug, Clone)]
+pub struct EncryptedSfdl(pub(crate) SfdlContainer);
+
+impl EncryptedSfdl {
+	/// Wrap a container as encrypted (for use by parser and tests).
+	pub fn from_container(container: SfdlContainer) -> Self {
+		Self(container)
 	}
 
-	match decrypt_string(&container.connection.host, password) {
-		Ok(host) => {
-			// A valid hostname should contain only printable ASCII chars
-			// and typically has at least one dot or is an IP address
-			!host.is_empty() && host.is_ascii() && host.chars().all(|c| c.is_alphanumeric() || ".-_:".contains(c))
-		}
-		Err(e) => {
-			tracing::debug!("Password validation failed: {e}");
-			false
+	/// Read-only access to the inner container (fields are ciphertext).
+	pub fn inner(&self) -> &SfdlContainer {
+		&self.0
+	}
+
+	/// Validate a password without decrypting.
+	pub fn validate_password(&self, password: &str) -> bool {
+		match decrypt_string(&self.0.connection.host, password) {
+			Ok(host) => !host.is_empty() && host.is_ascii() && host.chars().all(|c| c.is_alphanumeric() || ".-_:".contains(c)),
+			Err(e) => {
+				tracing::debug!("Password validation failed: {e}");
+				false
+			}
 		}
 	}
-}
 
-/// Tries a list of passwords and returns the first one that validates.
-pub fn try_passwords(container: &SfdlContainer, passwords: &[String]) -> Option<String> {
-	passwords.iter().find(|pw| validate_password(container, pw)).cloned()
+	/// Try a list of passwords and return the first one that validates.
+	pub fn try_passwords(&self, passwords: &[String]) -> Option<String> {
+		passwords.iter().find(|pw| self.validate_password(pw)).cloned()
+	}
+
+	/// Decrypt all fields, consuming self and returning a ready-to-use container.
+	pub fn decrypt(self, password: &str) -> Result<SfdlContainer, CryptoError> {
+		let mut inner = self.0;
+		transform_fields(&mut inner, |s| decrypt_string(s, password))?;
+		Ok(inner)
+	}
 }
 
 /// Apply a transform function to all encrypted fields in a container.
@@ -109,16 +126,6 @@ fn transform_fields(container: &mut SfdlContainer, f: impl Fn(&str) -> Result<St
 	Ok(())
 }
 
-/// Decrypts all encrypted fields in a container in-place.
-pub fn decrypt_container(container: &mut SfdlContainer, password: &str) -> Result<(), CryptoError> {
-	if !container.encrypted {
-		return Ok(());
-	}
-	transform_fields(container, |s| decrypt_string(s, password))?;
-	container.encrypted = false;
-	Ok(())
-}
-
 /// Encrypts a single string with AES-128-CBC and returns a Base64-encoded result.
 /// Output format: base64(IV || ciphertext) with a random IV.
 pub fn encrypt_string(plaintext: &str, password: &str) -> String {
@@ -143,14 +150,11 @@ pub fn encrypt_string(plaintext: &str, password: &str) -> String {
 	B64.encode(&result)
 }
 
-/// Encrypts all sensitive fields in a container in-place.
-pub fn encrypt_container(container: &mut SfdlContainer, password: &str) {
-	if container.encrypted {
-		return;
-	}
-	// encrypt_string is infallible — wrap in Ok for transform_fields
-	transform_fields(container, |s| Ok(encrypt_string(s, password))).expect("encrypt_string is infallible");
-	container.encrypted = true;
+/// Encrypt a container, consuming it and returning an [`EncryptedSfdl`].
+pub fn encrypt_container(container: SfdlContainer, password: &str) -> EncryptedSfdl {
+	let mut inner = container;
+	transform_fields(&mut inner, |s| Ok(encrypt_string(s, password))).expect("encrypt_string is infallible");
+	EncryptedSfdl(inner)
 }
 
 #[cfg(test)]
@@ -255,72 +259,44 @@ mod tests {
 		assert!(result.is_err());
 	}
 
-	/// SFDL-002 | BR-SFDL-004: Correct password validates successfully.
-	#[test]
-	fn sfdl002_validate_password_correct() {
-		let container = SfdlContainer {
-			encrypted: true,
+	fn make_encrypted() -> EncryptedSfdl {
+		EncryptedSfdl(SfdlContainer {
 			connection: Connection {
 				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
 				..Connection::default()
 			},
 			..SfdlContainer::default()
-		};
-		assert!(validate_password(&container, "test"));
+		})
+	}
+
+	/// SFDL-002 | BR-SFDL-004: Correct password validates successfully.
+	#[test]
+	fn sfdl002_validate_password_correct() {
+		let enc = make_encrypted();
+		assert!(enc.validate_password("test"));
 	}
 
 	/// SFDL-002 | BR-SFDL-004: Wrong password fails validation.
 	#[test]
 	fn sfdl002_validate_password_wrong() {
-		let container = SfdlContainer {
-			encrypted: true,
-			connection: Connection {
-				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
-				..Connection::default()
-			},
-			..SfdlContainer::default()
-		};
-		assert!(!validate_password(&container, "wrong"));
-	}
-
-	/// SFDL-002 | BR-SFDL-004: Unencrypted container always validates.
-	#[test]
-	fn sfdl002_validate_password_unencrypted() {
-		let container = SfdlContainer {
-			encrypted: false,
-			..SfdlContainer::default()
-		};
-		assert!(validate_password(&container, "anything"));
+		let enc = make_encrypted();
+		assert!(!enc.validate_password("wrong"));
 	}
 
 	/// SFDL-002 | Main Success: Auto-password list finds the correct one.
 	#[test]
 	fn sfdl002_try_passwords_finds_correct() {
-		let container = SfdlContainer {
-			encrypted: true,
-			connection: Connection {
-				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
-				..Connection::default()
-			},
-			..SfdlContainer::default()
-		};
+		let enc = make_encrypted();
 		let passwords = vec!["wrong1".into(), "test".into(), "wrong2".into()];
-		assert_eq!(try_passwords(&container, &passwords), Some("test".into()));
+		assert_eq!(enc.try_passwords(&passwords), Some("test".into()));
 	}
 
 	/// SFDL-002 | A1: No auto-password matches.
 	#[test]
 	fn sfdl002_try_passwords_none_match() {
-		let container = SfdlContainer {
-			encrypted: true,
-			connection: Connection {
-				host: "FA9p93TaRSx1Bap096qqevmwi8vGbaEXtXRbnLmbUr8=".into(),
-				..Connection::default()
-			},
-			..SfdlContainer::default()
-		};
+		let enc = make_encrypted();
 		let passwords = vec!["wrong1".into(), "wrong2".into()];
-		assert_eq!(try_passwords(&container, &passwords), None);
+		assert_eq!(enc.try_passwords(&passwords), None);
 	}
 
 	// --- CR-004: Encrypt container ---
@@ -356,10 +332,9 @@ mod tests {
 	fn cr004_encrypt_container_round_trip() {
 		use crate::sfdl::models::{BulkFolder, FileItem, Package};
 
-		let mut container = SfdlContainer {
+		let container = SfdlContainer {
 			description: "Test.Release".into(),
 			uploader: "user123".into(),
-			encrypted: false,
 			connection: Connection {
 				host: "ftp.example.com".into(),
 				username: "ftpuser".into(),
@@ -394,32 +369,19 @@ mod tests {
 		let orig_file_name = container.packages[0].file_list[0].file_name.clone();
 		let orig_bulk_path = container.packages[0].bulk_folder_list[0].bulk_folder_path.clone();
 
-		// Encrypt
-		encrypt_container(&mut container, "secret");
-		assert!(container.encrypted);
-		assert_ne!(container.description, orig_desc);
-		assert_ne!(container.connection.host, orig_host);
+		// Encrypt (consumes container, returns EncryptedSfdl)
+		let encrypted = encrypt_container(container, "secret");
+		assert_ne!(encrypted.inner().description, orig_desc);
+		assert_ne!(encrypted.inner().connection.host, orig_host);
 
-		// Decrypt
-		decrypt_container(&mut container, "secret").unwrap();
-		assert!(!container.encrypted);
-		assert_eq!(container.description, orig_desc);
-		assert_eq!(container.connection.host, orig_host);
-		assert_eq!(container.connection.username, orig_user);
-		assert_eq!(container.connection.password, orig_pw);
-		assert_eq!(container.packages[0].file_list[0].file_name, orig_file_name);
-		assert_eq!(container.packages[0].bulk_folder_list[0].bulk_folder_path, orig_bulk_path);
+		// Decrypt (consumes EncryptedSfdl, returns SfdlContainer)
+		let decrypted = encrypted.decrypt("secret").unwrap();
+		assert_eq!(decrypted.description, orig_desc);
+		assert_eq!(decrypted.connection.host, orig_host);
+		assert_eq!(decrypted.connection.username, orig_user);
+		assert_eq!(decrypted.connection.password, orig_pw);
+		assert_eq!(decrypted.packages[0].file_list[0].file_name, orig_file_name);
+		assert_eq!(decrypted.packages[0].bulk_folder_list[0].bulk_folder_path, orig_bulk_path);
 	}
-
-	/// CR-004 | BR: Already encrypted container is a no-op.
-	#[test]
-	fn cr004_encrypt_already_encrypted_is_noop() {
-		let mut container = SfdlContainer {
-			encrypted: true,
-			description: "already-encrypted-data".into(),
-			..SfdlContainer::default()
-		};
-		encrypt_container(&mut container, "test");
-		assert_eq!(container.description, "already-encrypted-data");
-	}
+	// Note: "encrypt already-encrypted" test removed — the type system prevents double encryption.
 }

@@ -1,5 +1,5 @@
-use rsfdl_core::container::{DecryptionStatus, load_sfdl};
-use rsfdl_core::sfdl::crypto::decrypt_container;
+use rsfdl_core::container::{DecryptionStatus, LoadResult, load_sfdl};
+use rsfdl_core::sfdl::models::SfdlFile;
 use rsfdl_core::sfdl::parser::parse_sfdl;
 
 const ENCRYPTED_V3: &str = include_str!("fixtures/encrypted_v3.sfdl");
@@ -14,12 +14,12 @@ const ENCRYPTED_BULKFOLDER_V3: &str = include_str!("fixtures/encrypted_bulkfolde
 /// SFDL-002 | Main Success: Decrypt encrypted v3 FileList container.
 #[test]
 fn sfdl002_parse_and_decrypt_v3() {
-	let mut container = parse_sfdl(ENCRYPTED_V3).unwrap();
-	assert!(container.encrypted);
+	let SfdlFile::Encrypted(enc) = parse_sfdl(ENCRYPTED_V3).unwrap() else {
+		panic!("expected Encrypted");
+	};
 
-	decrypt_container(&mut container, "test").unwrap();
+	let container = enc.decrypt("test").unwrap();
 
-	assert!(!container.encrypted);
 	assert_eq!(container.description, "Test.Release.2026.1080p");
 	assert_eq!(container.uploader, "testuser");
 	assert_eq!(container.connection.host, "ftp.example.com");
@@ -38,12 +38,12 @@ fn sfdl002_parse_and_decrypt_v3() {
 /// SFDL-002 | Main Success: Decrypt encrypted v3 BulkFolder container.
 #[test]
 fn sfdl002_parse_and_decrypt_bulkfolder_v3() {
-	let mut container = parse_sfdl(ENCRYPTED_BULKFOLDER_V3).unwrap();
-	assert!(container.encrypted);
+	let SfdlFile::Encrypted(enc) = parse_sfdl(ENCRYPTED_BULKFOLDER_V3).unwrap() else {
+		panic!("expected Encrypted");
+	};
 
-	decrypt_container(&mut container, "test").unwrap();
+	let container = enc.decrypt("test").unwrap();
 
-	assert!(!container.encrypted);
 	assert_eq!(container.description, "BulkFolder.Test.2026");
 	assert_eq!(container.connection.host, "ftp.example.com");
 
@@ -62,32 +62,35 @@ fn sfdl002_parse_and_decrypt_bulkfolder_v3() {
 /// SFDL-002 | A2: Wrong password on FileList container.
 #[test]
 fn sfdl002_wrong_password_fails() {
-	let mut container = parse_sfdl(ENCRYPTED_V3).unwrap();
-	let result = decrypt_container(&mut container, "wrong_password");
+	let SfdlFile::Encrypted(enc) = parse_sfdl(ENCRYPTED_V3).unwrap() else {
+		panic!("expected Encrypted");
+	};
+	let result = enc.decrypt("wrong_password");
 	assert!(result.is_err());
 }
 
 /// SFDL-002 | A2: Wrong password on BulkFolder container.
 #[test]
 fn sfdl002_wrong_password_bulkfolder_fails() {
-	let mut container = parse_sfdl(ENCRYPTED_BULKFOLDER_V3).unwrap();
-	let result = decrypt_container(&mut container, "wrong_password");
+	let SfdlFile::Encrypted(enc) = parse_sfdl(ENCRYPTED_BULKFOLDER_V3).unwrap() else {
+		panic!("expected Encrypted");
+	};
+	let result = enc.decrypt("wrong_password");
 	assert!(result.is_err());
 }
 
 // =======================================================
-// SFDL-002 | Unencrypted: decrypt is a no-op
+// SFDL-002 | Unencrypted parsing
 // =======================================================
 
-/// SFDL-002 | Edge: Decrypting unencrypted container is a no-op.
+/// SFDL-002 | Edge: Unencrypted container parses as Decrypted variant.
 #[test]
 fn sfdl002_decrypt_unencrypted_is_noop() {
-	let mut container = parse_sfdl(UNENCRYPTED_V3).unwrap();
-	let original_host = container.connection.host.clone();
-
-	decrypt_container(&mut container, "anything").unwrap();
-
-	assert_eq!(container.connection.host, original_host);
+	let SfdlFile::Decrypted(container) = parse_sfdl(UNENCRYPTED_V3).unwrap() else {
+		panic!("expected Decrypted");
+	};
+	// Host is plaintext and accessible directly
+	assert_eq!(container.connection.host, "ftp.example.com");
 }
 
 // =======================================================
@@ -100,12 +103,14 @@ fn sfdl002_load_sfdl_auto_decrypt() {
 	let auto_passwords = vec!["wrong1".into(), "test".into(), "wrong2".into()];
 	let result = load_sfdl(ENCRYPTED_V3, &auto_passwords).unwrap();
 
-	assert!(matches!(result.status, DecryptionStatus::AutoDecrypted { .. }));
-	if let DecryptionStatus::AutoDecrypted { password } = &result.status {
+	let LoadResult::Ready(container, status) = result else {
+		panic!("expected Ready");
+	};
+	assert!(matches!(status, DecryptionStatus::AutoDecrypted { .. }));
+	if let DecryptionStatus::AutoDecrypted { password } = &status {
 		assert_eq!(password, "test");
 	}
-	assert!(!result.container.encrypted);
-	assert_eq!(result.container.connection.host, "ftp.example.com");
+	assert_eq!(container.connection.host, "ftp.example.com");
 }
 
 /// SFDL-002 | A1: No auto-password matches → NeedsPassword.
@@ -113,24 +118,24 @@ fn sfdl002_load_sfdl_auto_decrypt() {
 fn sfdl002_load_sfdl_no_auto_match() {
 	let auto_passwords = vec!["wrong1".into(), "wrong2".into()];
 	let result = load_sfdl(ENCRYPTED_V3, &auto_passwords).unwrap();
-
-	assert!(matches!(result.status, DecryptionStatus::NeedsPassword));
-	assert!(result.container.encrypted);
+	assert!(matches!(result, LoadResult::NeedsPassword(_)));
 }
 
 /// SFDL-002 | A1: Empty auto-password list → NeedsPassword.
 #[test]
 fn sfdl002_load_sfdl_empty_auto_list() {
 	let result = load_sfdl(ENCRYPTED_V3, &[]).unwrap();
-	assert!(matches!(result.status, DecryptionStatus::NeedsPassword));
+	assert!(matches!(result, LoadResult::NeedsPassword(_)));
 }
 
-/// SFDL-002 | Edge: Unencrypted container → NotEncrypted (no auto-decrypt needed).
+/// SFDL-002 | Edge: Unencrypted container → Ready(NotEncrypted).
 #[test]
 fn sfdl002_load_sfdl_not_encrypted() {
 	let result = load_sfdl(UNENCRYPTED_V3, &["test".into()]).unwrap();
-	assert!(matches!(result.status, DecryptionStatus::NotEncrypted));
-	assert!(!result.container.encrypted);
+	let LoadResult::Ready(_, status) = result else {
+		panic!("expected Ready");
+	};
+	assert!(matches!(status, DecryptionStatus::NotEncrypted));
 }
 
 // =======================================================
@@ -140,9 +145,10 @@ fn sfdl002_load_sfdl_not_encrypted() {
 /// SFDL-001 | Main Success: Unencrypted BulkFolder parses correctly.
 #[test]
 fn sfdl001_parse_bulkfolder_v3() {
-	let container = parse_sfdl(BULKFOLDER_V3).unwrap();
+	let SfdlFile::Decrypted(container) = parse_sfdl(BULKFOLDER_V3).unwrap() else {
+		panic!("expected Decrypted");
+	};
 
-	assert!(!container.encrypted);
 	assert_eq!(container.description, "BulkFolder.Test.2026");
 
 	let pkg = &container.packages[0];
