@@ -59,6 +59,7 @@ impl Throttle {
 			throttle: self.clone(),
 			interval_start: Instant::now(),
 			interval_bytes: 0,
+			active: false,
 		}
 	}
 }
@@ -68,6 +69,7 @@ pub struct ThrottleHandle {
 	throttle: Arc<Throttle>,
 	interval_start: Instant,
 	interval_bytes: u64,
+	active: bool,
 }
 
 impl ThrottleHandle {
@@ -109,12 +111,16 @@ impl ThrottleHandle {
 	}
 
 	/// Register this worker as active.
-	pub fn start(&self) -> u32 {
+	pub fn start(&mut self) -> u32 {
+		debug_assert!(!self.active, "ThrottleHandle::start() called twice");
+		self.active = true;
 		self.throttle.thread_started()
 	}
 
 	/// Unregister this worker.
-	pub fn finish(&self) -> u32 {
+	pub fn finish(&mut self) -> u32 {
+		debug_assert!(self.active, "ThrottleHandle::finish() called without start()");
+		self.active = false;
 		self.throttle.thread_finished()
 	}
 }
@@ -216,15 +222,17 @@ mod tests {
 		assert_eq!(slept, Duration::ZERO);
 	}
 
-	/// DL-008 | Handle: start/finish track thread count.
+	/// DL-008 | Handle: start/finish track thread count as matched pair.
 	#[test]
 	fn dl008_handle_start_finish() {
 		let throttle = Throttle::new(1000);
-		let handle = throttle.handle();
+		let mut handle = throttle.handle();
 
 		assert_eq!(handle.start(), 1);
-		assert_eq!(handle.start(), 2); // calling start twice = 2 threads
-		assert_eq!(handle.finish(), 1);
+		assert_eq!(handle.finish(), 0);
+
+		// Can be reused for another cycle
+		assert_eq!(handle.start(), 1);
 		assert_eq!(handle.finish(), 0);
 	}
 }
