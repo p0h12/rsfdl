@@ -8,9 +8,6 @@ pub enum SfdlError {
 	#[error("Unsupported SFDL version: {0}")]
 	UnsupportedVersion(u32),
 
-	#[error("Crypto error: {0}")]
-	Crypto(#[from] CryptoError),
-
 	#[error("Failed to serialize SFDL file: {0}")]
 	SerializeError(String),
 
