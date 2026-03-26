@@ -12,7 +12,7 @@ use crate::download::throttle::Throttle;
 use crate::error::DownloadError;
 use crate::ftp::client::FtpClient;
 use crate::settings::Settings;
-use crate::sfdl::models::{HashType, SfdlContainer};
+use crate::sfdl::models::{Connection, HashType, SfdlContainer};
 use crate::verification::{self, VerificationOutcome};
 
 /// Result summary after all downloads complete.
@@ -22,6 +22,15 @@ pub struct DownloadResult {
 	pub failed: u32,
 	pub cancelled: u32,
 	pub skipped: u32,
+}
+
+/// Shared configuration for per-file download tasks.
+struct DownloadTaskConfig {
+	conn: Arc<Connection>,
+	resume_downloads: bool,
+	ftp_timeout_seconds: u32,
+	max_retries: u32,
+	retry_delay_seconds: u32,
 }
 
 pub struct DownloadManager {
@@ -182,169 +191,23 @@ impl DownloadManager {
 
 		// 5. Parallel downloads with semaphore + throttle
 		let semaphore = Arc::new(Semaphore::new(self.max_threads as usize));
-		let conn = Arc::new(self.container.connection.clone());
+		let config = Arc::new(DownloadTaskConfig {
+			conn: Arc::new(self.container.connection.clone()),
+			resume_downloads: self.resume_downloads,
+			ftp_timeout_seconds: self.ftp_timeout_seconds,
+			max_retries: self.max_retries,
+			retry_delay_seconds: self.retry_delay_seconds,
+		});
 		let throttle = Throttle::new(self.max_speed_kbps);
 		let cancel = self.cancel_token.clone();
-		let resume_downloads = self.resume_downloads;
-		let ftp_timeout = self.ftp_timeout_seconds;
-		let max_retries = self.max_retries;
-		let retry_delay = self.retry_delay_seconds;
 
 		let mut handles = Vec::new();
 
 		for item in to_download {
-			let sem = semaphore.clone();
-			let conn = conn.clone();
-			let tx = progress_tx.clone();
-			let global_cancel = cancel.clone();
-			let file_tokens = file_tokens.clone();
-			let mut throttle_handle = throttle.handle();
+			let file_cancel = cancel.child_token();
+			file_tokens.lock().await.insert(item.id, file_cancel.clone());
 
-			// DL-006: Create a child token for this file
-			let file_cancel = global_cancel.child_token();
-			{
-				file_tokens.lock().await.insert(item.id, file_cancel.clone());
-			}
-
-			let handle = tokio::spawn(async move {
-				let _permit = match sem.acquire().await {
-					Ok(permit) => permit,
-					Err(_) => {
-						let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
-						return DownloadStatus::Cancelled;
-					}
-				};
-
-				if file_cancel.is_cancelled() {
-					let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
-					return DownloadStatus::Cancelled;
-				}
-
-				// Create directory structure
-				if let Some(parent) = item.local_path.parent()
-					&& let Err(e) = tokio::fs::create_dir_all(parent).await
-				{
-					let _ = tx.send(ProgressEvent::Failed {
-						item_id: item.id,
-						error: e.to_string(),
-					});
-					return DownloadStatus::Failed;
-				}
-
-				// DL-007: Retry loop
-				let mut attempt = 0u32;
-				let mut started_sent = false;
-
-				loop {
-					if file_cancel.is_cancelled() {
-						let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
-						return DownloadStatus::Cancelled;
-					}
-
-					// DL-005: Determine resume offset (re-check each attempt)
-					let resume_offset = if resume_downloads {
-						match item.check_local_state() {
-							ResumeAction::Resume(offset) => offset,
-							ResumeAction::AlreadyComplete => {
-								let _ = tx.send(ProgressEvent::Skipped {
-									item_id: item.id,
-									file_name: item.file_item.file_name.clone(),
-									total_bytes: item.file_item.file_size,
-								});
-								return DownloadStatus::Skipped;
-							}
-							ResumeAction::DeleteAndRestart => {
-								let _ = tokio::fs::remove_file(&item.local_path).await;
-								0
-							}
-							ResumeAction::StartFresh => 0,
-						}
-					} else {
-						0
-					};
-
-					// Connect
-					let client = FtpClient::connect(&conn, ftp_timeout).await;
-					let mut client = match client {
-						Ok(c) => c,
-						Err(e) => {
-							let dl_err = DownloadError::Ftp(e);
-							if dl_err.is_retryable() && attempt < max_retries {
-								attempt += 1;
-								let delay = calculate_retry_delay(retry_delay, attempt, dl_err.is_server_full());
-								let _ = tx.send(ProgressEvent::Retry {
-									item_id: item.id,
-									attempt,
-									max_retries,
-									delay_seconds: delay,
-									error: dl_err.to_string(),
-								});
-								tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
-								continue;
-							}
-							let _ = tx.send(ProgressEvent::Failed {
-								item_id: item.id,
-								error: format!("{} (after {} retries)", dl_err, attempt),
-							});
-							return DownloadStatus::Failed;
-						}
-					};
-
-					// Send Started event (only on first attempt)
-					if !started_sent {
-						let _ = tx.send(ProgressEvent::Started {
-							item_id: item.id,
-							file_name: item.file_item.file_name.clone(),
-							total_bytes: item.file_item.file_size,
-						});
-						started_sent = true;
-					}
-
-					// DL-008: Register active thread for bandwidth throttle
-					throttle_handle.start();
-					let result = client
-						.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &file_cancel, &mut throttle_handle)
-						.await;
-					throttle_handle.finish();
-
-					match result {
-						Ok(_) => {
-							// POST-001: Hash verification after successful download
-							let verification = verify_downloaded_file(&item, &mut client, &tx).await;
-							client.disconnect().await;
-							let _ = tx.send(ProgressEvent::Completed { item_id: item.id });
-							return if verification { DownloadStatus::Completed } else { DownloadStatus::Failed };
-						}
-						Err(DownloadError::Cancelled) => {
-							client.disconnect().await;
-							let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
-							return DownloadStatus::Cancelled;
-						}
-						Err(e) => {
-							client.disconnect().await;
-							if e.is_retryable() && attempt < max_retries {
-								attempt += 1;
-								let delay = calculate_retry_delay(retry_delay, attempt, e.is_server_full());
-								let _ = tx.send(ProgressEvent::Retry {
-									item_id: item.id,
-									attempt,
-									max_retries,
-									delay_seconds: delay,
-									error: e.to_string(),
-								});
-								tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
-								continue;
-							}
-							let _ = tx.send(ProgressEvent::Failed {
-								item_id: item.id,
-								error: format!("{} (after {} retries)", e, attempt),
-							});
-							return DownloadStatus::Failed;
-						}
-					}
-				}
-			});
-
+			let handle = tokio::spawn(download_single_file(item, config.clone(), semaphore.clone(), file_cancel, throttle.handle(), progress_tx.clone()));
 			handles.push(handle);
 		}
 
@@ -381,6 +244,153 @@ impl DownloadManager {
 			cancelled,
 			skipped,
 		})
+	}
+}
+
+/// DL-004/DL-007: Download a single file with semaphore, retry, resume, and verification.
+async fn download_single_file(
+	item: DownloadItem,
+	config: Arc<DownloadTaskConfig>,
+	semaphore: Arc<Semaphore>,
+	cancel_token: CancellationToken,
+	mut throttle_handle: crate::download::throttle::ThrottleHandle,
+	tx: mpsc::UnboundedSender<ProgressEvent>,
+) -> DownloadStatus {
+	let _permit = match semaphore.acquire().await {
+		Ok(permit) => permit,
+		Err(_) => {
+			let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
+			return DownloadStatus::Cancelled;
+		}
+	};
+
+	if cancel_token.is_cancelled() {
+		let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
+		return DownloadStatus::Cancelled;
+	}
+
+	// Create directory structure
+	if let Some(parent) = item.local_path.parent()
+		&& let Err(e) = tokio::fs::create_dir_all(parent).await
+	{
+		let _ = tx.send(ProgressEvent::Failed {
+			item_id: item.id,
+			error: e.to_string(),
+		});
+		return DownloadStatus::Failed;
+	}
+
+	// DL-007: Retry loop
+	let mut attempt = 0u32;
+	let mut started_sent = false;
+
+	loop {
+		if cancel_token.is_cancelled() {
+			let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
+			return DownloadStatus::Cancelled;
+		}
+
+		// DL-005: Determine resume offset (re-check each attempt)
+		let resume_offset = if config.resume_downloads {
+			match item.check_local_state() {
+				ResumeAction::Resume(offset) => offset,
+				ResumeAction::AlreadyComplete => {
+					let _ = tx.send(ProgressEvent::Skipped {
+						item_id: item.id,
+						file_name: item.file_item.file_name.clone(),
+						total_bytes: item.file_item.file_size,
+					});
+					return DownloadStatus::Skipped;
+				}
+				ResumeAction::DeleteAndRestart => {
+					let _ = tokio::fs::remove_file(&item.local_path).await;
+					0
+				}
+				ResumeAction::StartFresh => 0,
+			}
+		} else {
+			0
+		};
+
+		// Connect
+		let client = FtpClient::connect(&config.conn, config.ftp_timeout_seconds).await;
+		let mut client = match client {
+			Ok(c) => c,
+			Err(e) => {
+				let dl_err = DownloadError::Ftp(e);
+				if dl_err.is_retryable() && attempt < config.max_retries {
+					attempt += 1;
+					let delay = calculate_retry_delay(config.retry_delay_seconds, attempt, dl_err.is_server_full());
+					let _ = tx.send(ProgressEvent::Retry {
+						item_id: item.id,
+						attempt,
+						max_retries: config.max_retries,
+						delay_seconds: delay,
+						error: dl_err.to_string(),
+					});
+					tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
+					continue;
+				}
+				let _ = tx.send(ProgressEvent::Failed {
+					item_id: item.id,
+					error: format!("{} (after {} retries)", dl_err, attempt),
+				});
+				return DownloadStatus::Failed;
+			}
+		};
+
+		// Send Started event (only on first attempt)
+		if !started_sent {
+			let _ = tx.send(ProgressEvent::Started {
+				item_id: item.id,
+				file_name: item.file_item.file_name.clone(),
+				total_bytes: item.file_item.file_size,
+			});
+			started_sent = true;
+		}
+
+		// DL-008: Register active thread for bandwidth throttle
+		throttle_handle.start();
+		let result = client
+			.download_file(&item.file_item.full_path, &item.local_path, resume_offset, item.id, &tx, &cancel_token, &mut throttle_handle)
+			.await;
+		throttle_handle.finish();
+
+		match result {
+			Ok(_) => {
+				// POST-001: Hash verification after successful download
+				let verification = verify_downloaded_file(&item, &mut client, &tx).await;
+				client.disconnect().await;
+				let _ = tx.send(ProgressEvent::Completed { item_id: item.id });
+				return if verification { DownloadStatus::Completed } else { DownloadStatus::Failed };
+			}
+			Err(DownloadError::Cancelled) => {
+				client.disconnect().await;
+				let _ = tx.send(ProgressEvent::Cancelled { item_id: item.id });
+				return DownloadStatus::Cancelled;
+			}
+			Err(e) => {
+				client.disconnect().await;
+				if e.is_retryable() && attempt < config.max_retries {
+					attempt += 1;
+					let delay = calculate_retry_delay(config.retry_delay_seconds, attempt, e.is_server_full());
+					let _ = tx.send(ProgressEvent::Retry {
+						item_id: item.id,
+						attempt,
+						max_retries: config.max_retries,
+						delay_seconds: delay,
+						error: e.to_string(),
+					});
+					tokio::time::sleep(std::time::Duration::from_secs(delay as u64)).await;
+					continue;
+				}
+				let _ = tx.send(ProgressEvent::Failed {
+					item_id: item.id,
+					error: format!("{} (after {} retries)", e, attempt),
+				});
+				return DownloadStatus::Failed;
+			}
+		}
 	}
 }
 
