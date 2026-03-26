@@ -29,7 +29,7 @@ pub fn CreatorView() -> Element {
 					// Sub-header
 					div {
 							class: "flex items-center justify-between px-4 py-3",
-							style: "background: var(--color-surface); border-bottom: 1px solid var(--color-border);",
+							style: "background: var(--color-background-primary); border-bottom: 0.5px solid var(--color-border-tertiary);",
 							h2 {
 									class: "text-lg font-bold",
 									style: "color: var(--color-text-primary);",
@@ -376,11 +376,11 @@ async fn create_sfdl(
 		uploader,
 		max_download_threads: threads,
 		connection: Connection {
+			auth_required: !username.is_empty(),
 			host,
 			port,
 			username,
 			password,
-			auth_required: true,
 			..Connection::default()
 		},
 		packages,

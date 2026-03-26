@@ -49,12 +49,13 @@ pub fn SummaryBanner(container_id: ContainerId) -> Element {
 							div {
 									class: "mt-3",
 									style: "border-top: 0.5px solid var(--color-border-tertiary);",
-									for fs in entries.iter() {
+									for (idx, fs) in entries.iter().enumerate() {
 											{
 													let s_text = status_text(fs);
 													let s_color = status_color(fs.status);
 													rsx! {
 															div {
+															key: "{idx}",
 																	class: "flex items-center gap-2 py-1.5",
 																	style: "font-size: 12px; border-bottom: 0.5px solid var(--color-border-tertiary);",
 																	span {

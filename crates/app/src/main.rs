@@ -3,6 +3,7 @@ pub mod icons;
 mod state;
 mod views;
 
+use dioxus::html::HasFileData;
 use dioxus::prelude::*;
 
 use state::{AppState, AppView, Theme};
@@ -79,12 +80,33 @@ fn app() -> Element {
 					ondrop: move |evt| {
 							evt.prevent_default();
 							dragging.set(false);
-							// UI-006: Open file dialog on drop as fallback.
-							// Direct file reading from DragData requires HasFileData trait
-							// which needs platform-specific wry integration for desktop file paths.
-							spawn(async move {
-									components::header::open_sfdl_files_from_dialog(state).await;
-							});
+							// UI-006: Read dropped files via HasFileData trait
+							let dropped_files = evt.files();
+							if dropped_files.is_empty() {
+									// Fallback: open file dialog if no files in drop event
+									spawn(async move {
+											components::header::open_sfdl_files_from_dialog(state).await;
+									});
+							} else {
+									spawn(async move {
+											for file_data in dropped_files {
+													let name = file_data.name();
+													// BR-UI-017: Only accept .sfdl files
+													if !components::header::is_sfdl_file(&name) {
+															continue;
+													}
+													let path = file_data.path().to_string_lossy().to_string();
+													match file_data.read_string().await {
+															Ok(content) => {
+																	components::header::process_sfdl_content(state, &path, &content);
+															}
+															Err(e) => {
+																	state.error_message.set(Some(format!("Cannot read dropped file: {e}")));
+															}
+													}
+											}
+									});
+							}
 					},
 
 					// Header (always visible)

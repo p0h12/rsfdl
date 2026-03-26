@@ -63,6 +63,7 @@ pub fn FileList(container_id: ContainerId) -> Element {
 									let cid3 = container_id;
 									rsx! {
 											div {
+											key: "{idx}",
 													class: "flex items-center gap-2 px-4 py-1.5 text-[13px]",
 													style: "padding-left: 40px; border-bottom: 0.5px solid var(--color-border-tertiary);",
 													onmouseenter: |_| {},

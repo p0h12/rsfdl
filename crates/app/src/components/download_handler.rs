@@ -104,11 +104,13 @@ pub fn start_download(mut state: AppState, container_id: ContainerId) {
 					}
 				}
 				ProgressEvent::Completed { item_id } => {
+					let leftover = std::mem::replace(&mut pending_bytes, 0);
 					state.with_container_mut(container_id, |cs| {
 						if let Some(fs) = cs.file_states.get_mut(&item_id) {
 							fs.bytes_written = fs.total_bytes;
 							fs.status = FileStatus::Completed;
 						}
+						cs.global_progress.total_written_all += leftover;
 						cs.global_progress.files_done += 1;
 					});
 				}

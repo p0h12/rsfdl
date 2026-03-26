@@ -60,7 +60,7 @@ pub fn MainView() -> Element {
 
 							// Container cards
 							for id in container_ids {
-									ContainerCard { container_id: id }
+									ContainerCard { key: "{id}", container_id: id }
 							}
 					}
 			}

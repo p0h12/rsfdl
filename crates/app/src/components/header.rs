@@ -104,7 +104,6 @@ fn ThemeToggle(theme: Theme) -> Element {
 }
 
 /// BR-UI-017: Check if a filename has the `.sfdl` extension (case-insensitive).
-#[allow(dead_code)]
 pub fn is_sfdl_file(name: &str) -> bool {
 	name.contains('.') && name.rsplit('.').next().is_some_and(|ext| ext.eq_ignore_ascii_case("sfdl"))
 }

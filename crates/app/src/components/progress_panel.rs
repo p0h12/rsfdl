@@ -84,6 +84,7 @@ pub fn ProgressPanel(container_id: ContainerId) -> Element {
 
 									rsx! {
 											div {
+											key: "{item_id}",
 													class: "flex items-center gap-2 py-1.5",
 													style: "font-size: 12px; border-bottom: 0.5px solid var(--color-border-tertiary);",
 													span {

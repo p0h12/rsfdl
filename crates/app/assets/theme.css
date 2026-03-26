@@ -33,7 +33,7 @@
 }
 
 /* Dark mode via data-theme attribute */
-:root[data-theme="dark"] {
+[data-theme="dark"] {
   --color-background-primary: #161616;
   --color-background-secondary: #1e1e1e;
   --color-background-tertiary: #262626;
