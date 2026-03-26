@@ -78,37 +78,43 @@ pub fn try_passwords(container: &SfdlContainer, passwords: &[String]) -> Option<
 	passwords.iter().find(|pw| validate_password(container, pw)).cloned()
 }
 
+/// Apply a transform function to all encrypted fields in a container.
+///
+/// Single definition of which fields are encrypted — used by both
+/// encrypt and decrypt to ensure they stay in sync.
+fn transform_fields(container: &mut SfdlContainer, f: impl Fn(&str) -> Result<String, CryptoError>) -> Result<(), CryptoError> {
+	container.description = f(&container.description)?;
+	container.uploader = f(&container.uploader)?;
+	container.connection.host = f(&container.connection.host)?;
+	container.connection.username = f(&container.connection.username)?;
+	container.connection.password = f(&container.connection.password)?;
+
+	for package in &mut container.packages {
+		package.name = f(&package.name)?;
+
+		for file_item in &mut package.file_list {
+			file_item.file_name = f(&file_item.file_name)?;
+			file_item.directory_root = f(&file_item.directory_root)?;
+			file_item.directory_path = f(&file_item.directory_path)?;
+			file_item.full_path = f(&file_item.full_path)?;
+			file_item.package_name = f(&file_item.package_name)?;
+		}
+
+		for bulk_folder in &mut package.bulk_folder_list {
+			bulk_folder.bulk_folder_path = f(&bulk_folder.bulk_folder_path)?;
+			bulk_folder.package_name = f(&bulk_folder.package_name)?;
+		}
+	}
+
+	Ok(())
+}
+
 /// Decrypts all encrypted fields in a container in-place.
 pub fn decrypt_container(container: &mut SfdlContainer, password: &str) -> Result<(), CryptoError> {
 	if !container.encrypted {
 		return Ok(());
 	}
-
-	let d = |s: &str| decrypt_string(s, password);
-
-	container.description = d(&container.description)?;
-	container.uploader = d(&container.uploader)?;
-	container.connection.host = d(&container.connection.host)?;
-	container.connection.username = d(&container.connection.username)?;
-	container.connection.password = d(&container.connection.password)?;
-
-	for package in &mut container.packages {
-		package.name = d(&package.name)?;
-
-		for file_item in &mut package.file_list {
-			file_item.file_name = d(&file_item.file_name)?;
-			file_item.directory_root = d(&file_item.directory_root)?;
-			file_item.directory_path = d(&file_item.directory_path)?;
-			file_item.full_path = d(&file_item.full_path)?;
-			file_item.package_name = d(&file_item.package_name)?;
-		}
-
-		for bulk_folder in &mut package.bulk_folder_list {
-			bulk_folder.bulk_folder_path = d(&bulk_folder.bulk_folder_path)?;
-			bulk_folder.package_name = d(&bulk_folder.package_name)?;
-		}
-	}
-
+	transform_fields(container, |s| decrypt_string(s, password))?;
 	container.encrypted = false;
 	Ok(())
 }
@@ -137,37 +143,13 @@ pub fn encrypt_string(plaintext: &str, password: &str) -> String {
 	B64.encode(&result)
 }
 
-/// Encrypts all sensitive fields in a container in-place (mirrors decrypt_container).
+/// Encrypts all sensitive fields in a container in-place.
 pub fn encrypt_container(container: &mut SfdlContainer, password: &str) {
 	if container.encrypted {
 		return;
 	}
-
-	let e = |s: &str| encrypt_string(s, password);
-
-	container.description = e(&container.description);
-	container.uploader = e(&container.uploader);
-	container.connection.host = e(&container.connection.host);
-	container.connection.username = e(&container.connection.username);
-	container.connection.password = e(&container.connection.password);
-
-	for package in &mut container.packages {
-		package.name = e(&package.name);
-
-		for file_item in &mut package.file_list {
-			file_item.file_name = e(&file_item.file_name);
-			file_item.directory_root = e(&file_item.directory_root);
-			file_item.directory_path = e(&file_item.directory_path);
-			file_item.full_path = e(&file_item.full_path);
-			file_item.package_name = e(&file_item.package_name);
-		}
-
-		for bulk_folder in &mut package.bulk_folder_list {
-			bulk_folder.bulk_folder_path = e(&bulk_folder.bulk_folder_path);
-			bulk_folder.package_name = e(&bulk_folder.package_name);
-		}
-	}
-
+	// encrypt_string is infallible — wrap in Ok for transform_fields
+	transform_fields(container, |s| Ok(encrypt_string(s, password))).expect("encrypt_string is infallible");
 	container.encrypted = true;
 }
 
