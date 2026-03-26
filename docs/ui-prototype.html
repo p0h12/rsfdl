@@ -3,8 +3,10 @@
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width,initial-scale=1">
-	<title>rsfdl — UI Prototype</title>
-	<script src="https://unpkg.com/lucide@latest"></script>
+	<title>rsfdl — UI Prototype (React)</title>
+	<script src="https://unpkg.com/react@18/umd/react.development.js" crossorigin></script>
+	<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js" crossorigin></script>
+	<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 	<style>
 		:root {
 			--font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
@@ -233,7 +235,7 @@
 		}
 
 		/* ── Drop Zone (empty state) ── */
-		#drop-zone {
+		.drop-zone {
 			border: 1.5px dashed var(--color-border-secondary);
 			border-radius: var(--border-radius-lg);
 			padding: 5rem 2rem;
@@ -243,7 +245,7 @@
 			background: var(--color-background-primary);
 		}
 
-		#drop-zone:hover, #drop-zone.drag-over {
+		.drop-zone:hover, .drop-zone.drag-over {
 			background: var(--color-accent-bg);
 			border-color: var(--color-accent);
 		}
@@ -282,7 +284,7 @@
 		}
 
 		/* ── Full-window drag overlay ── */
-		#drag-overlay {
+		.drag-overlay {
 			display: none;
 			position: fixed;
 			inset: 0;
@@ -295,7 +297,7 @@
 			pointer-events: none;
 		}
 
-		#drag-overlay.active {
+		.drag-overlay.active {
 			display: flex;
 		}
 
@@ -313,10 +315,6 @@
 		}
 
 		/* ── Container List ── */
-		#container-list {
-			display: none;
-		}
-
 		.container-toolbar {
 			display: flex;
 			align-items: center;
@@ -900,14 +898,6 @@
 		}
 
 		/* ── Settings View (replaces main content) ── */
-		#settings-view {
-			display: none;
-		}
-
-		#settings-view.open {
-			display: block;
-		}
-
 		.settings-header {
 			display: flex;
 			align-items: center;
@@ -1076,7 +1066,7 @@
 				padding: .75rem .5rem 3rem;
 			}
 
-			#drop-zone {
+			.drop-zone {
 				padding: 3rem 1rem;
 			}
 
@@ -1140,7 +1130,7 @@
 			}
 		}
 
-		.pf-status.running i {
+		.pf-status.running svg {
 			animation: pulse 1.5s ease-in-out infinite;
 		}
 
@@ -1190,689 +1180,893 @@
 	</style>
 </head>
 <body>
+<div id="root"></div>
+<script type="text/babel">
+const { useState, useEffect, useRef, useCallback } = React;
 
-<!-- ── Full-window drag overlay ── -->
-<div id="drag-overlay">
-	<div class="drag-overlay-inner">
-		<div class="dz-icon"><i data-lucide="file-down" style="width:24px;height:24px"></i></div>
-		<p class="dz-title">SFDL-Datei ablegen</p>
-		<p class="dz-sub" style="margin:0">Dateien hier loslassen zum Laden</p>
-	</div>
-</div>
+/* ── Icon SVG path data ── */
+const ICON_PATHS = {
+	'arrow-down-to-line': {paths: ['M12 17V3','M6 11l6 6 6-6','M19 21H5'], fills: false},
+	'file-plus': {paths: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z','M14 2v4a2 2 0 0 0 2 2h4','M12 12v6','M9 15h6'], fills: false},
+	'sun': {paths: ['M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z','M12 2v2','M12 20v2','M4.93 4.93l1.41 1.41','M17.66 17.66l1.41 1.41','M2 12h2','M20 12h2','M6.34 17.66l-1.41 1.41','M19.07 4.93l-1.41 1.41'], fills: false},
+	'monitor': {paths: ['M2 3h20v14H2z','M8 21h8','M12 17v4'], fills: false, rects: [{x:2,y:3,width:20,height:14,rx:2}]},
+	'moon': {paths: ['M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79Z'], fills: false},
+	'settings': {paths: ['M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z'], fills: false, circles: [{cx:12,cy:12,r:3}]},
+	'file-down': {paths: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z','M14 2v4a2 2 0 0 0 2 2h4','M12 18v-6','M9 15l3 3 3-3'], fills: false},
+	'folder-open': {paths: ['M6 14l1.5-2.9A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2'], fills: false},
+	'plus': {paths: ['M5 12h14','M12 5v14'], fills: false},
+	'trash-2': {paths: ['M3 6h18','M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6','M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2','M10 11v6','M14 11v6'], fills: false},
+	'grip-vertical': {circles: [{cx:9,cy:12,r:1},{cx:9,cy:5,r:1},{cx:9,cy:19,r:1},{cx:15,cy:12,r:1},{cx:15,cy:5,r:1},{cx:15,cy:19,r:1}], paths: [], fills: false},
+	'lock': {paths: ['M5 11h14v10H5z','M7 11V7a5 5 0 0 1 10 0v4'], fills: false, rects: [{x:3,y:11,width:18,height:11,rx:2}]},
+	'file-archive': {paths: ['M16 22h2a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h2','M14 2v4a2 2 0 0 0 2 2h4','M10 12.5a.5.5 0 0 0-1 0v.5h1v-.5Z','M10 18v-1h-1v1a1 1 0 0 0 1 1h1a1 1 0 0 0 1-1v-1h-1-1Z','M10 12h-1v2h2v-2h-1Z','M10 15h1v-1h-2v1h1Z'], fills: false},
+	'x': {paths: ['M18 6L6 18','M6 6l12 12'], fills: false},
+	'chevron-down': {paths: ['M6 9l6 6 6-6'], fills: false},
+	'chevron-up': {paths: ['M18 15l-6-6-6 6'], fills: false},
+	'key-round': {paths: ['M2.586 17.414A2 2 0 0 0 2 18.828V21a1 1 0 0 0 1 1h3a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h1a1 1 0 0 0 1-1v-1a1 1 0 0 1 1-1h.172a2 2 0 0 0 1.414-.586l.814-.814a6.5 6.5 0 1 0-4-4z'], fills: false, circles: [{cx:16.5,cy:7.5,r:0.5}]},
+	'eye': {paths: ['M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0'], fills: false, circles: [{cx:12,cy:12,r:3}]},
+	'eye-off': {paths: ['M10.733 5.076a10.744 10.744 0 0 1 11.205 6.575 1 1 0 0 1 0 .696 10.747 10.747 0 0 1-1.444 2.49','M14.084 14.158a3 3 0 0 1-4.242-4.242','M17.479 17.499a10.75 10.75 0 0 1-15.417-5.151 1 1 0 0 1 0-.696 10.75 10.75 0 0 1 4.446-5.143','M2 2l20 20'], fills: false},
+	'unlock': {paths: ['M7 11V7a5 5 0 0 1 9.9-1'], fills: false, rects: [{x:3,y:11,width:18,height:11,rx:2}]},
+	'disc': {paths: [], fills: false, circles: [{cx:12,cy:12,r:10},{cx:12,cy:12,r:2}], lines: [{x1:12,y1:12,x2:12,y2:12}]},
+	'film': {paths: ['M7 2v20','M17 2v20','M2 12h20','M2 7h5','M2 17h5','M17 7h5','M17 17h5'], fills: false, rects: [{x:2,y:2,width:20,height:20,rx:2.18}]},
+	'archive': {paths: ['M10 12h4','M3 3h18v4H3z'], fills: false, rects: [{x:3,y:3,width:18,height:4}]},
+	'file-text': {paths: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z','M14 2v4a2 2 0 0 0 2 2h4','M10 9H8','M16 13H8','M16 17H8'], fills: false},
+	'image': {paths: ['M21 3H3v18h18V3Z','M21 15l-5-5L5 21'], fills: false, rects: [{x:3,y:3,width:18,height:18,rx:2}], circles: [{cx:8.5,cy:8.5,r:1.5}]},
+	'music': {paths: ['M9 18V5l12-2v13','M9 18a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z','M21 16a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z'], fills: false, circles: [{cx:6,cy:18,r:3},{cx:18,cy:16,r:3}]},
+	'file': {paths: ['M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z','M14 2v4a2 2 0 0 0 2 2h4'], fills: false},
+	'download': {paths: ['M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4','M7 10l5 5 5-5','M12 15V3'], fills: false},
+	'check-circle': {paths: ['M22 11.08V12a10 10 0 1 1-5.93-9.14','M22 4L12 14.01l-3-3'], fills: false},
+	'loader': {paths: ['M12 2v4','M12 18v4','M4.93 4.93l2.83 2.83','M16.24 16.24l2.83 2.83','M2 12h4','M18 12h4','M4.93 19.07l2.83-2.83','M16.24 7.76l2.83-2.83'], fills: false},
+	'circle': {paths: [], fills: false, circles: [{cx:12,cy:12,r:10}]},
+	'square': {paths: [], fills: false, rects: [{x:3,y:3,width:18,height:18,rx:2}]},
+	'rotate-ccw': {paths: ['M1 4v6h6','M3.51 15a9 9 0 1 0 2.13-9.36L1 10'], fills: false},
+	'clipboard-copy': {paths: ['M8 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2h-2'], fills: false, rects: [{x:8,y:1,width:8,height:4,rx:1}]},
+	'folder': {paths: ['M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z'], fills: false},
+	'arrow-left': {paths: ['M12 19l-7-7 7-7','M19 12H5'], fills: false},
+	'subtitles': {paths: ['M2 4h20v16H2z','M6 12h4','M14 12h4','M6 16h12'], fills: false, rects: [{x:2,y:4,width:20,height:16,rx:2}]},
+};
 
-<!-- ── Header ── -->
-<header class="app-header">
-	<div class="app-logo">
-		<div class="logo-icon"><i data-lucide="arrow-down-to-line" style="width:18px;height:18px"></i></div>
-		<span>rsfdl</span>
-	</div>
-	<div class="app-actions">
-		<button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input').click()">
-			<i data-lucide="file-plus" style="width:15px;height:15px"></i> Öffnen
-		</button>
-		<div class="theme-toggle" id="theme-toggle">
-			<button onclick="setTheme('light')" title="Hell" data-theme-btn="light">
-				<i data-lucide="sun" style="width:15px;height:15px"></i>
+function Icon({ name, size = 24, className = '', style = {} }) {
+	const iconData = ICON_PATHS[name];
+	if (!iconData) {
+		return <span style={{display:'inline-block',width:size,height:size}} />;
+	}
+	const mergedStyle = { ...style, display: 'inline-block', verticalAlign: 'middle' };
+
+	return (
+		<svg
+			xmlns="http://www.w3.org/2000/svg"
+			width={size}
+			height={size}
+			viewBox="0 0 24 24"
+			fill="none"
+			stroke="currentColor"
+			strokeWidth="2"
+			strokeLinecap="round"
+			strokeLinejoin="round"
+			className={className}
+			style={mergedStyle}
+		>
+			{iconData.rects && iconData.rects.map((r, i) => (
+				<rect key={`r${i}`} x={r.x} y={r.y} width={r.width} height={r.height} rx={r.rx || 0} />
+			))}
+			{iconData.circles && iconData.circles.map((c, i) => (
+				<circle key={`c${i}`} cx={c.cx} cy={c.cy} r={c.r} />
+			))}
+			{iconData.paths && iconData.paths.map((d, i) => (
+				<path key={`p${i}`} d={d} />
+			))}
+		</svg>
+	);
+}
+
+function CheckSvg() {
+	return (
+		<svg width="10" height="8" viewBox="0 0 10 8" fill="none">
+			<polyline points="1,4 3.5,6.5 9,1" stroke="#fff" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+		</svg>
+	);
+}
+
+/* ── Demo Data ── */
+const DEMO_CONTAINERS = [
+	{
+		id: 1,
+		name: 'Movie.Collection.2025.German.DL.1080p.BluRay.x264',
+		encrypted: true,
+		version: 'v3',
+		needsPassword: true,
+		decrypted: false,
+		description: 'Movie Collection 2025',
+		host: null,
+		packages: [],
+		expanded: true,
+		downloading: false,
+		downloadDone: false,
+		progress: 0,
+	},
+	{
+		id: 2,
+		name: 'Linux.Distros.Pack.2025',
+		encrypted: false,
+		version: 'v3',
+		needsPassword: false,
+		decrypted: true,
+		description: 'Various Linux ISOs',
+		host: 'ftp.example.com',
+		packages: [
+			{
+				name: 'Ubuntu',
+				expanded: true,
+				files: [
+					{name: 'ubuntu-24.04-desktop-amd64.iso', size: '4.7 GB', selected: true},
+					{name: 'ubuntu-24.04-server-amd64.iso', size: '2.1 GB', selected: true},
+					{name: 'SHA256SUMS.txt', size: '1.2 KB', selected: false, excluded: true},
+					{name: 'info.nfo', size: '0.4 KB', selected: false, excluded: true},
+				]
+			},
+			{
+				name: 'Fedora',
+				expanded: true,
+				files: [
+					{name: 'Fedora-Workstation-Live-x86_64-41.iso', size: '2.3 GB', selected: true},
+					{name: 'Fedora-Server-dvd-x86_64-41.iso', size: '2.8 GB', selected: true},
+				]
+			}
+		],
+		expanded: true,
+		downloading: false,
+		downloadDone: false,
+		progress: 0,
+	},
+	{
+		id: 3,
+		name: 'Documentary.Series.S01.Complete.720p',
+		encrypted: false,
+		version: 'v2',
+		needsPassword: false,
+		decrypted: true,
+		description: 'Documentary series complete season 1',
+		host: 'ftp2.example.com',
+		packages: [
+			{
+				name: 'Season 01',
+				expanded: false,
+				files: [
+					{name: 'S01E01.The.Beginning.720p.mkv', size: '1.4 GB', selected: true},
+					{name: 'S01E02.The.Journey.720p.mkv', size: '1.3 GB', selected: true},
+					{name: 'S01E03.The.Discovery.720p.mkv', size: '1.5 GB', selected: true},
+					{name: 'S01E04.The.Return.720p.mkv', size: '1.4 GB', selected: true},
+					{name: 'S01E05.The.Finale.720p.mkv', size: '1.6 GB', selected: true},
+					{name: 'cover.jpg', size: '320 KB', selected: false, excluded: true},
+					{name: 'sample.mkv', size: '45 MB', selected: false, excluded: true},
+				]
+			}
+		],
+		expanded: false,
+		downloading: false,
+		downloadDone: false,
+		progress: 0,
+	}
+];
+
+/* ── Helper: file icon ── */
+function getFileIcon(name) {
+	const ext = name.split('.').pop().toLowerCase();
+	const map = {
+		'iso': 'disc', 'img': 'disc',
+		'mkv': 'film', 'avi': 'film', 'mp4': 'film', 'mov': 'film',
+		'rar': 'archive', 'zip': 'archive', '7z': 'archive', 'tar': 'archive', 'gz': 'archive',
+		'nfo': 'file-text', 'txt': 'file-text', 'md': 'file-text',
+		'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'bmp': 'image',
+		'mp3': 'music', 'flac': 'music', 'wav': 'music', 'ogg': 'music',
+		'srt': 'subtitles', 'sub': 'subtitles',
+	};
+	return map[ext] || 'file';
+}
+
+/* ── Deep clone helper ── */
+function deepClone(obj) {
+	return JSON.parse(JSON.stringify(obj));
+}
+
+/* ── ThemeToggle ── */
+function ThemeToggle({ theme, setTheme }) {
+	return (
+		<div className="theme-toggle">
+			<button onClick={() => setTheme('light')} title="Hell" className={theme === 'light' ? 'active' : ''}>
+				<Icon name="sun" size={15} />
 			</button>
-			<button onclick="setTheme('system')" title="System" data-theme-btn="system" class="active">
-				<i data-lucide="monitor" style="width:15px;height:15px"></i>
+			<button onClick={() => setTheme('system')} title="System" className={theme === 'system' ? 'active' : ''}>
+				<Icon name="monitor" size={15} />
 			</button>
-			<button onclick="setTheme('dark')" title="Dunkel" data-theme-btn="dark">
-				<i data-lucide="moon" style="width:15px;height:15px"></i>
+			<button onClick={() => setTheme('dark')} title="Dunkel" className={theme === 'dark' ? 'active' : ''}>
+				<Icon name="moon" size={15} />
 			</button>
 		</div>
-		<button class="btn-icon" title="Einstellungen" onclick="openSettings()">
-			<i data-lucide="settings" style="width:18px;height:18px"></i>
-		</button>
-	</div>
-</header>
+	);
+}
 
-<!-- ── Main Content ── -->
-<main class="main-wrap">
-	<input type="file" id="file-input" accept=".sfdl" multiple style="display:none" onchange="filesChosen(this)">
-
-	<!-- Empty state / drop zone -->
-	<div id="drop-zone" onclick="document.getElementById('file-input').click()">
-		<div class="dz-icon"><i data-lucide="file-down" style="width:26px;height:26px"></i></div>
-		<p class="dz-title">SFDL-Container laden</p>
-		<p class="dz-sub">Dateien per Drag-and-Drop hier ablegen</p>
-		<button class="btn btn-primary btn-lg" onclick="event.stopPropagation();document.getElementById('file-input').click()">
-			<i data-lucide="folder-open" style="width:16px;height:16px"></i>
-			Datei auswählen
-		</button>
-		<p class="dz-hint">.sfdl (v2 / v3)</p>
-	</div>
-
-	<!-- Container list (shown after files loaded) -->
-	<div id="container-list">
-		<div class="container-toolbar">
-			<div class="container-toolbar-left">
-				<span class="container-count" id="container-count">0 Container</span>
+/* ── DragOverlay ── */
+function DragOverlay({ active }) {
+	return (
+		<div className={`drag-overlay${active ? ' active' : ''}`}>
+			<div className="drag-overlay-inner">
+				<div className="dz-icon"><Icon name="file-down" size={24} /></div>
+				<p className="dz-title">SFDL-Datei ablegen</p>
+				<p className="dz-sub" style={{margin:0}}>Dateien hier loslassen zum Laden</p>
 			</div>
-			<div style="display:flex;gap:6px">
-				<button class="btn btn-ghost btn-sm" onclick="document.getElementById('file-input').click()">
-					<i data-lucide="plus" style="width:14px;height:14px"></i> Hinzufügen
+		</div>
+	);
+}
+
+/* ── DropZone ── */
+function DropZone({ onOpenFile }) {
+	return (
+		<div className="drop-zone" onClick={onOpenFile}>
+			<div className="dz-icon"><Icon name="file-down" size={26} /></div>
+			<p className="dz-title">SFDL-Container laden</p>
+			<p className="dz-sub">Dateien per Drag-and-Drop hier ablegen</p>
+			<button className="btn btn-primary btn-lg" onClick={(e) => { e.stopPropagation(); onOpenFile(); }}>
+				<Icon name="folder-open" size={16} />
+				Datei ausw&auml;hlen
+			</button>
+			<p className="dz-hint">.sfdl (v2 / v3)</p>
+		</div>
+	);
+}
+
+/* ── Header ── */
+function Header({ theme, setTheme, onOpenFile, onOpenSettings }) {
+	return (
+		<header className="app-header">
+			<div className="app-logo">
+				<div className="logo-icon"><Icon name="arrow-down-to-line" size={18} /></div>
+				<span>rsfdl</span>
+			</div>
+			<div className="app-actions">
+				<button className="btn btn-ghost btn-sm" onClick={onOpenFile}>
+					<Icon name="file-plus" size={15} /> &Ouml;ffnen
 				</button>
-				<button class="btn btn-ghost btn-sm btn-danger" onclick="clearAll()">
-					<i data-lucide="trash-2" style="width:14px;height:14px"></i> Alle entfernen
+				<ThemeToggle theme={theme} setTheme={setTheme} />
+				<button className="btn-icon" title="Einstellungen" onClick={onOpenSettings}>
+					<Icon name="settings" size={18} />
+				</button>
+			</div>
+		</header>
+	);
+}
+
+/* ── PasswordSection ── */
+function PasswordSection({ onDecrypt }) {
+	const [password, setPassword] = useState('');
+	const [showPw, setShowPw] = useState(false);
+	const [error, setError] = useState(false);
+	const inputRef = useRef(null);
+
+	const handleDecrypt = useCallback(() => {
+		if (password.length === 0) {
+			setError(true);
+			return;
+		}
+		setError(false);
+		onDecrypt(password);
+	}, [password, onDecrypt]);
+
+	const handleKeyDown = useCallback((e) => {
+		if (e.key === 'Enter') handleDecrypt();
+	}, [handleDecrypt]);
+
+	return (
+		<div className="pw-section">
+			<div className="pw-inner">
+				<div className="pw-icon"><Icon name="key-round" size={22} /></div>
+				<div className="pw-title">Passwort erforderlich</div>
+				<div className="pw-sub">Dieser Container ist verschl&uuml;sselt. Bitte Passwort eingeben.</div>
+				<div className="pw-row">
+					<div className="pw-input-wrap">
+						<input
+							className="pw-input"
+							type={showPw ? 'text' : 'password'}
+							placeholder="Passwort"
+							ref={inputRef}
+							value={password}
+							onChange={(e) => setPassword(e.target.value)}
+							onKeyDown={handleKeyDown}
+						/>
+						<button className="pw-toggle" onClick={() => setShowPw(!showPw)}>
+							<Icon name={showPw ? 'eye-off' : 'eye'} size={14} />
+						</button>
+					</div>
+					<button className="btn btn-accent" onClick={handleDecrypt}>
+						<Icon name="unlock" size={14} /> Entschl&uuml;sseln
+					</button>
+				</div>
+				<div className={`pw-error${error ? ' show' : ''}`}>Falsches Passwort. Bitte erneut versuchen.</div>
+			</div>
+		</div>
+	);
+}
+
+/* ── FileSection ── */
+function FileSection({ container, idx, onToggleFile, onTogglePkg, onTogglePkgSel, onSelectAll, onStartDownload }) {
+	const c = container;
+	const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
+	const allFiles = c.packages.reduce((s, p) => s + p.files.length, 0);
+
+	return (
+		<React.Fragment>
+			{c.host && (
+				<div className="info-banner">
+					<div className="info-item"><div className="info-label">Server</div><div className="info-value">{c.host}</div></div>
+					<div className="info-item"><div className="info-label">Beschreibung</div><div className="info-value">{c.description || '-'}</div></div>
+					<div className="info-item"><div className="info-label">Pakete</div><div className="info-value">{c.packages.length}</div></div>
+					<div className="info-item"><div className="info-label">Dateien</div><div className="info-value">{allFiles}</div></div>
+				</div>
+			)}
+			<div className="file-section">
+				<div className="file-toolbar">
+					<div className="file-toolbar-left">
+						<button className="btn btn-ghost btn-sm" onClick={() => onSelectAll(idx, true)}>Alle</button>
+						<button className="btn btn-ghost btn-sm" onClick={() => onSelectAll(idx, false)}>Keine</button>
+					</div>
+					<div className="file-stats">{totalFiles} von {allFiles} ausgew&auml;hlt</div>
+				</div>
+				{c.packages.map((pkg, pi) => {
+					const selCount = pkg.files.filter(f => f.selected).length;
+					const allSel = selCount === pkg.files.length;
+					const someSel = selCount > 0 && !allSel;
+					const chkClass = allSel ? 'file-check on' : someSel ? 'file-check partial' : 'file-check';
+
+					return (
+						<React.Fragment key={pi}>
+							<div className="pkg-header" onClick={() => onTogglePkg(idx, pi)}>
+								<div className={chkClass} onClick={(e) => { e.stopPropagation(); onTogglePkgSel(idx, pi); }}>
+									{(allSel || someSel) && <CheckSvg />}
+								</div>
+								<Icon name={pkg.expanded ? 'folder-open' : 'folder'} size={15} style={{color:'var(--color-accent)'}} />
+								<span>{pkg.name}</span>
+								<span className="pkg-count">{selCount}/{pkg.files.length}</span>
+								<span style={{marginLeft:'auto',color:'var(--color-text-tertiary)'}}>
+									<Icon name={pkg.expanded ? 'chevron-up' : 'chevron-down'} size={14} />
+								</span>
+							</div>
+							{pkg.expanded && pkg.files.map((f, fi) => (
+								<div key={fi} className={`file-item${f.excluded ? ' excluded' : ''}`}>
+									<div className={f.selected ? 'file-check on' : 'file-check'} onClick={() => onToggleFile(idx, pi, fi)}>
+										{f.selected && <CheckSvg />}
+									</div>
+									<span className="file-icon"><Icon name={getFileIcon(f.name)} size={14} /></span>
+									<span className="file-name" title={f.name}>{f.name}</span>
+									<span className="file-size">{f.size}</span>
+								</div>
+							))}
+						</React.Fragment>
+					);
+				})}
+			</div>
+			<div className="dl-actions">
+				<div className="dl-summary">{totalFiles} Dateien zum Download</div>
+				<button
+					className="btn btn-accent"
+					onClick={() => onStartDownload(idx)}
+					disabled={totalFiles === 0}
+					style={totalFiles === 0 ? {opacity:.4,pointerEvents:'none'} : {}}
+				>
+					<Icon name="download" size={15} /> Download starten
+				</button>
+			</div>
+		</React.Fragment>
+	);
+}
+
+/* ── ProgressSection ── */
+function ProgressSection({ container, idx, onCancel }) {
+	const c = container;
+	const pct = c.progress || 0;
+	const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
+	const doneFiles = Math.floor(totalFiles * pct / 100);
+
+	const speeds = ['2.4 MB/s', '3.1 MB/s', '1.8 MB/s', '2.9 MB/s'];
+	const speed = speeds[idx % speeds.length];
+
+	let fileIdx = 0;
+	const fileRows = [];
+	for (const pkg of c.packages) {
+		for (const f of pkg.files) {
+			if (!f.selected) continue;
+			let status, statusIcon, fpct, label;
+			if (fileIdx < doneFiles) {
+				status = 'done';
+				statusIcon = 'check-circle';
+				fpct = 100;
+				label = f.size;
+			} else if (fileIdx === doneFiles && pct < 100) {
+				status = 'running';
+				statusIcon = 'loader';
+				fpct = Math.round((pct % (100 / totalFiles)) * totalFiles);
+				label = `${Math.round(parseFloat(f.size) * fpct / 100 * 10) / 10} / ${f.size}`;
+			} else {
+				status = 'pending';
+				statusIcon = 'circle';
+				fpct = 0;
+				label = 'Wartend';
+			}
+			fileRows.push(
+				<div className="pf-item" key={fileIdx}>
+					<span className={`pf-status ${status}`}>
+						<Icon name={statusIcon} size={14} className={status === 'running' ? 'spinner' : ''} />
+					</span>
+					<span className="pf-name">{f.name}</span>
+					<span className="pf-progress">{label}</span>
+					<div className="pf-bar-mini"><div className="pf-bar-mini-fill" style={{width:`${fpct}%`}}></div></div>
+				</div>
+			);
+			fileIdx++;
+		}
+	}
+
+	return (
+		<div className="progress-section">
+			<div className="progress-header">
+				<span className="progress-title">Download l&auml;uft...</span>
+				<div className="progress-stats">
+					<span>{doneFiles}/{totalFiles} Dateien</span>
+					<span>{speed}</span>
+					<span>{Math.round(pct)}%</span>
+				</div>
+			</div>
+			<div className="progress-bar-wrap">
+				<div className="progress-bar" style={{width:`${pct}%`}}></div>
+			</div>
+			<div className="progress-files">{fileRows}</div>
+			<div className="dl-actions" style={{borderTop:'none',padding:'12px 0 0'}}>
+				<div></div>
+				<button className="btn btn-ghost btn-danger" onClick={() => onCancel(idx)}>
+					<Icon name="square" size={14} /> Abbrechen
 				</button>
 			</div>
 		</div>
-		<div id="cards-wrap"></div>
-	</div>
-</main>
+	);
+}
 
-<!-- Settings view (replaces main content) -->
-<div id="settings-view">
-	<div class="settings-header">
-		<button class="btn-icon" onclick="closeSettings()">
-			<i data-lucide="arrow-left" style="width:18px;height:18px"></i>
-		</button>
-		<span class="settings-title">Einstellungen</span>
-	</div>
+/* ── ResultSection ── */
+function ResultSection({ container, idx, onReset, onCopySpeedReport }) {
+	const totalFiles = container.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
 
-	<!-- Allgemein -->
-	<div class="settings-card">
-		<div class="sg-title">Allgemein</div>
-		<div class="sg-row">
-			<div class="sg-label">Download-Verzeichnis
-				<div class="sg-label-sub">Zielordner für Downloads</div>
+	return (
+		<React.Fragment>
+			<div className="result-banner success">
+				<Icon name="check-circle" size={20} />
+				<span className="result-text">{totalFiles} Dateien erfolgreich heruntergeladen</span>
+			</div>
+			<div className="info-banner">
+				<div className="info-item"><div className="info-label">Dauer</div><div className="info-value">12m 34s</div></div>
+				<div className="info-item"><div className="info-label">Geschwindigkeit</div><div className="info-value">2.7 MB/s</div></div>
+				<div className="info-item"><div className="info-label">Gesamt</div><div className="info-value">11.9 GB</div></div>
+				<div className="info-item"><div className="info-label">Fehlgeschlagen</div><div className="info-value">0</div></div>
+			</div>
+			<div className="dl-actions">
+				<button className="btn btn-ghost" onClick={() => onReset(idx)}>
+					<Icon name="rotate-ccw" size={14} /> Zur&uuml;ck
+				</button>
+				<div style={{display:'flex',gap:'6px'}}>
+					<button className="btn btn-ghost" onClick={() => onCopySpeedReport(idx)}>
+						<Icon name="clipboard-copy" size={14} /> Speed Report
+					</button>
+					<button className="btn btn-accent">
+						<Icon name="folder-open" size={14} /> Ordner &ouml;ffnen
+					</button>
+				</div>
+			</div>
+		</React.Fragment>
+	);
+}
+
+/* ── SfdlCard ── */
+function SfdlCard({
+	container, idx, onToggle, onRemove, onDecrypt,
+	onToggleFile, onTogglePkg, onTogglePkgSel, onSelectAll,
+	onStartDownload, onCancelDownload, onReset, onCopySpeedReport,
+	onDragStart, onDragEnd, onDragOver, onDragLeave, onDrop,
+	isDragging, isDragTarget
+}) {
+	const c = container;
+	const stateIcon = c.needsPassword && !c.decrypted ? 'encrypted' :
+		c.decrypted ? 'open' : 'decrypted';
+
+	let metaInfo = '';
+	if (c.host) metaInfo = c.host;
+	else if (c.needsPassword && !c.decrypted) metaInfo = 'Passwort erforderlich';
+	else metaInfo = c.description || '';
+
+	let body = null;
+	if (c.needsPassword && !c.decrypted) {
+		body = <PasswordSection onDecrypt={(pw) => onDecrypt(idx, pw)} />;
+	} else if (c.downloadDone) {
+		body = <ResultSection container={c} idx={idx} onReset={onReset} onCopySpeedReport={onCopySpeedReport} />;
+	} else if (c.downloading) {
+		body = <ProgressSection container={c} idx={idx} onCancel={onCancelDownload} />;
+	} else if (c.packages.length > 0) {
+		body = <FileSection container={c} idx={idx}
+			onToggleFile={onToggleFile} onTogglePkg={onTogglePkg}
+			onTogglePkgSel={onTogglePkgSel} onSelectAll={onSelectAll}
+			onStartDownload={onStartDownload} />;
+	}
+
+	const cardClasses = ['sfdl-card'];
+	if (isDragging) cardClasses.push('dragging');
+	if (isDragTarget) cardClasses.push('drag-target');
+
+	return (
+		<div
+			className={cardClasses.join(' ')}
+			onDragOver={onDragOver}
+			onDragLeave={onDragLeave}
+			onDrop={onDrop}
+		>
+			<div className="card-header" onClick={() => onToggle(idx)}>
+				<div
+					className="drag-handle"
+					draggable="true"
+					onDragStart={(e) => onDragStart(e, idx)}
+					onDragEnd={onDragEnd}
+					onClick={(e) => e.stopPropagation()}
+				>
+					<Icon name="grip-vertical" size={16} />
+				</div>
+				<div className={`card-icon ${stateIcon}`}>
+					<Icon name={c.needsPassword && !c.decrypted ? 'lock' : 'file-archive'} size={18} />
+				</div>
+				<div className="card-info">
+					<div className="card-name">{c.name}</div>
+					<div className="card-meta">
+						{c.encrypted && <span className="card-badge badge-encrypted">Encrypted</span>}
+						<span className={`card-badge badge-${c.version}`}>{c.version.toUpperCase()}</span>
+						{c.downloading && <span className="card-badge badge-downloading">Downloading</span>}
+						<span>{metaInfo}</span>
+					</div>
+				</div>
+				<div className="card-actions-head">
+					<button className="btn-icon btn-danger" onClick={(e) => { e.stopPropagation(); onRemove(idx); }} title="Entfernen">
+						<Icon name="x" size={16} />
+					</button>
+				</div>
+				<div className={`card-chevron${c.expanded ? ' open' : ''}`}>
+					<Icon name="chevron-down" size={16} />
+				</div>
+			</div>
+			<div className={`card-body${c.expanded ? ' open' : ''}`}>
+				{body}
 			</div>
 		</div>
-		<div class="sg-row" style="margin-top:-4px">
-			<input class="sg-input sg-input-full" type="text" value="~/Downloads/rsfdl">
-		</div>
-		<div class="sg-row">
-			<div class="sg-label">Max. parallele Downloads</div>
-			<input class="sg-input sg-input-sm" type="number" value="3" min="1" max="20">
-		</div>
-		<div class="sg-row">
-			<div class="sg-label">Max. Geschwindigkeit (KB/s)
-				<div class="sg-label-sub">0 = unbegrenzt</div>
+	);
+}
+
+/* ── ContainerList ── */
+function ContainerList({
+	containers, onOpenFile, onClearAll,
+	onToggle, onRemove, onDecrypt,
+	onToggleFile, onTogglePkg, onTogglePkgSel, onSelectAll,
+	onStartDownload, onCancelDownload, onReset, onCopySpeedReport
+}) {
+	const [draggedIdx, setDraggedIdx] = useState(null);
+	const [dragTargetIdx, setDragTargetIdx] = useState(null);
+	const reorderRef = useRef(null);
+
+	const handleDragStart = useCallback((e, idx) => {
+		setDraggedIdx(idx);
+		e.dataTransfer.effectAllowed = 'move';
+		// Store to distinguish card reorder from file drops
+		reorderRef.current = true;
+	}, []);
+
+	const handleDragEnd = useCallback(() => {
+		setDraggedIdx(null);
+		setDragTargetIdx(null);
+		reorderRef.current = false;
+	}, []);
+
+	const handleDragOver = useCallback((e, idx) => {
+		e.preventDefault();
+		if (reorderRef.current) setDragTargetIdx(idx);
+	}, []);
+
+	const handleDragLeave = useCallback((e, idx) => {
+		setDragTargetIdx((prev) => prev === idx ? null : prev);
+	}, []);
+
+	const handleDrop = useCallback((e, toIdx) => {
+		e.preventDefault();
+		setDragTargetIdx(null);
+		if (draggedIdx !== null && draggedIdx !== toIdx && reorderRef.current) {
+			// Reorder
+			const newContainers = [...containers];
+			const [moved] = newContainers.splice(draggedIdx, 1);
+			newContainers.splice(toIdx, 0, moved);
+			onRemove('__reorder__', newContainers);
+		}
+		setDraggedIdx(null);
+		reorderRef.current = false;
+	}, [draggedIdx, containers, onRemove]);
+
+	return (
+		<div>
+			<div className="container-toolbar">
+				<div className="container-toolbar-left">
+					<span className="container-count">{containers.length} Container</span>
+				</div>
+				<div style={{display:'flex',gap:'6px'}}>
+					<button className="btn btn-ghost btn-sm" onClick={onOpenFile}>
+						<Icon name="plus" size={14} /> Hinzuf&uuml;gen
+					</button>
+					<button className="btn btn-ghost btn-sm btn-danger" onClick={onClearAll}>
+						<Icon name="trash-2" size={14} /> Alle entfernen
+					</button>
+				</div>
 			</div>
-			<input class="sg-input sg-input-sm" type="number" value="0" min="0">
-		</div>
-	</div>
-
-	<!-- Download-Verhalten -->
-	<div class="settings-card">
-		<div class="sg-title">Download-Verhalten</div>
-		<div class="sg-row">
-			<div class="sg-label">Max. Wiederholungen</div>
-			<input class="sg-input sg-input-sm" type="number" value="3" min="0" max="50">
-		</div>
-		<div class="sg-row">
-			<div class="sg-label">Retry-Wartezeit (Sek.)</div>
-			<input class="sg-input sg-input-sm" type="number" value="10" min="1" max="3600">
-		</div>
-		<div class="sg-row">
-			<div class="sg-label">Downloads fortsetzen
-				<div class="sg-label-sub">Abgebrochene Downloads weiterführen</div>
+			<div>
+				{containers.map((c, i) => (
+					<SfdlCard
+						key={c.id}
+						container={c}
+						idx={i}
+						onToggle={onToggle}
+						onRemove={onRemove}
+						onDecrypt={onDecrypt}
+						onToggleFile={onToggleFile}
+						onTogglePkg={onTogglePkg}
+						onTogglePkgSel={onTogglePkgSel}
+						onSelectAll={onSelectAll}
+						onStartDownload={onStartDownload}
+						onCancelDownload={onCancelDownload}
+						onReset={onReset}
+						onCopySpeedReport={onCopySpeedReport}
+						onDragStart={handleDragStart}
+						onDragEnd={handleDragEnd}
+						onDragOver={(e) => handleDragOver(e, i)}
+						onDragLeave={(e) => handleDragLeave(e, i)}
+						onDrop={(e) => handleDrop(e, i)}
+						isDragging={draggedIdx === i}
+						isDragTarget={dragTargetIdx === i}
+					/>
+				))}
 			</div>
-			<button class="sg-toggle on" onclick="this.classList.toggle('on')"></button>
 		</div>
-		<div class="sg-row">
-			<div class="sg-label">Paket-Unterordner erstellen</div>
-			<button class="sg-toggle on" onclick="this.classList.toggle('on')"></button>
-		</div>
-		<div class="sg-row">
-			<div class="sg-label">Strikte Speicherplatzprüfung</div>
-			<button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
-		</div>
-	</div>
+	);
+}
 
-	<!-- Post-Processing -->
-	<div class="settings-card">
-		<div class="sg-title">Nachbearbeitung</div>
-		<div class="sg-row">
-			<div class="sg-label">Auto-Extraktion
-				<div class="sg-label-sub">Archive nach Download entpacken</div>
+/* ── SettingsView ── */
+function SettingsView({ onClose }) {
+	const [exclusionTags, setExclusionTags] = useState(['*.nfo', '*.jpg', '*.png', '*.txt', '*sample*']);
+	const [pwTags, setPwTags] = useState(['\u2022\u2022\u2022\u2022\u2022\u2022', '\u2022\u2022\u2022\u2022\u2022\u2022\u2022\u2022']);
+	const [toggles, setToggles] = useState({resume: true, subfolders: true, strictDisk: false, autoExtract: false, deleteAfter: false});
+
+	const toggle = useCallback((key) => {
+		setToggles(prev => ({...prev, [key]: !prev[key]}));
+	}, []);
+
+	return (
+		<div className="main-wrap">
+			<div className="settings-header">
+				<button className="btn-icon" onClick={onClose}>
+					<Icon name="arrow-left" size={18} />
+				</button>
+				<span className="settings-title">Einstellungen</span>
 			</div>
-			<button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
-		</div>
-		<div class="sg-row">
-			<div class="sg-label">Archive nach Extraktion löschen</div>
-			<button class="sg-toggle" onclick="this.classList.toggle('on')"></button>
-		</div>
-	</div>
 
-	<!-- Ausschlussmuster -->
-	<div class="settings-card">
-		<div class="sg-title">Ausschlussmuster</div>
-		<div class="tag-list" id="exclusion-tags">
-			<span class="tag">*.nfo <button class="tag-del">&times;</button></span>
-			<span class="tag">*.jpg <button class="tag-del">&times;</button></span>
-			<span class="tag">*.png <button class="tag-del">&times;</button></span>
-			<span class="tag">*.txt <button class="tag-del">&times;</button></span>
-			<span class="tag">*sample* <button class="tag-del">&times;</button></span>
-		</div>
-		<div class="sg-row" style="margin-top:8px">
-			<input class="sg-input sg-input-full" type="text" placeholder="Neues Muster hinzufügen..." style="flex:1">
-			<button class="btn btn-ghost btn-sm"><i data-lucide="plus" style="width:14px;height:14px"></i></button>
-		</div>
-	</div>
+			{/* Allgemein */}
+			<div className="settings-card">
+				<div className="sg-title">Allgemein</div>
+				<div className="sg-row">
+					<div className="sg-label">Download-Verzeichnis
+						<div className="sg-label-sub">Zielordner f&uuml;r Downloads</div>
+					</div>
+				</div>
+				<div className="sg-row" style={{marginTop:'-4px'}}>
+					<input className="sg-input sg-input-full" type="text" defaultValue="~/Downloads/rsfdl" />
+				</div>
+				<div className="sg-row">
+					<div className="sg-label">Max. parallele Downloads</div>
+					<input className="sg-input sg-input-sm" type="number" defaultValue="3" min="1" max="20" />
+				</div>
+				<div className="sg-row">
+					<div className="sg-label">Max. Geschwindigkeit (KB/s)
+						<div className="sg-label-sub">0 = unbegrenzt</div>
+					</div>
+					<input className="sg-input sg-input-sm" type="number" defaultValue="0" min="0" />
+				</div>
+			</div>
 
-	<!-- Passwörter -->
-	<div class="settings-card">
-		<div class="sg-title">Auto-Passwörter</div>
-		<div class="tag-list" id="pw-tags">
-			<span class="tag">&bull;&bull;&bull;&bull;&bull;&bull; <button class="tag-del">&times;</button></span>
-			<span class="tag">&bull;&bull;&bull;&bull;&bull;&bull;&bull;&bull; <button class="tag-del">&times;</button></span>
+			{/* Download-Verhalten */}
+			<div className="settings-card">
+				<div className="sg-title">Download-Verhalten</div>
+				<div className="sg-row">
+					<div className="sg-label">Max. Wiederholungen</div>
+					<input className="sg-input sg-input-sm" type="number" defaultValue="3" min="0" max="50" />
+				</div>
+				<div className="sg-row">
+					<div className="sg-label">Retry-Wartezeit (Sek.)</div>
+					<input className="sg-input sg-input-sm" type="number" defaultValue="10" min="1" max="3600" />
+				</div>
+				<div className="sg-row">
+					<div className="sg-label">Downloads fortsetzen
+						<div className="sg-label-sub">Abgebrochene Downloads weiterf&uuml;hren</div>
+					</div>
+					<button className={`sg-toggle${toggles.resume ? ' on' : ''}`} onClick={() => toggle('resume')}></button>
+				</div>
+				<div className="sg-row">
+					<div className="sg-label">Paket-Unterordner erstellen</div>
+					<button className={`sg-toggle${toggles.subfolders ? ' on' : ''}`} onClick={() => toggle('subfolders')}></button>
+				</div>
+				<div className="sg-row">
+					<div className="sg-label">Strikte Speicherplatzpr&uuml;fung</div>
+					<button className={`sg-toggle${toggles.strictDisk ? ' on' : ''}`} onClick={() => toggle('strictDisk')}></button>
+				</div>
+			</div>
+
+			{/* Post-Processing */}
+			<div className="settings-card">
+				<div className="sg-title">Nachbearbeitung</div>
+				<div className="sg-row">
+					<div className="sg-label">Auto-Extraktion
+						<div className="sg-label-sub">Archive nach Download entpacken</div>
+					</div>
+					<button className={`sg-toggle${toggles.autoExtract ? ' on' : ''}`} onClick={() => toggle('autoExtract')}></button>
+				</div>
+				<div className="sg-row">
+					<div className="sg-label">Archive nach Extraktion l&ouml;schen</div>
+					<button className={`sg-toggle${toggles.deleteAfter ? ' on' : ''}`} onClick={() => toggle('deleteAfter')}></button>
+				</div>
+			</div>
+
+			{/* Ausschlussmuster */}
+			<div className="settings-card">
+				<div className="sg-title">Ausschlussmuster</div>
+				<div className="tag-list">
+					{exclusionTags.map((tag, i) => (
+						<span className="tag" key={i}>
+							{tag} <button className="tag-del" onClick={() => setExclusionTags(prev => prev.filter((_, j) => j !== i))}>&times;</button>
+						</span>
+					))}
+				</div>
+				<div className="sg-row" style={{marginTop:'8px'}}>
+					<input className="sg-input sg-input-full" type="text" placeholder="Neues Muster hinzuf&uuml;gen..." style={{flex:1}} />
+					<button className="btn btn-ghost btn-sm"><Icon name="plus" size={14} /></button>
+				</div>
+			</div>
+
+			{/* Passw&ouml;rter */}
+			<div className="settings-card">
+				<div className="sg-title">Auto-Passw&ouml;rter</div>
+				<div className="tag-list">
+					{pwTags.map((tag, i) => (
+						<span className="tag" key={i}>
+							{tag} <button className="tag-del" onClick={() => setPwTags(prev => prev.filter((_, j) => j !== i))}>&times;</button>
+						</span>
+					))}
+				</div>
+				<div className="sg-row" style={{marginTop:'8px'}}>
+					<input className="sg-input sg-input-full" type="password" placeholder="Neues Passwort..." style={{flex:1}} />
+					<button className="btn btn-ghost btn-sm"><Icon name="plus" size={14} /></button>
+				</div>
+			</div>
+
+			{/* Speed Report */}
+			<div className="settings-card">
+				<div className="sg-title">Speed Report</div>
+				<div className="sg-row">
+					<div className="sg-label">Benutzername</div>
+					<input className="sg-input" type="text" placeholder="Forum-Username" />
+				</div>
+			</div>
+
+			<div className="settings-footer">
+				<button className="btn btn-ghost" onClick={onClose}>Abbrechen</button>
+				<button className="btn btn-accent" onClick={onClose}>Speichern</button>
+			</div>
 		</div>
-		<div class="sg-row" style="margin-top:8px">
-			<input class="sg-input sg-input-full" type="password" placeholder="Neues Passwort..." style="flex:1">
-			<button class="btn btn-ghost btn-sm"><i data-lucide="plus" style="width:14px;height:14px"></i></button>
-		</div>
-	</div>
+	);
+}
 
-	<!-- Speed Report -->
-	<div class="settings-card">
-		<div class="sg-title">Speed Report</div>
-		<div class="sg-row">
-			<div class="sg-label">Benutzername</div>
-			<input class="sg-input" type="text" placeholder="Forum-Username">
-		</div>
-	</div>
+/* ── App ── */
+function App() {
+	const [containers, setContainers] = useState(() => deepClone(DEMO_CONTAINERS));
+	const [view, setView] = useState('main'); // 'main' or 'settings'
+	const [theme, setThemeState] = useState(() => localStorage.getItem('rsfdl-theme') || 'system');
+	const [dragOverlay, setDragOverlay] = useState(false);
+	const dragCounterRef = useRef(0);
+	const fileInputRef = useRef(null);
+	const nextIdRef = useRef(4);
+	const intervalsRef = useRef({});
 
-	<div class="settings-footer">
-		<button class="btn btn-ghost" onclick="closeSettings()">Abbrechen</button>
-		<button class="btn btn-accent" onclick="closeSettings()">Speichern</button>
-	</div>
-</div>
+	// Apply theme
+	const setTheme = useCallback((mode) => {
+		localStorage.setItem('rsfdl-theme', mode);
+		setThemeState(mode);
+	}, []);
 
-<script>
-	/* ── State ── */
-	let containers = [];
-	let draggedCardIdx = null;
-	let nextId = 1;
+	useEffect(() => {
+		const root = document.documentElement;
+		root.removeAttribute('data-theme');
+		if (theme === 'light') root.setAttribute('data-theme', 'light');
+		else if (theme === 'dark') root.setAttribute('data-theme', 'dark');
+	}, [theme]);
 
-	/* ── Demo Data ── */
-	const DEMO_CONTAINERS = [
-		{
-			name: 'Movie.Collection.2025.German.DL.1080p.BluRay.x264',
-			encrypted: true,
-			version: 'v3',
-			needsPassword: true,
+	// Full-window drag & drop
+	useEffect(() => {
+		const handleDragEnter = (e) => {
+			e.preventDefault();
+			dragCounterRef.current++;
+			setDragOverlay(true);
+		};
+		const handleDragLeave = (e) => {
+			e.preventDefault();
+			dragCounterRef.current--;
+			if (dragCounterRef.current <= 0) {
+				dragCounterRef.current = 0;
+				setDragOverlay(false);
+			}
+		};
+		const handleDragOver = (e) => e.preventDefault();
+		const handleDrop = (e) => {
+			e.preventDefault();
+			dragCounterRef.current = 0;
+			setDragOverlay(false);
+			if (e.dataTransfer.files.length > 0) {
+				setContainers(prev => {
+					let next = [...prev];
+					for (const f of e.dataTransfer.files) {
+						if (f.name.endsWith('.sfdl')) {
+							next = [...next, createContainer(f.name)];
+						}
+					}
+					return next;
+				});
+			}
+		};
+
+		document.addEventListener('dragenter', handleDragEnter);
+		document.addEventListener('dragleave', handleDragLeave);
+		document.addEventListener('dragover', handleDragOver);
+		document.addEventListener('drop', handleDrop);
+
+		return () => {
+			document.removeEventListener('dragenter', handleDragEnter);
+			document.removeEventListener('dragleave', handleDragLeave);
+			document.removeEventListener('dragover', handleDragOver);
+			document.removeEventListener('drop', handleDrop);
+		};
+	}, []);
+
+	// Cleanup intervals on unmount
+	useEffect(() => {
+		return () => {
+			Object.values(intervalsRef.current).forEach(clearInterval);
+		};
+	}, []);
+
+	const createContainer = useCallback((filename) => {
+		const id = nextIdRef.current++;
+		const encrypted = Math.random() > 0.5;
+		const needsPassword = Math.random() > 0.5;
+		const c = {
+			id,
+			name: filename.replace(/\.sfdl$/i, ''),
+			encrypted,
+			version: Math.random() > 0.3 ? 'v3' : 'v2',
+			needsPassword,
 			decrypted: false,
-			description: 'Movie Collection 2025',
+			description: 'Container ' + id,
 			host: null,
 			packages: [],
 			expanded: true,
-			downloading: false,
-			progress: 0,
-		},
-		{
-			name: 'Linux.Distros.Pack.2025',
-			encrypted: false,
-			version: 'v3',
-			needsPassword: false,
-			decrypted: true,
-			description: 'Various Linux ISOs',
-			host: 'ftp.example.com',
-			packages: [
-				{
-					name: 'Ubuntu',
-					expanded: true,
-					files: [
-						{name: 'ubuntu-24.04-desktop-amd64.iso', size: '4.7 GB', selected: true},
-						{name: 'ubuntu-24.04-server-amd64.iso', size: '2.1 GB', selected: true},
-						{name: 'SHA256SUMS.txt', size: '1.2 KB', selected: false, excluded: true},
-						{name: 'info.nfo', size: '0.4 KB', selected: false, excluded: true},
-					]
-				},
-				{
-					name: 'Fedora',
-					expanded: true,
-					files: [
-						{name: 'Fedora-Workstation-Live-x86_64-41.iso', size: '2.3 GB', selected: true},
-						{name: 'Fedora-Server-dvd-x86_64-41.iso', size: '2.8 GB', selected: true},
-					]
-				}
-			],
-			expanded: true,
-			downloading: false,
-			progress: 0,
-		},
-		{
-			name: 'Documentary.Series.S01.Complete.720p',
-			encrypted: false,
-			version: 'v2',
-			needsPassword: false,
-			decrypted: true,
-			description: 'Documentary series complete season 1',
-			host: 'ftp2.example.com',
-			packages: [
-				{
-					name: 'Season 01',
-					expanded: false,
-					files: [
-						{name: 'S01E01.The.Beginning.720p.mkv', size: '1.4 GB', selected: true},
-						{name: 'S01E02.The.Journey.720p.mkv', size: '1.3 GB', selected: true},
-						{name: 'S01E03.The.Discovery.720p.mkv', size: '1.5 GB', selected: true},
-						{name: 'S01E04.The.Return.720p.mkv', size: '1.4 GB', selected: true},
-						{name: 'S01E05.The.Finale.720p.mkv', size: '1.6 GB', selected: true},
-						{name: 'cover.jpg', size: '320 KB', selected: false, excluded: true},
-						{name: 'sample.mkv', size: '45 MB', selected: false, excluded: true},
-					]
-				}
-			],
-			expanded: false,
 			downloading: false,
 			downloadDone: false,
 			progress: 0,
-		}
-	];
-
-	/* ── Render ── */
-	function render() {
-		const dz = document.getElementById('drop-zone');
-		const cl = document.getElementById('container-list');
-		const wrap = document.getElementById('cards-wrap');
-
-		if (containers.length === 0) {
-			dz.style.display = '';
-			cl.style.display = 'none';
-			return;
-		}
-
-		dz.style.display = 'none';
-		cl.style.display = '';
-		document.getElementById('container-count').textContent = containers.length + ' Container';
-
-		wrap.innerHTML = containers.map((c, i) => renderCard(c, i)).join('');
-		lucide.createIcons();
-		initCardDrag();
-	}
-
-	function renderCard(c, idx) {
-		const stateIcon = c.needsPassword && !c.decrypted ? 'encrypted' :
-				c.decrypted ? 'open' : 'decrypted';
-
-		const badges = [];
-		if (c.encrypted) badges.push(`<span class="card-badge badge-encrypted">Encrypted</span>`);
-		badges.push(`<span class="card-badge badge-${c.version}">${c.version.toUpperCase()}</span>`);
-		if (c.downloading) badges.push(`<span class="card-badge badge-downloading">Downloading</span>`);
-
-		let metaInfo = '';
-		if (c.host) metaInfo = c.host;
-		else if (c.needsPassword && !c.decrypted) metaInfo = 'Passwort erforderlich';
-		else metaInfo = c.description || '';
-
-		const chevronClass = c.expanded ? 'card-chevron open' : 'card-chevron';
-
-		let body = '';
-		if (c.needsPassword && !c.decrypted) {
-			body = renderPasswordSection(idx);
-		} else if (c.downloadDone) {
-			body = renderResultSection(c, idx);
-		} else if (c.downloading) {
-			body = renderProgressSection(c, idx);
-		} else if (c.packages.length > 0) {
-			body = renderFileSection(c, idx);
-		}
-
-		return `<div class="sfdl-card" data-idx="${idx}" draggable="false">
-    <div class="card-header" onclick="toggleCard(${idx})">
-      <div class="drag-handle" draggable="true" ondragstart="cardDragStart(event,${idx})" ondragend="cardDragEnd(event)" onclick="event.stopPropagation()">
-        <i data-lucide="grip-vertical" style="width:16px;height:16px"></i>
-      </div>
-      <div class="card-icon ${stateIcon}">
-        <i data-lucide="${c.needsPassword && !c.decrypted ? 'lock' : 'file-archive'}" style="width:18px;height:18px"></i>
-      </div>
-      <div class="card-info">
-        <div class="card-name">${c.name}</div>
-        <div class="card-meta">${badges.join('')} <span>${metaInfo}</span></div>
-      </div>
-      <div class="card-actions-head">
-        <button class="btn-icon btn-danger" onclick="event.stopPropagation();removeCard(${idx})" title="Entfernen">
-          <i data-lucide="x" style="width:16px;height:16px"></i>
-        </button>
-      </div>
-      <div class="${chevronClass}">
-        <i data-lucide="chevron-down" style="width:16px;height:16px"></i>
-      </div>
-    </div>
-    <div class="card-body ${c.expanded ? 'open' : ''}">
-      ${body}
-    </div>
-  </div>`;
-	}
-
-	function renderPasswordSection(idx) {
-		return `<div class="pw-section">
-    <div class="pw-inner">
-      <div class="pw-icon"><i data-lucide="key-round" style="width:22px;height:22px"></i></div>
-      <div class="pw-title">Passwort erforderlich</div>
-      <div class="pw-sub">Dieser Container ist verschlüsselt. Bitte Passwort eingeben.</div>
-      <div class="pw-row">
-        <div class="pw-input-wrap">
-          <input class="pw-input" type="password" placeholder="Passwort" id="pw-${idx}" onkeydown="if(event.key==='Enter')decryptCard(${idx})">
-          <button class="pw-toggle" onclick="togglePwVis(${idx})"><i data-lucide="eye" style="width:14px;height:14px"></i></button>
-        </div>
-        <button class="btn btn-accent" onclick="decryptCard(${idx})">
-          <i data-lucide="unlock" style="width:14px;height:14px"></i> Entschlüsseln
-        </button>
-      </div>
-      <div class="pw-error" id="pw-err-${idx}">Falsches Passwort. Bitte erneut versuchen.</div>
-    </div>
-  </div>`;
-	}
-
-	function renderFileSection(c, idx) {
-		const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
-		const allFiles = c.packages.reduce((s, p) => s + p.files.length, 0);
-
-		let info = '';
-		if (c.host) {
-			info = `<div class="info-banner">
-      <div class="info-item"><div class="info-label">Server</div><div class="info-value">${c.host}</div></div>
-      <div class="info-item"><div class="info-label">Beschreibung</div><div class="info-value">${c.description || '-'}</div></div>
-      <div class="info-item"><div class="info-label">Pakete</div><div class="info-value">${c.packages.length}</div></div>
-      <div class="info-item"><div class="info-label">Dateien</div><div class="info-value">${allFiles}</div></div>
-    </div>`;
-		}
-
-		const pkgs = c.packages.map((pkg, pi) => {
-			const selCount = pkg.files.filter(f => f.selected).length;
-			const allSel = selCount === pkg.files.length;
-			const someSel = selCount > 0 && !allSel;
-			const chkClass = allSel ? 'file-check on' : someSel ? 'file-check partial' : 'file-check';
-
-			const files = pkg.expanded ? pkg.files.map((f, fi) => `
-      <div class="file-item ${f.excluded ? 'excluded' : ''}">
-        <div class="${f.selected ? 'file-check on' : 'file-check'}" onclick="toggleFile(${idx},${pi},${fi})">
-          ${f.selected ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><polyline points="1,4 3.5,6.5 9,1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
-        </div>
-        <span class="file-icon"><i data-lucide="${getFileIcon(f.name)}" style="width:14px;height:14px"></i></span>
-        <span class="file-name" title="${f.name}">${f.name}</span>
-        <span class="file-size">${f.size}</span>
-      </div>
-    `).join('') : '';
-
-			return `
-      <div class="pkg-header" onclick="togglePkg(${idx},${pi})">
-        <div class="${chkClass}" onclick="event.stopPropagation();togglePkgSel(${idx},${pi})">
-          ${allSel || someSel ? '<svg width="10" height="8" viewBox="0 0 10 8" fill="none"><polyline points="1,4 3.5,6.5 9,1" stroke="#fff" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>' : ''}
-        </div>
-        <i data-lucide="${pkg.expanded ? 'folder-open' : 'folder'}" style="width:15px;height:15px;color:var(--color-accent)"></i>
-        <span>${pkg.name}</span>
-        <span class="pkg-count">${selCount}/${pkg.files.length}</span>
-        <span style="margin-left:auto;color:var(--color-text-tertiary)"><i data-lucide="chevron-${pkg.expanded ? 'up' : 'down'}" style="width:14px;height:14px"></i></span>
-      </div>
-      ${files}
-    `;
-		}).join('');
-
-		return `${info}
-    <div class="file-section">
-      <div class="file-toolbar">
-        <div class="file-toolbar-left">
-          <button class="btn btn-ghost btn-sm" onclick="selectAll(${idx},true)">Alle</button>
-          <button class="btn btn-ghost btn-sm" onclick="selectAll(${idx},false)">Keine</button>
-        </div>
-        <div class="file-stats">${totalFiles} von ${allFiles} ausgewählt</div>
-      </div>
-      ${pkgs}
-    </div>
-    <div class="dl-actions">
-      <div class="dl-summary">${totalFiles} Dateien zum Download</div>
-      <button class="btn btn-accent" onclick="startDownload(${idx})" ${totalFiles === 0 ? 'disabled style="opacity:.4;pointer-events:none"' : ''}>
-        <i data-lucide="download" style="width:15px;height:15px"></i> Download starten
-      </button>
-    </div>`;
-	}
-
-	function renderProgressSection(c, idx) {
-		const pct = c.progress || 0;
-		const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
-		const doneFiles = Math.floor(totalFiles * pct / 100);
-
-		const speeds = ['2.4 MB/s', '3.1 MB/s', '1.8 MB/s', '2.9 MB/s'];
-		const speed = speeds[idx % speeds.length];
-
-		let fileRows = '';
-		let fileIdx = 0;
-		for (const pkg of c.packages) {
-			for (const f of pkg.files) {
-				if (!f.selected) continue;
-				let status, statusIcon, fpct, label;
-				if (fileIdx < doneFiles) {
-					status = 'done';
-					statusIcon = 'check-circle';
-					fpct = 100;
-					label = f.size;
-				} else if (fileIdx === doneFiles && pct < 100) {
-					status = 'running';
-					statusIcon = 'loader';
-					fpct = Math.round((pct % (100 / totalFiles)) * totalFiles);
-					label = `${Math.round(parseFloat(f.size) * fpct / 100 * 10) / 10} / ${f.size}`;
-				} else {
-					status = 'pending';
-					statusIcon = 'circle';
-					fpct = 0;
-					label = 'Wartend';
-				}
-				fileRows += `<div class="pf-item">
-        <span class="pf-status ${status}"><i data-lucide="${statusIcon}" style="width:14px;height:14px" ${status === 'running' ? 'class="spinner"' : ''}></i></span>
-        <span class="pf-name">${f.name}</span>
-        <span class="pf-progress">${label}</span>
-        <div class="pf-bar-mini"><div class="pf-bar-mini-fill" style="width:${fpct}%"></div></div>
-      </div>`;
-				fileIdx++;
-			}
-		}
-
-		return `<div class="progress-section">
-    <div class="progress-header">
-      <span class="progress-title">Download läuft...</span>
-      <div class="progress-stats">
-        <span>${doneFiles}/${totalFiles} Dateien</span>
-        <span>${speed}</span>
-        <span>${Math.round(pct)}%</span>
-      </div>
-    </div>
-    <div class="progress-bar-wrap">
-      <div class="progress-bar" style="width:${pct}%"></div>
-    </div>
-    <div class="progress-files">${fileRows}</div>
-    <div class="dl-actions" style="border-top:none;padding:12px 0 0">
-      <div></div>
-      <button class="btn btn-ghost btn-danger" onclick="cancelDownload(${idx})">
-        <i data-lucide="square" style="width:14px;height:14px"></i> Abbrechen
-      </button>
-    </div>
-  </div>`;
-	}
-
-	function renderResultSection(c, idx) {
-		const totalFiles = c.packages.reduce((s, p) => s + p.files.filter(f => f.selected).length, 0);
-
-		return `<div class="result-banner success">
-    <i data-lucide="check-circle" style="width:20px;height:20px"></i>
-    <span class="result-text">${totalFiles} Dateien erfolgreich heruntergeladen</span>
-  </div>
-  <div class="info-banner">
-    <div class="info-item"><div class="info-label">Dauer</div><div class="info-value">12m 34s</div></div>
-    <div class="info-item"><div class="info-label">Geschwindigkeit</div><div class="info-value">2.7 MB/s</div></div>
-    <div class="info-item"><div class="info-label">Gesamt</div><div class="info-value">11.9 GB</div></div>
-    <div class="info-item"><div class="info-label">Fehlgeschlagen</div><div class="info-value">0</div></div>
-  </div>
-  <div class="dl-actions">
-    <button class="btn btn-ghost" onclick="resetCard(${idx})">
-      <i data-lucide="rotate-ccw" style="width:14px;height:14px"></i> Zurück
-    </button>
-    <div style="display:flex;gap:6px">
-      <button class="btn btn-ghost" onclick="copySpeedReport(${idx})">
-        <i data-lucide="clipboard-copy" style="width:14px;height:14px"></i> Speed Report
-      </button>
-      <button class="btn btn-accent">
-        <i data-lucide="folder-open" style="width:14px;height:14px"></i> Ordner öffnen
-      </button>
-    </div>
-  </div>`;
-	}
-
-	/* ── Helpers ── */
-	function getFileIcon(name) {
-		const ext = name.split('.').pop().toLowerCase();
-		const map = {
-			'iso': 'disc', 'img': 'disc',
-			'mkv': 'film', 'avi': 'film', 'mp4': 'film', 'mov': 'film',
-			'rar': 'archive', 'zip': 'archive', '7z': 'archive', 'tar': 'archive', 'gz': 'archive',
-			'nfo': 'file-text', 'txt': 'file-text', 'md': 'file-text',
-			'jpg': 'image', 'jpeg': 'image', 'png': 'image', 'gif': 'image', 'bmp': 'image',
-			'mp3': 'music', 'flac': 'music', 'wav': 'music', 'ogg': 'music',
-			'srt': 'subtitles', 'sub': 'subtitles',
 		};
-		return map[ext] || 'file';
-	}
-
-	/* ── Interactions ── */
-	function toggleCard(idx) {
-		containers[idx].expanded = !containers[idx].expanded;
-		render();
-	}
-
-	function togglePkg(idx, pi) {
-		containers[idx].packages[pi].expanded = !containers[idx].packages[pi].expanded;
-		render();
-	}
-
-	function toggleFile(idx, pi, fi) {
-		const f = containers[idx].packages[pi].files[fi];
-		f.selected = !f.selected;
-		if (f.selected) f.excluded = false;
-		render();
-	}
-
-	function togglePkgSel(idx, pi) {
-		const pkg = containers[idx].packages[pi];
-		const allSel = pkg.files.every(f => f.selected);
-		pkg.files.forEach(f => {
-			f.selected = !allSel;
-			if (!allSel) f.excluded = false;
-		});
-		render();
-	}
-
-	function selectAll(idx, val) {
-		containers[idx].packages.forEach(p => p.files.forEach(f => {
-			f.selected = val;
-			if (val) f.excluded = false;
-		}));
-		render();
-	}
-
-	function removeCard(idx) {
-		containers.splice(idx, 1);
-		render();
-	}
-
-	function clearAll() {
-		containers = [];
-		render();
-	}
-
-	function decryptCard(idx) {
-		const pw = document.getElementById('pw-' + idx);
-		if (!pw) return;
-		if (pw.value.length === 0) {
-			document.getElementById('pw-err-' + idx).classList.add('show');
-			return;
-		}
-		// Simulate decryption success
-		const c = containers[idx];
-		c.decrypted = true;
-		c.needsPassword = false;
-		c.host = 'ftp.example.com';
-		c.packages = [{
-			name: c.name,
-			expanded: true,
-			files: [
-				{name: 'Movie.Part1.rar', size: '4.0 GB', selected: true},
-				{name: 'Movie.Part2.rar', size: '4.0 GB', selected: true},
-				{name: 'Movie.Part3.rar', size: '3.2 GB', selected: true},
-				{name: 'cover.jpg', size: '180 KB', selected: false, excluded: true},
-				{name: 'info.nfo', size: '0.8 KB', selected: false, excluded: true},
-			]
-		}];
-		render();
-	}
-
-	function togglePwVis(idx) {
-		const inp = document.getElementById('pw-' + idx);
-		inp.type = inp.type === 'password' ? 'text' : 'password';
-	}
-
-	function startDownload(idx) {
-		const c = containers[idx];
-		c.downloading = true;
-		c.progress = 0;
-		render();
-
-		// Simulate progress
-		const iv = setInterval(() => {
-			c.progress = Math.min(100, c.progress + Math.random() * 4 + 1);
-			render();
-			if (c.progress >= 100) {
-				clearInterval(iv);
-				c.downloading = false;
-				c.downloadDone = true;
-				render();
-			}
-		}, 400);
-		c._interval = iv;
-	}
-
-	function cancelDownload(idx) {
-		const c = containers[idx];
-		if (c._interval) clearInterval(c._interval);
-		c.downloading = false;
-		c.progress = 0;
-		render();
-	}
-
-	function resetCard(idx) {
-		const c = containers[idx];
-		c.downloadDone = false;
-		c.progress = 0;
-		render();
-	}
-
-	function copySpeedReport(idx) {
-		alert('Speed Report in Zwischenablage kopiert!');
-	}
-
-	/* ── File Load ── */
-	function filesChosen(input) {
-		if (input.files.length > 0) {
-			for (const f of input.files) {
-				addContainer(f.name);
-			}
-			render();
-			input.value = '';
-		}
-	}
-
-	function addContainer(filename) {
-		containers.push({
-			name: filename.replace(/\.sfdl$/i, ''),
-			encrypted: Math.random() > 0.5,
-			version: Math.random() > 0.3 ? 'v3' : 'v2',
-			needsPassword: Math.random() > 0.5,
-			decrypted: false,
-			description: 'Container ' + nextId,
-			host: null,
-			packages: [],
-			expanded: true,
-			downloading: false,
-			progress: 0,
-		});
-		// If not encrypted, simulate content
-		const c = containers[containers.length - 1];
-		if (!c.needsPassword) {
+		if (!needsPassword) {
 			c.decrypted = true;
-			c.host = 'ftp' + nextId + '.example.com';
+			c.host = 'ftp' + id + '.example.com';
 			c.packages = [{
 				name: 'Package 1',
 				expanded: true,
@@ -1883,125 +2077,242 @@
 				]
 			}];
 		}
-		nextId++;
-	}
+		return c;
+	}, []);
 
-	/* ── Card Drag & Drop (Reorder) ── */
-	function initCardDrag() {
-		const wrap = document.getElementById('cards-wrap');
-		if (!wrap) return;
-		const cards = wrap.querySelectorAll('.sfdl-card');
-		cards.forEach(card => {
-			card.addEventListener('dragover', e => {
-				e.preventDefault();
-				card.classList.add('drag-target');
-			});
-			card.addEventListener('dragleave', () => {
-				card.classList.remove('drag-target');
-			});
-			card.addEventListener('drop', e => {
-				e.preventDefault();
-				card.classList.remove('drag-target');
-				const toIdx = parseInt(card.dataset.idx);
-				if (draggedCardIdx !== null && draggedCardIdx !== toIdx) {
-					const [moved] = containers.splice(draggedCardIdx, 1);
-					containers.splice(toIdx, 0, moved);
-					render();
+	const openFileDialog = useCallback(() => {
+		if (fileInputRef.current) fileInputRef.current.click();
+	}, []);
+
+	const handleFilesChosen = useCallback((e) => {
+		const files = e.target.files;
+		if (files.length > 0) {
+			setContainers(prev => {
+				let next = [...prev];
+				for (const f of files) {
+					next = [...next, createContainer(f.name)];
 				}
+				return next;
 			});
-		});
-	}
-
-	function cardDragStart(e, idx) {
-		draggedCardIdx = idx;
-		e.dataTransfer.effectAllowed = 'move';
-		setTimeout(() => {
-			const card = document.querySelectorAll('.sfdl-card')[idx];
-			if (card) card.classList.add('dragging');
-		}, 0);
-	}
-
-	function cardDragEnd(e) {
-		draggedCardIdx = null;
-		document.querySelectorAll('.sfdl-card').forEach(c => c.classList.remove('dragging', 'drag-target'));
-	}
-
-	/* ── Full-window Drag & Drop ── */
-	let dragCounter = 0;
-	document.addEventListener('dragenter', e => {
-		e.preventDefault();
-		dragCounter++;
-		document.getElementById('drag-overlay').classList.add('active');
-	});
-	document.addEventListener('dragleave', e => {
-		e.preventDefault();
-		dragCounter--;
-		if (dragCounter <= 0) {
-			dragCounter = 0;
-			document.getElementById('drag-overlay').classList.remove('active');
+			e.target.value = '';
 		}
-	});
-	document.addEventListener('dragover', e => e.preventDefault());
-	document.addEventListener('drop', e => {
-		e.preventDefault();
-		dragCounter = 0;
-		document.getElementById('drag-overlay').classList.remove('active');
-		if (e.dataTransfer.files.length > 0) {
-			for (const f of e.dataTransfer.files) {
-				if (f.name.endsWith('.sfdl')) {
-					addContainer(f.name);
-				}
+	}, [createContainer]);
+
+	const toggleCard = useCallback((idx) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			next[idx].expanded = !next[idx].expanded;
+			return next;
+		});
+	}, []);
+
+	const removeCard = useCallback((idx, reorderedList) => {
+		if (idx === '__reorder__') {
+			setContainers(reorderedList);
+			return;
+		}
+		setContainers(prev => {
+			const next = [...prev];
+			const removed = next.splice(idx, 1)[0];
+			if (intervalsRef.current[removed.id]) {
+				clearInterval(intervalsRef.current[removed.id]);
+				delete intervalsRef.current[removed.id];
 			}
-			render();
-		}
-	});
-
-	/* ── Settings View ── */
-	function openSettings() {
-		document.getElementById('drop-zone').style.display = 'none';
-		document.getElementById('container-list').style.display = 'none';
-		document.getElementById('settings-view').classList.add('open');
-		window.scrollTo(0, 0);
-	}
-
-	function closeSettings() {
-		document.getElementById('settings-view').classList.remove('open');
-		render();
-	}
-
-	/* ── Init with demo data ── */
-	function loadDemo() {
-		containers = JSON.parse(JSON.stringify(DEMO_CONTAINERS));
-		render();
-	}
-
-	// Start with demo data
-	loadDemo();
-
-	/* ── Theme Toggle ── */
-	function setTheme(mode) {
-		localStorage.setItem('rsfdl-theme', mode);
-		applyTheme(mode);
-	}
-
-	function applyTheme(mode) {
-		const root = document.documentElement;
-		root.removeAttribute('data-theme');
-		if (mode === 'light') root.setAttribute('data-theme', 'light');
-		else if (mode === 'dark') root.setAttribute('data-theme', 'dark');
-		// 'system' = no attribute, CSS media query handles it
-
-		document.querySelectorAll('#theme-toggle button').forEach(btn => {
-			btn.classList.toggle('active', btn.dataset.themeBtn === mode);
+			return next;
 		});
-	}
+	}, []);
 
-	// Restore saved theme
-	const savedTheme = localStorage.getItem('rsfdl-theme') || 'system';
-	applyTheme(savedTheme);
+	const clearAll = useCallback(() => {
+		Object.values(intervalsRef.current).forEach(clearInterval);
+		intervalsRef.current = {};
+		setContainers([]);
+	}, []);
 
-	// Init Lucide icons
-	lucide.createIcons();
+	const decryptCard = useCallback((idx, pw) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			const c = next[idx];
+			c.decrypted = true;
+			c.needsPassword = false;
+			c.host = 'ftp.example.com';
+			c.packages = [{
+				name: c.name,
+				expanded: true,
+				files: [
+					{name: 'Movie.Part1.rar', size: '4.0 GB', selected: true},
+					{name: 'Movie.Part2.rar', size: '4.0 GB', selected: true},
+					{name: 'Movie.Part3.rar', size: '3.2 GB', selected: true},
+					{name: 'cover.jpg', size: '180 KB', selected: false, excluded: true},
+					{name: 'info.nfo', size: '0.8 KB', selected: false, excluded: true},
+				]
+			}];
+			return next;
+		});
+	}, []);
+
+	const toggleFile = useCallback((idx, pi, fi) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			const f = next[idx].packages[pi].files[fi];
+			f.selected = !f.selected;
+			if (f.selected) f.excluded = false;
+			return next;
+		});
+	}, []);
+
+	const togglePkg = useCallback((idx, pi) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			next[idx].packages[pi].expanded = !next[idx].packages[pi].expanded;
+			return next;
+		});
+	}, []);
+
+	const togglePkgSel = useCallback((idx, pi) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			const pkg = next[idx].packages[pi];
+			const allSel = pkg.files.every(f => f.selected);
+			pkg.files.forEach(f => {
+				f.selected = !allSel;
+				if (!allSel) f.excluded = false;
+			});
+			return next;
+		});
+	}, []);
+
+	const selectAll = useCallback((idx, val) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			next[idx].packages.forEach(p => p.files.forEach(f => {
+				f.selected = val;
+				if (val) f.excluded = false;
+			}));
+			return next;
+		});
+	}, []);
+
+	const startDownload = useCallback((idx) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			next[idx].downloading = true;
+			next[idx].progress = 0;
+			const containerId = next[idx].id;
+
+			const iv = setInterval(() => {
+				setContainers(current => {
+					const ci = current.findIndex(c => c.id === containerId);
+					if (ci === -1) {
+						clearInterval(iv);
+						delete intervalsRef.current[containerId];
+						return current;
+					}
+					const updated = deepClone(current);
+					updated[ci].progress = Math.min(100, updated[ci].progress + Math.random() * 4 + 1);
+					if (updated[ci].progress >= 100) {
+						clearInterval(iv);
+						delete intervalsRef.current[containerId];
+						updated[ci].downloading = false;
+						updated[ci].downloadDone = true;
+					}
+					return updated;
+				});
+			}, 400);
+			intervalsRef.current[containerId] = iv;
+
+			return next;
+		});
+	}, []);
+
+	const cancelDownload = useCallback((idx) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			const c = next[idx];
+			if (intervalsRef.current[c.id]) {
+				clearInterval(intervalsRef.current[c.id]);
+				delete intervalsRef.current[c.id];
+			}
+			c.downloading = false;
+			c.progress = 0;
+			return next;
+		});
+	}, []);
+
+	const resetCard = useCallback((idx) => {
+		setContainers(prev => {
+			const next = deepClone(prev);
+			next[idx].downloadDone = false;
+			next[idx].progress = 0;
+			return next;
+		});
+	}, []);
+
+	const copySpeedReport = useCallback((idx) => {
+		alert('Speed Report in Zwischenablage kopiert!');
+	}, []);
+
+	const openSettings = useCallback(() => {
+		setView('settings');
+		window.scrollTo(0, 0);
+	}, []);
+
+	const closeSettings = useCallback(() => {
+		setView('main');
+	}, []);
+
+	return (
+		<React.Fragment>
+			<DragOverlay active={dragOverlay} />
+
+			<Header
+				theme={theme}
+				setTheme={setTheme}
+				onOpenFile={openFileDialog}
+				onOpenSettings={openSettings}
+			/>
+
+			<input
+				type="file"
+				ref={fileInputRef}
+				accept=".sfdl"
+				multiple
+				style={{display:'none'}}
+				onChange={handleFilesChosen}
+			/>
+
+			{view === 'settings' ? (
+				<SettingsView onClose={closeSettings} />
+			) : (
+				<main className="main-wrap">
+					{containers.length === 0 ? (
+						<DropZone onOpenFile={openFileDialog} />
+					) : (
+						<ContainerList
+							containers={containers}
+							onOpenFile={openFileDialog}
+							onClearAll={clearAll}
+							onToggle={toggleCard}
+							onRemove={removeCard}
+							onDecrypt={decryptCard}
+							onToggleFile={toggleFile}
+							onTogglePkg={togglePkg}
+							onTogglePkgSel={togglePkgSel}
+							onSelectAll={selectAll}
+							onStartDownload={startDownload}
+							onCancelDownload={cancelDownload}
+							onReset={resetCard}
+							onCopySpeedReport={copySpeedReport}
+						/>
+					)}
+				</main>
+			)}
+		</React.Fragment>
+	);
+}
+
+/* ── Mount ── */
+const root = ReactDOM.createRoot(document.getElementById('root'));
+root.render(<App />);
 </script>
 </body>
 </html>
